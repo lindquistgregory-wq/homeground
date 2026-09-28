@@ -3,7 +3,7 @@
  * diagram with the parcel's real terrain horizon, sunrise/sunset/solar noon, a time scrubber, and
  * "sun checks" that compare what the user sees with what the model predicts.
  */
-import { daySunSamples, formatLength, horizonAt, keySunDates, sunTimes, type SunSample } from '@plotwright/core';
+import { daySunSamples, formatLength, horizonAt, keySunDates, solarDayOf, sunTimes, type SunSample } from '@plotwright/core';
 import * as Location from 'expo-location';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -55,7 +55,8 @@ export default function SunScreen() {
   }, [id, ent]);
 
   const origin = analysis?.frame.origin ?? (parcel ? { lat: 0, lon: 0 } : null);
-  const days = useMemo(() => [...keySunDates(new Date().getFullYear()), { label: 'Today', date: new Date() }], []);
+  const lonForDay = analysis?.frame.origin.lon ?? 0;
+  const days = useMemo(() => [...keySunDates(new Date().getFullYear()), { label: 'Today', date: solarDayOf(new Date(), lonForDay) }], [lonForDay]);
   const arcs = useMemo(() => {
     if (!parcel || !analysis) return [];
     const c = analysis.frame.origin;

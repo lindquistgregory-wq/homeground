@@ -52,3 +52,24 @@ test('day samples cover daylight only, rising in the east and setting in the wes
   assert.ok(s[0]!.azimuth > 80 && s[0]!.azimuth < 100);
   assert.ok(s[s.length - 1]!.azimuth > 260 && s[s.length - 1]!.azimuth < 280);
 });
+
+test('solarDayOf: a US evening is still "today", not the next UTC day', async () => {
+  const { solarDayOf, approxSolarNoon } = await import('./spa');
+  // 18:30 PDT on 15 June = 01:30 UTC on 16 June; Sacramento, sun still ~21° up.
+  const when = new Date(Date.UTC(2026, 5, 16, 1, 30));
+  const day = solarDayOf(when, -121.49);
+  assert.equal(day.getUTCDate(), 15);
+  const noon = approxSolarNoon(day, -121.49);
+  assert.ok(Math.abs(+noon - +when) < 8 * 3_600_000, 'solar noon is the same afternoon');
+  const p = solarPosition(when, 38.58, -121.49);
+  assert.ok(p.elevation > 15);
+});
+
+test('near the polar circle a missing crossing is null, never reported as noon', () => {
+  for (let doy = 170; doy <= 200; doy++) {
+    const d = new Date(Date.UTC(2026, 0, doy, 12));
+    const st = sunTimes(d, 66.8, -162.6);
+    if (st.sunrise) assert.ok(Math.abs(+st.sunrise - +st.solarNoon) > 3_600_000, `day ${doy}: sunrise equals noon`);
+    if (st.sunset) assert.ok(Math.abs(+st.sunset - +st.solarNoon) > 3_600_000, `day ${doy}: sunset equals noon`);
+  }
+});

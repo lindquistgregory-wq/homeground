@@ -187,6 +187,16 @@ export interface SunSample extends SolarPosition {
   time: Date;
 }
 
+/**
+ * The solar day that contains the instant `when` at longitude `lon`, as the UTC-noon Date that the
+ * day functions below expect. Use this for "today" and "now": the UTC calendar date is already
+ * tomorrow on a US evening.
+ */
+export function solarDayOf(when: Date, lon: number): Date {
+  const local = new Date(when.getTime() + (lon / 15) * 3_600_000);
+  return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate(), 12));
+}
+
 /** UTC instant of local *solar* noon for the calendar day containing `day` (approximate, ±1 min). */
 export function approxSolarNoon(dayUtc: Date, lon: number): Date {
   const base = Date.UTC(dayUtc.getUTCFullYear(), dayUtc.getUTCMonth(), dayUtc.getUTCDate(), 12);
@@ -233,8 +243,10 @@ export function sunTimes(day: Date, lat: number, lon: number, opts: SpaOptions =
   };
   const half = 12 * 3_600_000;
   if (f(noon) < 0) return { sunrise: null, sunset: null, solarNoon: new Date(noon), kind: 'polarNight', noonElevation };
-  if (f(noon - half) > 0 && f(noon + half) > 0) return { sunrise: null, sunset: null, solarNoon: new Date(noon), kind: 'polarDay', noonElevation };
-  return { sunrise: root(noon - half, noon), solarNoon: new Date(noon), sunset: root(noon, noon + half), kind: 'normal', noonElevation };
+  const upBefore = f(noon - half) > 0, upAfter = f(noon + half) > 0;
+  if (upBefore && upAfter) return { sunrise: null, sunset: null, solarNoon: new Date(noon), kind: 'polarDay', noonElevation };
+  // Near the polar circles one crossing can be missing on a given solar day; report it as null.
+  return { sunrise: upBefore ? null : root(noon - half, noon), solarNoon: new Date(noon), sunset: upAfter ? null : root(noon, noon + half), kind: 'normal', noonElevation };
 }
 
 /**

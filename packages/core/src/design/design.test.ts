@@ -162,3 +162,31 @@ test('existing buildings use their traced polygon footprint', () => {
   const area = footprintAreaM2(b, frame);
   assert.ok(area > 350 && area < 400, `area ${area}`); // ≈16.5 m × 22.2 m
 });
+
+test('validation catches crossing structures, boundary corners into sides, and uses metric text', () => {
+  const frame = localFrame({ lat: 42.253, lon: -73.9855 });
+  const a = newObject('tool-shed', { lat: 42.253, lon: -73.9855 }, 'a');
+  a.width = 1; a.length = 10; a.rotationDeg = 0;
+  const b = { ...a, id: 'b', rotationDeg: 90 }; // plus sign: no vertex inside the other
+  const boundary: Polygon = { type: 'Polygon', coordinates: [[[-73.99, 42.25], [-73.98, 42.25], [-73.98, 42.256], [-73.99, 42.256], [-73.99, 42.25]]] };
+  const w = validateDesign([a, b], { boundary, units: 'metric' }, frame);
+  assert.ok(w.some((x) => x.kind === 'overlap'), 'plus-shaped overlap');
+  const near = validateDesign([a], { boundary, setbackM: 400, units: 'metric' }, frame);
+  assert.match(near.find((x) => x.kind === 'setback')!.message, / m from the property line; your setback is 400\.0 m/);
+});
+
+test('DXF is R12 (POLYLINE/VERTEX/SEQEND, ASCII) and OSM-derived objects carry attribution', () => {
+  const frame = localFrame({ lat: 42.253, lon: -73.9855 });
+  const bld = newObject('building', { lat: 42.253, lon: -73.9855 }, 'b');
+  bld.existing = true;
+  const d = { id: 'd', parcelId: 'p', name: 'Plan — test', objects: [bld], createdAt: '', updatedAt: '' };
+  const boundary: Polygon = { type: 'Polygon', coordinates: [[[-73.99, 42.25], [-73.98, 42.25], [-73.98, 42.256], [-73.99, 42.256], [-73.99, 42.25]]] };
+  const dxf = designToDXF(d, boundary, frame, { includeBoundary: true });
+  assert.match(dxf, /\$ACADVER\n1\nAC1009/);
+  assert.ok(!dxf.includes('LWPOLYLINE'));
+  assert.ok(/^[\x09\x0a\x0d\x20-\x7e]*$/.test(dxf), 'ASCII only');
+  assert.match(dxf, /OpenStreetMap/);
+  assert.equal(parseDxf(dxf).rawPolygons.length, 2);
+  assert.match(designToGeoJSON(d, boundary, frame, { includeBoundary: false }), /OpenStreetMap/);
+  assert.match(designToKML(d, boundary, frame, { includeBoundary: false }), /OpenStreetMap/);
+});

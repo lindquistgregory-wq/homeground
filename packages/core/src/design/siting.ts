@@ -31,10 +31,12 @@ export function siteSuitability(target: SitingTarget, inp: SitingInputs): Siting
   const factors: string[] = [];
   const add = (f: string, used: boolean) => used && factors.push(f);
   add('Winter sun (more is better)', !!inp.winterSun && (target === 'greenhouse' || target === 'solar'));
-  add('Summer afternoon shade (animals)', !!inp.summerSun && target === 'coop');
+  add('Summer sun', !!inp.summerSun && target === 'solar');
+  add('Some summer shade (4–9 h of sun suits birds)', !!inp.summerSun && target === 'coop');
   add('Summer sun (6 h+ for vegetables)', !!inp.summerSun && (target === 'garden' || target === 'orchard'));
   add('Gentle slope', !!inp.slope);
   add('Not in a frost pocket', !!inp.pooling && target !== 'coop' && target !== 'solar');
+  add('Not in a wet low spot', !!inp.pooling && target === 'coop');
 
   for (let k = 0; k < out.data.length; k++) {
     if (!inp.parcelMask.data[k]) continue;

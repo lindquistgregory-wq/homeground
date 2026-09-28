@@ -231,6 +231,14 @@ export function sunHours(s: SurfaceModel, samples: PreparedSample[], opts: Shade
               lastMat = mat;
               continue;
             }
+            if (mat === lastMat && ray < bottom) {
+              // Passing under the same crown (e.g. from a cell beneath a tree): still one crown.
+              if (zg > ray) {
+                t = 0;
+                break;
+              }
+              continue;
+            }
           }
           if (zg > ray) {
             t = 0; // terrain blocks
@@ -260,8 +268,20 @@ export function sunClass(hours: number): SunClass {
 export function affectedMask(g: Grid, bounds: [number, number, number, number], maxHeightM: number, samples: PreparedSample[]): Uint8Array {
   const mask = new Uint8Array(g.width * g.height);
   let [xmin, ymin, xmax, ymax] = bounds;
+  // On sloping ground a shadow reaches further downhill: use the object's highest ground minus the
+  // lowest ground in the grid (conservative) on top of the object's height. `g` is the ground grid.
+  let zTop = -Infinity, zMin = Infinity;
+  for (let j = 0; j < g.height; j++)
+    for (let i = 0; i < g.width; i++) {
+      const z = g.data[j * g.width + i]!;
+      if (Number.isNaN(z)) continue;
+      if (z < zMin) zMin = z;
+      const [x, y] = cellCenter(g, i, j);
+      if (x >= bounds[0] - g.cell && x <= bounds[2] + g.cell && y >= bounds[1] - g.cell && y <= bounds[3] + g.cell && z > zTop) zTop = z;
+    }
+  const drop = Number.isFinite(zTop) && Number.isFinite(zMin) ? Math.max(0, zTop - zMin) : 0;
   for (const s of samples) {
-    const L = Math.min(250, maxHeightM / Math.max(s.tanAlt, 0.02));
+    const L = Math.min(250, (maxHeightM + drop) / Math.max(s.tanAlt, 0.02));
     // Shadow is cast away from the sun.
     xmin = Math.min(xmin, bounds[0] - s.sx * L);
     xmax = Math.max(xmax, bounds[2] - s.sx * L);

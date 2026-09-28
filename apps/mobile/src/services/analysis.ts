@@ -6,12 +6,12 @@
 import {
   DEFAULT_TRANSMITTANCE, affectedMask, boundsUtm, footprintUtm, burnCanopy, burnDesign, bbox, cellCenter, coldAirPoolingIndex, contours, daySunSamples, emptySurface,
   fromUtm, horizonProfile, isLeafOn, like, makeGrid, prepareSamples, rasterizePolygon, sampleBilinear, slopeAspect, sunHours,
-  toPolygons, type Areal, type ContourLine, type DesignObject, type Grid, type HorizonProfile, type Layer, type LocalFrame,
+  solarDayOf, solarPosition, toPolygons, type Areal, type ContourLine, type DesignObject, type Grid, type HorizonProfile, type Layer, type LocalFrame,
   type PreparedSample, type SurfaceModel, frameForBoundary, project,
 } from '@plotwright/core';
 import { parcelCanopy, parcelTerrain, utmBoxFor, type ParcelTerrain } from '@plotwright/providers';
 import { ShadeNativeModule } from '@plotwright/shade-native';
-import { inflateSync } from 'fflate';
+import { inflateSync, unzlibSync } from 'fflate';
 import { http } from './http';
 
 /** Cap on analysis cells so a big parcel stays interactive; larger parcels use a coarser grid. */
@@ -36,7 +36,17 @@ export interface ParcelAnalysis {
 
 const cache = new Map<string, Promise<ParcelAnalysis>>();
 
-const inflate = (b: Uint8Array) => inflateSync(b);
+/**
+ * TIFF compression 8 / 32946 is zlib-wrapped DEFLATE (starts 0x78). fflate's inflateSync expects raw
+ * DEFLATE, so unwrap with unzlibSync, falling back to raw for the rare writer that omits the header.
+ */
+const inflate = (b: Uint8Array) => {
+  try {
+    return unzlibSync(b);
+  } catch {
+    return inflateSync(b);
+  }
+};
 
 function resample(src: Grid, cell: number, box: [number, number, number, number]): Grid {
   const width = Math.max(1, Math.ceil((box[2] - box[0]) / cell));
@@ -55,8 +65,13 @@ export async function loadAnalysis(
   boundary: Areal,
   opts: { canopy: boolean; frost?: ParcelAnalysis['frost']; refresh?: boolean },
 ): Promise<ParcelAnalysis> {
-  const key = `${parcelId}:${opts.canopy ? 'c' : 'n'}`;
-  if (!opts.refresh && cache.has(key)) return cache.get(key)!;
+  // Boundary edits must invalidate the cached mask; frost dates only change leaf-on timing.
+  const key = `${parcelId}:${opts.canopy ? 'c' : 'n'}:${hashString(JSON.stringify(boundary))}`;
+  if (!opts.refresh && cache.has(key)) {
+    const cached = await cache.get(key)!;
+    if (opts.frost) cached.frost = opts.frost;
+    return cached;
+  }
   const p = (async (): Promise<ParcelAnalysis> => {
     const frame = frameForBoundary(boundary);
     const client = opts.refresh ? http.fresh() : http;
@@ -89,7 +104,9 @@ export async function loadAnalysis(
     let horizon: HorizonProfile | undefined, slope: Grid | undefined, pooling: Grid | undefined;
     if (terrain.status === 'ok') {
       const cx = (box.xmin + box.xmax) / 2, cy = (box.ymin + box.ymax) / 2;
-      horizon = horizonProfile(terrain.value.far, cx, cy, { minDistM: 150 });
+      // Start the far horizon where the near grid ends so no terrain band is skipped.
+      const nearEdge = Math.min(cx - ext[0], ext[2] - cx, cy - ext[1], ext[3] - cy);
+      horizon = horizonProfile(terrain.value.far, cx, cy, { minDistM: Math.max(30, nearEdge - 2 * cell) });
       slope = slopeAspect(ground).slope;
       pooling = coldAirPoolingIndex(ground);
     }
@@ -98,6 +115,12 @@ export async function loadAnalysis(
   cache.set(key, p);
   p.catch(() => cache.delete(key));
   return p;
+}
+
+function hashString(s: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return (h >>> 0).toString(36);
 }
 
 export function surfaceFor(a: ParcelAnalysis, objects: DesignObject[]): SurfaceModel {
@@ -117,11 +140,11 @@ export const PERIOD_LABELS: Record<SunPeriod, string> = {
   growing: 'Growing season avg',
 };
 
-function periodDates(period: SunPeriod, year: number): Date[] {
+function periodDates(period: SunPeriod, year: number, lon: number): Date[] {
   const d = (m: number, day: number) => new Date(Date.UTC(year, m, day, 12));
   switch (period) {
     case 'today':
-      return [new Date()];
+      return [solarDayOf(new Date(), lon)];
     case 'winter':
       return [d(11, 21)];
     case 'equinox':
@@ -174,7 +197,7 @@ export function computeSun(
   const t0 = Date.now();
   const s = surfaceFor(a, objects);
   const c = a.frame.origin;
-  const dates = periodDates(period, new Date().getUTCFullYear());
+  const dates = periodDates(period, new Date().getUTCFullYear(), c.lon);
   if (incremental && incremental.prev.period === period && dates.length === 1 && incremental.changed.length && incremental.prev.hours.data.length === a.ground.data.length) {
     const date = dates[0]!;
     const samples = prepareSamples(daySunSamples(date, c.lat, c.lon, stepMin), { horizon: a.horizon, sampleHours: stepMin / 60 });
@@ -213,10 +236,9 @@ export function modeledSunAt(a: ParcelAnalysis, objects: DesignObject[], lat: nu
   const [x, y] = project(a.frame, [lon, lat]);
   const i = Math.floor((x - a.ground.x0) / a.ground.cell), j = Math.floor((a.ground.y0 - y) / a.ground.cell);
   if (i < 0 || j < 0 || i >= a.ground.width || j >= a.ground.height) return null;
-  const all = daySunSamples(when, lat, lon, 2);
-  const nearest = all.reduce<(typeof all)[number] | undefined>((best, s) => (!best || Math.abs(+s.time - +when) < Math.abs(+best.time - +when) ? s : best), undefined);
-  if (!nearest || Math.abs(+nearest.time - +when) > 5 * 60_000) return false; // sun is down
-  const samples = prepareSamples([nearest], { horizon: a.horizon, sampleHours: 1 });
+  const pos = solarPosition(when, lat, lon);
+  if (pos.elevation <= 0) return false; // sun is down
+  const samples = prepareSamples([{ ...pos, time: when }], { horizon: a.horizon, sampleHours: 1 });
   if (!samples.length) return false; // behind the far horizon
   const mask = new Uint8Array(a.ground.data.length);
   mask[j * a.ground.width + i] = 1;
@@ -236,9 +258,18 @@ export function heatmapGeoJSON(a: ParcelAnalysis, hours: Grid): { type: 'Feature
   const f = Math.max(1, Math.ceil(Math.sqrt(inside / 15_000)));
   const g = a.ground;
   const features: Feature[] = [];
-  const corner = (x: number, y: number) => {
-    const { lat, lon } = fromUtm(x, y, g.zone);
-    return [lon, lat];
+  // One inverse projection per lattice vertex (shared by up to 4 cells), rounded to ~1 cm.
+  const cols = Math.ceil(g.width / f) + 1;
+  const vertexCache = new Map<number, number[]>();
+  const vertex = (vi: number, vj: number) => {
+    const key = vj * cols + vi;
+    let v = vertexCache.get(key);
+    if (!v) {
+      const { lat, lon } = fromUtm(g.x0 + vi * f * g.cell, g.y0 - vj * f * g.cell, g.zone);
+      v = [Math.round(lon * 1e7) / 1e7, Math.round(lat * 1e7) / 1e7];
+      vertexCache.set(key, v);
+    }
+    return v;
   };
   for (let j = 0; j < g.height; j += f)
     for (let i = 0; i < g.width; i += f) {
@@ -249,19 +280,25 @@ export function heatmapGeoJSON(a: ParcelAnalysis, hours: Grid): { type: 'Feature
           if (a.mask[k] && !Number.isNaN(hours.data[k]!)) (sum += hours.data[k]!), n++;
         }
       if (!n) continue;
-      const h = sum / n;
-      const x0 = g.x0 + i * g.cell, y0 = g.y0 - j * g.cell, x1 = x0 + f * g.cell, y1 = y0 - f * g.cell;
+      const vi = i / f, vj = j / f;
       features.push({
         type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [[corner(x0, y0), corner(x1, y0), corner(x1, y1), corner(x0, y1), corner(x0, y0)]] },
-        properties: { hours: Math.round(h * 10) / 10 },
+        geometry: { type: 'Polygon', coordinates: [[vertex(vi, vj), vertex(vi + 1, vj), vertex(vi + 1, vj + 1), vertex(vi, vj + 1), vertex(vi, vj)]] },
+        properties: { hours: Math.round((sum / n) * 10) / 10 },
       });
     }
   return { type: 'FeatureCollection', features };
 }
 
-export function contourGeoJSON(a: ParcelAnalysis, intervalM: number): { type: 'FeatureCollection'; features: Feature[] } {
-  const lines: ContourLine[] = contours(a.ground, intervalM, 3000);
+/**
+ * Contour lines over the parcel. The interval is widened if needed so there are at most ~80 levels,
+ * which keeps this under a few hundred ms on a phone. Returns the interval actually used.
+ */
+export function contourGeoJSON(a: ParcelAnalysis, intervalM: number): { type: 'FeatureCollection'; features: Feature[]; intervalM: number } {
+  let min = Infinity, max = -Infinity;
+  for (const v of a.ground.data) if (!Number.isNaN(v)) (min = Math.min(min, v)), (max = Math.max(max, v));
+  const used = Number.isFinite(min) ? Math.max(intervalM, (max - min) / 80) : intervalM;
+  const lines: ContourLine[] = contours(a.ground, used, 3000);
   return {
     type: 'FeatureCollection',
     features: lines.map((l) => ({
@@ -269,6 +306,7 @@ export function contourGeoJSON(a: ParcelAnalysis, intervalM: number): { type: 'F
       geometry: { type: 'LineString' as const, coordinates: l.points.map(([x, y]) => { const { lat, lon } = fromUtm(x, y, a.ground.zone); return [lon, lat]; }) },
       properties: { level: Math.round(l.level * 10) / 10 },
     })),
+    intervalM: used,
   };
 }
 

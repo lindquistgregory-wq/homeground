@@ -31,6 +31,8 @@ export interface DesignObject {
   polygon?: Array<[number, number]>;
   /** Existing feature detected from map data (not something the user plans to build). */
   existing?: boolean;
+  /** Solar arrays: direction the panels face, degrees clockwise from north. */
+  facingDeg?: number;
   costUsd?: number;
   notes?: string;
 }
@@ -58,6 +60,8 @@ export function newObject(kind: string, center: LatLon, id: string): DesignObjec
   return {
     id, kind, shape: t.shape, center: [center.lon, center.lat], rotationDeg: 0,
     width: t.width, length: t.length, height: t.height, material: t.material, crownBase: t.crownBase,
+    // Solar arrays default to facing south: panel rows run east–west.
+    ...(kind === 'solar-array' ? { rotationDeg: 90, facingDeg: 180 } : {}),
   };
 }
 
@@ -132,11 +136,28 @@ export function footprintAreaM2(o: DesignObject, frame: LocalFrame): number {
   return Math.abs(s / 2);
 }
 
+function burnOutline(mask: Grid, ring: Array<[number, number]>): void {
+  const step = mask.cell / 3;
+  for (let k = 1; k < ring.length; k++) {
+    const [ax, ay] = ring[k - 1]!, [bx, by] = ring[k]!;
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let s = 0; s <= n; s++) {
+      const x = ax + ((bx - ax) * s) / n, y = ay + ((by - ay) * s) / n;
+      const i = Math.floor((x - mask.x0) / mask.cell), j = Math.floor((mask.y0 - y) / mask.cell);
+      if (i >= 0 && j >= 0 && i < mask.width && j < mask.height) mask.data[j * mask.width + i] = 1;
+    }
+  }
+}
+
 /** Burn every shade-casting object into the surface model. */
 export function burnDesign(surface: SurfaceModel, objects: DesignObject[], frame: LocalFrame): void {
   for (const o of objects) {
     if (o.material === Material.none || o.height <= 0) continue;
-    const mask = rasterizePolygon(surface.ground, [footprintUtm(o, frame)]);
+    const ring = footprintUtm(o, frame);
+    const mask = rasterizePolygon(surface.ground, [ring]);
+    // Objects thinner than a cell (fences, trellises, containers) cover no cell centre; burn the
+    // cells their outline passes through so they still cast shade.
+    if (Math.min(o.width, o.shape === 'line' ? o.width : o.length) < 1.5 * surface.ground.cell) burnOutline(mask, ring);
     burnObstacle(surface, mask, o.height, o.material, (o.crownBase ?? 0) * o.height);
   }
 }
@@ -190,6 +211,8 @@ export interface ValidationContext {
   setbackM?: number;
   slope?: Grid;
   maxStructureSlopeDeg?: number;
+  /** Units for distances in warning text. */
+  units?: 'imperial' | 'metric';
 }
 
 function distPointSeg(px: number, py: number, a: [number, number], b: [number, number]): number {
@@ -197,6 +220,18 @@ function distPointSeg(px: number, py: number, a: [number, number], b: [number, n
   const l2 = dx * dx + dy * dy;
   const t = l2 ? Math.max(0, Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / l2)) : 0;
   return Math.hypot(a[0] + t * dx - px, a[1] + t * dy - py);
+}
+
+function segmentsCross(p1: [number, number], p2: [number, number], p3: [number, number], p4: [number, number]): boolean {
+  const d = (a: [number, number], b: [number, number], c: [number, number]) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const d1 = d(p3, p4, p1), d2 = d(p3, p4, p2), d3 = d(p1, p2, p3), d4 = d(p1, p2, p4);
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+}
+
+function ringsOverlap(a: Array<[number, number]>, b: Array<[number, number]>): boolean {
+  if (a.some(([x, y]) => inRing(x, y, b)) || b.some(([x, y]) => inRing(x, y, a))) return true;
+  for (let i = 1; i < a.length; i++) for (let j = 1; j < b.length; j++) if (segmentsCross(a[i - 1]!, a[i]!, b[j - 1]!, b[j]!)) return true;
+  return false;
 }
 
 function inRing(x: number, y: number, ring: Array<[number, number]>): boolean {
@@ -213,14 +248,19 @@ export function validateDesign(objects: DesignObject[], ctx: ValidationContext, 
   const polys = toPolygons(ctx.boundary).map((p) => p[0]!.map((q) => project(frame, q)));
   const edges = polys.flatMap((ring) => ring.slice(1).map((b, k) => [ring[k]!, b] as [[number, number], [number, number]]));
   const maxSlope = ctx.maxStructureSlopeDeg ?? 10;
-  const feet = (m: number) => `${(m / 0.3048).toFixed(0)} ft`;
+  const feet = (m: number) => (ctx.units === 'metric' ? `${m.toFixed(1)} m` : `${(m / 0.3048).toFixed(0)} ft`);
   const fps = objects.map((o) => ({ o, ring: footprintUtm(o, frame), type: objectType(o.kind) }));
 
   for (const { o, ring, type } of fps) {
-    const outside = ring.some(([x, y]) => !polys.some((p) => inRing(x, y, p)));
+    const outside = ring.some(([x, y]) => !polys.some((p) => inRing(x, y, p))) || edges.some(([a, b]) => ring.slice(1).some((q, k) => segmentsCross(a, b, ring[k]!, q)));
     if (outside) warnings.push({ objectId: o.id, kind: 'outside-boundary', message: `${type?.name ?? o.kind} extends past the property line.` });
     if (type?.isStructure && ctx.setbackM && ctx.setbackM > 0) {
-      const d = Math.min(...ring.flatMap(([x, y]) => edges.map(([a, b]) => distPointSeg(x, y, a, b))));
+      const objEdges = ring.slice(1).map((q, k) => [ring[k]!, q] as [[number, number], [number, number]]);
+      const d = Math.min(
+        ...ring.flatMap(([x, y]) => edges.map(([a, b]) => distPointSeg(x, y, a, b))),
+        // Boundary corners poking toward an object's side.
+        ...polys.flat().flatMap(([x, y]) => objEdges.map(([a, b]) => distPointSeg(x, y, a, b))),
+      );
       if (d < ctx.setbackM)
         warnings.push({ objectId: o.id, kind: 'setback', message: `${type.name} is ${feet(d)} from the property line; your setback is ${feet(ctx.setbackM)}.` });
     }
@@ -239,7 +279,7 @@ export function validateDesign(objects: DesignObject[], ctx: ValidationContext, 
     for (let b = a + 1; b < fps.length; b++) {
       const A = fps[a]!, B = fps[b]!;
       if (!A.type?.isStructure || !B.type?.isStructure) continue;
-      const hit = A.ring.some(([x, y]) => inRing(x, y, B.ring)) || B.ring.some(([x, y]) => inRing(x, y, A.ring));
+      const hit = ringsOverlap(A.ring, B.ring);
       if (hit) warnings.push({ objectId: B.o.id, kind: 'overlap', message: `${B.type.name} overlaps ${A.type.name}.` });
     }
   return warnings;

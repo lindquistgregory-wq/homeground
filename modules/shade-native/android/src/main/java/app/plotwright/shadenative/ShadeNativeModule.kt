@@ -9,7 +9,7 @@ import java.nio.ByteOrder
 
 /**
  * Line-for-line port of `sunHours()` in packages/core/src/sun/shade.ts. Keep the two in sync:
- * Settings → Diagnostics runs both on the same inputs and reports any difference.
+ * Settings → Diagnostics runs both on the same scene and reports the largest difference.
  */
 class ShadeNativeModule : Module() {
   override fun definition() = ModuleDefinition {
@@ -63,17 +63,20 @@ class ShadeNativeModule : Module() {
               val mt = mat.get(k).toInt() and 0xff
               val zg = g.get(k).toDouble()
               var inside = false
+              var underSame = false
               if (mt != 0) {
                 val topZ = zg + hTop.get(k); val bottomZ = zg + hBase.get(k)
                 if (ray <= topZ && ray >= bottomZ) {
                   if (mt != lastMat) t *= tr.get(mt).toDouble()
                   lastMat = mt
                   inside = true
+                } else if (mt == lastMat && ray < bottomZ) {
+                  underSame = true // passing under the same crown: still one crown
                 }
               }
               if (!inside) {
                 if (zg > ray) { t = 0.0; break }
-                lastMat = 0
+                if (!underSame) lastMat = 0
               }
               d += step
             }

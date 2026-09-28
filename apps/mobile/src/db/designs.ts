@@ -15,6 +15,18 @@ const fromRow = (r: Row): Design => ({
   id: r.id, parcelId: r.parcel_id, name: r.name, objects: JSON.parse(r.objects) as DesignObject[], createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
+/** Tombstone every design of a deleted parcel so other devices drop them too. */
+export async function deleteDesignsForParcel(parcelId: string): Promise<void> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{ id: string }>('SELECT id FROM designs WHERE parcel_id = ? AND deleted = 0', parcelId);
+  for (const r of rows) {
+    const hlc = clock().tick();
+    await db.runAsync('UPDATE designs SET deleted = 1, updated_hlc = ? WHERE id = ?', hlc, r.id);
+    await db.runAsync('INSERT OR REPLACE INTO sync_pending (collection, id, hlc) VALUES (?, ?, ?)', 'designs', r.id, hlc);
+  }
+  await db.runAsync('DELETE FROM design_versions WHERE design_id IN (SELECT id FROM designs WHERE parcel_id = ?)', parcelId);
+}
+
 export async function designsForParcel(parcelId: string): Promise<Design[]> {
   const db = await getDb();
   return (await db.getAllAsync<Row>('SELECT * FROM designs WHERE parcel_id = ? AND deleted = 0 ORDER BY created_at', parcelId)).map(fromRow);
@@ -24,7 +36,8 @@ export async function getOrCreateDesign(parcelId: string): Promise<Design> {
   const existing = (await designsForParcel(parcelId))[0];
   if (existing) return existing;
   const now = new Date().toISOString();
-  const d: Design = { id: newId(), parcelId, name: 'Main plan', objects: [], createdAt: now, updatedAt: now };
+  // Same id on every device so the first sync merges into one plan instead of creating two.
+  const d: Design = { id: `design-${parcelId}`, parcelId, name: 'Main plan', objects: [], createdAt: now, updatedAt: now };
   await saveDesign(d);
   return d;
 }

@@ -121,3 +121,60 @@ test('incremental recompute of the affected region matches a full recompute', ()
   assert.equal(maxDiff, 0);
   assert.ok(touched < full.data.length * 0.5, `recomputed ${touched} of ${full.data.length} cells`);
 });
+
+test('a cell under a tree crown is filtered by that crown once, not twice', () => {
+  const g = flat(40, 40, 1);
+  const s = emptySurface(g);
+  const canopy = makeGrid({ width: 40, height: 40, cell: 1, x0: g.x0, y0: g.y0, zone: ZONE }, 0);
+  rasterizePolygon(g, [rect(580010, 4679970, 580030, 4679990)], 10, canopy); // 20 m × 20 m, 10 m tall
+  burnCanopy(s, canopy, Material.deciduous);
+  const noon = sunTimes(new Date(Date.UTC(2026, 5, 21, 12)), LAT, LON).solarNoon;
+  const sun = solarPosition(noon, LAT, LON);
+  const out = sunHours(s, prepareSamples([{ ...sun, time: noon }], { sampleHours: 1 }), { sampleHours: 1, leafOn: true });
+  const centre = 20 * 40 + 20;
+  assert.ok(Math.abs(out.data[centre]! - 0.15) < 1e-6, `transmittance ${out.data[centre]}`);
+});
+
+test('fences thinner than a cell still cast shade', async () => {
+  const { burnDesign, newObject } = await import('../design/design');
+  const { localFrame, unproject } = await import('../geo/measure');
+  const g = flat(40, 40, 1);
+  const s = emptySurface(g);
+  const frame = localFrame({ lat: 42.25, lon: -75 });
+  const fence = newObject('fence-garden', { lat: 42.25, lon: -75 }, 'f');
+  // East–west solid fence across the middle of the grid, 2 m tall.
+  fence.path = [unproject(frame, [580005, 4679980]) as [number, number], unproject(frame, [580035, 4679980]) as [number, number]];
+  fence.height = 2;
+  const g2 = { ...g, zone: frame.zone };
+  const s2 = { ...s, ground: g2 };
+  burnDesign(s2, [fence], frame);
+  let burned = 0;
+  for (const m of s2.material) burned += m ? 1 : 0;
+  assert.ok(burned >= 25, `fence burned ${burned} cells`);
+});
+
+test('incremental recompute on a steep slope matches a full recompute (move = old + new)', () => {
+  const W = 80;
+  const g = makeGrid({ width: W, height: W, cell: 1, x0: 580000, y0: 4680000, zone: ZONE }, 0);
+  for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) g.data[j * W + i] = 200 - 0.4 * (W - j); // falls ~22° toward the north
+  // One winter-noon sun position: shadow slope (~0.45) barely exceeds the ground slope (0.4), so the
+  // shadow runs far downhill — exactly what a flat-ground mask misses.
+  const noon = sunTimes(new Date(Date.UTC(2026, 11, 21, 12)), LAT, LON).solarNoon;
+  const samples = prepareSamples([{ ...solarPosition(noon, LAT, LON), time: noon }], { sampleHours: 1 / 3 });
+  const old: [number, number, number, number] = [580030, 4679950, 580036, 4679956];
+  const moved: [number, number, number, number] = [580040, 4679940, 580046, 4679946];
+  const withBox = (b: [number, number, number, number]) => {
+    const s = emptySurface(g);
+    burnObstacle(s, rasterizePolygon(g, [rect(b[0], b[1], b[2], b[3])]), 4, Material.opaque);
+    return s;
+  };
+  const before = sunHours(withBox(old), samples, { sampleHours: 1 / 3 });
+  const full = sunHours(withBox(moved), samples, { sampleHours: 1 / 3 });
+  const union: [number, number, number, number] = [Math.min(old[0], moved[0]), Math.min(old[1], moved[1]), Math.max(old[2], moved[2]), Math.max(old[3], moved[3])];
+  const inc = makeGrid({ ...g }, 0);
+  inc.data.set(before.data);
+  sunHours(withBox(moved), samples, { sampleHours: 1 / 3, mask: affectedMask(g, union, 4, samples) }, inc);
+  let maxDiff = 0;
+  for (let k = 0; k < inc.data.length; k++) maxDiff = Math.max(maxDiff, Math.abs(inc.data[k]! - full.data[k]!));
+  assert.ok(maxDiff < 1e-6, `max difference ${maxDiff} h`);
+});

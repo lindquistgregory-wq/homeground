@@ -1,7 +1,7 @@
 import ExpoModulesCore
 
 /// Line-for-line port of `sunHours()` in packages/core/src/sun/shade.ts. Keep the two in sync:
-/// Settings → Diagnostics runs both on the same inputs and reports any difference.
+/// Settings → Diagnostics runs both on the same scene and reports the largest difference.
 public class ShadeNativeModule: Module {
   public func definition() -> ModuleDefinition {
     Name("ShadeNative")
@@ -52,17 +52,20 @@ public class ShadeNativeModule: Module {
               let mt = Int(mat[k])
               let zg = Double(g[k])
               var inside = false
+              var underSame = false
               if mt != 0 {
                 let topZ = zg + Double(hTop[k]), bottomZ = zg + Double(hBase[k])
                 if ray <= topZ && ray >= bottomZ {
                   if mt != lastMat { t *= Double(tr[mt]) }
                   lastMat = mt
                   inside = true
+                } else if mt == lastMat && ray < bottomZ {
+                  underSame = true // passing under the same crown: still one crown
                 }
               }
               if !inside {
                 if zg > ray { t = 0; break }
-                lastMat = 0
+                if !underSame { lastMat = 0 }
               }
               d += step
             }

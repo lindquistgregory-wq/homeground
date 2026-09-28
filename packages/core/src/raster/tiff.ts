@@ -33,7 +33,11 @@ export function cachedSource(inner: ByteSource, blockSize = 65536): ByteSource {
   const blocks = new Map<number, Promise<Uint8Array>>();
   const block = (i: number) => {
     let p = blocks.get(i);
-    if (!p) blocks.set(i, (p = inner.read(i * blockSize, blockSize)));
+    if (!p) {
+      p = inner.read(i * blockSize, blockSize);
+      blocks.set(i, p);
+      p.catch(() => blocks.delete(i)); // let a failed range read be retried
+    }
     return p;
   };
   return {

@@ -34,6 +34,10 @@ const CATEGORY_LABEL: Record<ObjectCategory, string> = {
 
 /** Viridis stops: colour-blind safe and readable on imagery. */
 const SUN_RAMP = ['interpolate', ['linear'], ['get', 'hours'], 0, '#440154', 3, '#31688e', 6, '#35b779', 9, '#fde725'];
+// Hoisted so map layers keep stable props and big GeoJSON sources aren't re-serialised on every render.
+const HEAT_PAINT = { 'fill-color': SUN_RAMP, 'fill-opacity': 0.6, 'fill-antialias': false };
+const CONTOUR_PAINT = { 'line-color': '#f5e6c8', 'line-width': 0.8, 'line-opacity': 0.8 };
+const CAMERA_PADDING = { top: 40, right: 40, bottom: 40, left: 40 };
 
 export default function DesignScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -127,7 +131,7 @@ export default function DesignScreen() {
       if (o.shape === 'line') {
         const [x, y] = project(frame, o.center);
         o.path = [unproject(frame, [x - o.length / 2, y]) as [number, number], unproject(frame, [x + o.length / 2, y]) as [number, number]];
-        if (objectType(o.kind)?.followsContour && analysis?.terrain.status === 'ok') o = snapToContour(o, analysis.ground, frame);
+        if (objectType(o.kind)?.followsContour && ent.has('layers.advancedTerrain') && analysis?.terrain.status === 'ok') o = snapToContour(o, analysis.ground, frame);
       }
       update([...design.objects, o], [o]);
       setSelectedId(o.id);
@@ -188,13 +192,15 @@ export default function DesignScreen() {
   }, [design, frame, selectedId]);
 
   const heatGeo = useMemo(() => (analysis && sun && ent.has('sun.heatmaps') ? heatmapGeoJSON(analysis, sun.hours) : null), [analysis, sun, ent]);
-  const contourGeo = useMemo(
-    () => (analysis && layers.contours && analysis.terrain.status === 'ok' ? contourGeoJSON(analysis, contourInterval) : null),
-    [analysis, layers.contours, contourInterval],
-  );
+  const [contourGeo, setContourGeo] = useState<ReturnType<typeof contourGeoJSON> | null>(null);
+  useEffect(() => {
+    if (!analysis || !layers.contours || analysis.terrain.status !== 'ok') return setContourGeo(null);
+    const h = setTimeout(() => setContourGeo(contourGeoJSON(analysis, contourInterval)), 30); // let the toggle render first
+    return () => clearTimeout(h);
+  }, [analysis, layers.contours, contourInterval]);
   const warnings: DesignWarning[] = useMemo(
-    () => (design && frame && parcel ? validateDesign(design.objects.filter((o) => !o.existing), { boundary: parcel.geometry, setbackM, slope: analysis?.slope, maxStructureSlopeDeg: 10 }, frame) : []),
-    [design, frame, parcel, setbackM, analysis],
+    () => (design && frame && parcel ? validateDesign(design.objects.filter((o) => !o.existing), { boundary: parcel.geometry, setbackM, slope: analysis?.slope, maxStructureSlopeDeg: 10, units }, frame) : []),
+    [design, frame, parcel, setbackM, analysis, units],
   );
   const summary = analysis && sun ? sunSummary(analysis, sun.hours) : null;
 
@@ -202,7 +208,9 @@ export default function DesignScreen() {
     if (!analysis || !design) return;
     const winter = computeSun(analysis, design.objects, 'winter');
     const summer = computeSun(analysis, design.objects, 'summer');
-    const r = siteSuitability(target, { winterSun: winter.hours, summerSun: summer.hours, slope: analysis.slope, pooling: analysis.pooling, parcelMask: analysis.maskGrid });
+    // Cold-air drainage is a Homestead Pro terrain layer (§10); lower tiers score without it.
+    const pooling = ent.has('layers.advancedTerrain') ? analysis.pooling : undefined;
+    const r = siteSuitability(target, { winterSun: winter.hours, summerSun: summer.hours, slope: analysis.slope, pooling, parcelMask: analysis.maskGrid });
     const renamed = { ...r.score, data: r.score.data.map((v) => v * 10) }; // reuse the 0–10 heat builder
     const geo = heatmapGeoJSON(analysis, renamed as typeof r.score);
     setSiting({ target, geo, factors: r.factors });
@@ -233,30 +241,30 @@ export default function DesignScreen() {
           attribution
           onPress={(e) => onMapPress(e.nativeEvent.lngLat[0], e.nativeEvent.lngLat[1])}
         >
-          <Camera bounds={[b[0], b[1], b[2], b[3]]} padding={{ top: 40, right: 40, bottom: 40, left: 40 }} />
+          <Camera initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding: CAMERA_PADDING }} />
           {layers.imagery && (
             <RasterSource id="img" tiles={USGS_IMAGERY.tiles} tileSize={256} maxzoom={USGS_IMAGERY.maxzoom} attribution={USGS_IMAGERY.attribution}>
               <Layer type="raster" id="img-l" />
             </RasterSource>
           )}
-          {layers.hillshade && (
+          {layers.hillshade && ent.has('layers.standard') && (
             <RasterSource id="hs" tiles={USGS_HILLSHADE.tiles} tileSize={256} maxzoom={USGS_HILLSHADE.maxzoom} attribution={USGS_HILLSHADE.attribution}>
               <Layer type="raster" id="hs-l" paint={{ 'raster-opacity': 0.45 }} />
             </RasterSource>
           )}
           {layers.heatmap && heatGeo && (
             <GeoJSONSource id="heat" data={heatGeo}>
-              <Layer type="fill" id="heat-l" paint={{ 'fill-color': SUN_RAMP, 'fill-opacity': 0.6, 'fill-antialias': false }} />
+              <Layer type="fill" id="heat-l" paint={HEAT_PAINT} />
             </GeoJSONSource>
           )}
           {layers.siting && siting && (
             <GeoJSONSource id="siting" data={siting.geo}>
-              <Layer type="fill" id="siting-l" paint={{ 'fill-color': SUN_RAMP, 'fill-opacity': 0.6, 'fill-antialias': false }} />
+              <Layer type="fill" id="siting-l" paint={HEAT_PAINT} />
             </GeoJSONSource>
           )}
-          {contourGeo && (
+          {contourGeo && ent.has('layers.standard') && (
             <GeoJSONSource id="contours" data={contourGeo}>
-              <Layer type="line" id="contours-l" paint={{ 'line-color': '#f5e6c8', 'line-width': 0.8, 'line-opacity': 0.8 }} />
+              <Layer type="line" id="contours-l" paint={CONTOUR_PAINT} />
             </GeoJSONSource>
           )}
           <GeoJSONSource id="parcel" data={{ type: 'Feature', geometry: parcel.geometry, properties: {} }}>
@@ -268,7 +276,8 @@ export default function DesignScreen() {
               data={objectsGeo}
               hitbox={{ top: 8, right: 8, bottom: 8, left: 8 }}
               onPress={(e) => {
-                if (placing || moving) return;
+                if (placing || moving) return; // let the map handle placement taps
+                e.stopPropagation(); // otherwise the Map's onPress deselects straight away
                 const fid = e.nativeEvent.features[0]?.properties?.id;
                 if (typeof fid === 'string') {
                   setSelectedId(fid);
@@ -315,13 +324,14 @@ export default function DesignScreen() {
 
         {tab === 'selected' && (selected ? (
           <SelectedPanel
+            key={selected.id}
             o={selected}
             units={units}
             areaM2={frame ? footprintAreaM2(selected, frame) : 0}
             onPatch={replaceSelected}
             onMove={() => setMoving(true)}
             onSnapAngle={() => frame && replaceSelected({ rotationDeg: snapRotationToBoundary(selected.rotationDeg, parcel.geometry, frame) })}
-            onSnapContour={objectType(selected.kind)?.followsContour && analysis?.terrain.status === 'ok' && frame ? () => replaceSelected(snapToContour(selected, analysis.ground, frame)) : undefined}
+            onSnapContour={objectType(selected.kind)?.followsContour && ent.has('layers.advancedTerrain') && analysis?.terrain.status === 'ok' && frame ? () => replaceSelected(snapToContour(selected, analysis.ground, frame)) : undefined}
             onDelete={() => { update(design.objects.filter((o) => o.id !== selected.id), [selected]); setSelectedId(null); }}
           />
         ) : <Body muted>Tap an object on the map to edit it.</Body>)}
@@ -367,10 +377,18 @@ export default function DesignScreen() {
         {tab === 'layers' && (
           <>
             {([
-              ['imagery', 'Aerial imagery'], ['hillshade', 'Hillshade'], ['contours', 'Contour lines'], ['heatmap', 'Sun-hours heatmap'], ['siting', 'Siting suitability'],
-            ] as Array<[keyof typeof layers, string]>).map(([k, label]) => (
-              <Button key={k} title={`${layers[k] ? '✓ ' : ''}${label}`} kind={layers[k] ? 'primary' : 'secondary'} onPress={() => setLayers((l) => ({ ...l, [k]: !l[k] }))} />
-            ))}
+              ['imagery', 'Aerial imagery', 'layers.core'], ['hillshade', 'Hillshade', 'layers.standard'], ['contours', 'Contour lines', 'layers.standard'],
+              ['heatmap', 'Sun-hours heatmap', 'sun.heatmaps'], ['siting', 'Siting suitability', 'sun.heatmaps'],
+            ] as Array<[keyof typeof layers, string, Parameters<typeof ent.has>[0]]>).map(([k, label, feature]) => {
+              const locked = !ent.has(feature);
+              return (
+                <Button key={k} title={`${layers[k] && !locked ? '✓ ' : ''}${label}${locked ? ' 🔒' : ''}`} kind={layers[k] && !locked ? 'primary' : 'secondary'} disabled={locked}
+                  onPress={() => setLayers((l) => ({ ...l, [k]: !l[k] }))} />
+              );
+            })}
+            {contourGeo && Math.abs(contourGeo.intervalM - contourInterval) > 1e-6 && (
+              <Body muted>Contour interval widened to {formatLength(contourGeo.intervalM, units)} so the map stays responsive on this much relief.</Body>
+            )}
             {layers.contours && (
               <View style={styles.row}>
                 {(units === 'imperial' ? [[0.3048, '1 ft'], [0.6096, '2 ft'], [1.524, '5 ft']] : [[0.25, '0.25 m'], [0.5, '0.5 m'], [1, '1 m']]).map(([v, l]) => (
@@ -460,7 +478,7 @@ function SelectedPanel({ o, units, areaM2, onPatch, onMove, onSnapAngle, onSnapC
   return (
     <Card title={o.label ?? type?.name ?? o.kind}>
       <Body muted>{formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}</Body>
-      {!o.polygon && o.shape !== 'circle' && <Stepper label="Length" value={o.length} step={step} min={0.3} units={units} onChange={(v) => onPatch({ length: v })} />}
+      {!o.polygon && o.shape === 'rect' && <Stepper label="Length" value={o.length} step={step} min={0.3} units={units} onChange={(v) => onPatch({ length: v })} />}
       {!o.polygon && <Stepper label={o.shape === 'circle' ? 'Diameter' : 'Width'} value={o.width} step={step} min={0.1} units={units} onChange={(v) => onPatch(o.shape === 'circle' ? { width: v, length: v } : { width: v })} />}
       <Stepper label="Height" value={o.height} step={step} min={0} units={units} onChange={(v) => onPatch({ height: v })} />
       {!o.polygon && o.shape === 'rect' && (
@@ -491,25 +509,29 @@ function SelectedPanel({ o, units, areaM2, onPatch, onMove, onSnapAngle, onSnapC
       <Button title="Move (tap new spot)" kind="secondary" onPress={onMove} />
       <Button title="Delete" kind="secondary" onPress={onDelete} />
       {type?.notes && <Body muted>{type.notes}</Body>}
-      {o.kind === 'solar-array' && <PvCard o={o} areaM2={areaM2} />}
+      {o.kind === 'solar-array' && <PvCard o={o} areaM2={areaM2} onPatch={onPatch} />}
     </Card>
   );
 }
 
 /** On-device solar estimate (§5.6): NASA POWER monthly GHI + tilt/azimuth + standard losses. No PV API. */
-function PvCard({ o, areaM2 }: { o: DesignObject; areaM2: number }) {
+function PvCard({ o, areaM2, onPatch }: { o: DesignObject; areaM2: number; onPatch: (p: Partial<DesignObject>) => void }) {
   const ent = useEntitlements((s) => s.entitlements);
   const [res, setRes] = useState<Awaited<ReturnType<typeof solarClimatology>> | null>(null);
   const [tilt, setTilt] = useState(Math.round(Math.abs(o.center[1])));
+  const [lat, lon] = [o.center[1], o.center[0]];
+  const pro = ent.has('sun.pvEstimate');
   useEffect(() => {
-    if (ent.has('sun.pvEstimate')) void solarClimatology(http, { lat: o.center[1], lon: o.center[0] }).then(setRes);
-  }, [o.center, ent]);
-  if (!ent.has('sun.pvEstimate')) return <Body muted>Solar output estimates are part of Homestead Pro.</Body>;
+    if (pro) void solarClimatology(http, { lat, lon }).then(setRes);
+  }, [lat, lon, pro]);
+  if (!pro) return <Body muted>Solar output estimates are part of Homestead Pro.</Body>;
   if (!res) return <ActivityIndicator accessibilityLabel="Loading solar data" />;
   if (res.status !== 'ok') return <Body muted>{res.reason}</Body>;
   const kw = Math.round(areaM2 * 0.2 * 10) / 10; // ~200 W per m² of modern panels
-  const facing = ((o.rotationDeg % 360) + 360) % 360; // panels face the object's rotation direction
-  const est = estimatePv(o.center[1], res.value, kw, tilt, facing);
+  // Panels face across the array's long axis; keep facing and rotation in step.
+  const facing = o.facingDeg ?? (((o.rotationDeg + 90) % 360) + 360) % 360;
+  const turn = (delta: number) => { const f = (((facing + delta) % 360) + 360) % 360; onPatch({ facingDeg: f, rotationDeg: (f + 270) % 360 }); };
+  const est = estimatePv(lat, res.value, kw, tilt, facing);
   return (
     <View style={{ marginTop: 8 }}>
       <Body>≈ {Math.round(est.annualKWh).toLocaleString()} kWh per year from ~{kw} kW</Body>
@@ -517,7 +539,11 @@ function PvCard({ o, areaM2 }: { o: DesignObject; areaM2: number }) {
         <Button title={`Tilt ${tilt}° −`} kind="secondary" onPress={() => setTilt((x) => Math.max(0, x - 5))} />
         <Button title="+" kind="secondary" onPress={() => setTilt((x) => Math.min(90, x + 5))} />
       </View>
-      <Body muted>Facing {Math.round(facing)}° (rotate the array to change). {est.notes.join(' ')}</Body>
+      <View style={styles.row}>
+        <Button title="Face ⟲ 15°" kind="secondary" onPress={() => turn(-15)} />
+        <Button title="Face ⟳ 15°" kind="secondary" onPress={() => turn(15)} />
+      </View>
+      <Body muted>Facing {Math.round(facing)}° ({facing > 135 && facing < 225 ? 'south-ish, good' : 'not south'}). {est.notes.join(' ')}</Body>
       <Body muted>Source: {res.attribution.source}. Shade from your plan isn't subtracted yet.</Body>
     </View>
   );

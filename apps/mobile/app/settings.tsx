@@ -1,4 +1,4 @@
-import { Material, centroid, daySunSamples, prepareSamples, PRODUCT_IDS, runShadeBenchmark } from '@plotwright/core';
+import { DEFAULT_TRANSMITTANCE, Material, centroid, daySunSamples, emptySurface, makeGrid, prepareSamples, PRODUCT_IDS, runShadeBenchmark, sunHours } from '@plotwright/core';
 import { ShadeNativeModule } from '@plotwright/shade-native';
 import { validateUserEndpoint } from '@plotwright/providers';
 import { UserSync } from '@plotwright/user-sync';
@@ -14,21 +14,34 @@ import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
 import { cloudSyncAvailable, syncNow, wipeCloudData } from '../src/sync/userCloud';
 
-/** Same synthetic scene as runShadeBenchmark, run through the native module. */
-function benchNative(): number {
+/**
+ * A synthetic 100 m yard (sloped ground, a tree line, a house) run through both engines: times the
+ * native one and reports the largest difference from the TypeScript engine (float32 vs float64
+ * inputs mean tiny differences are expected).
+ */
+function benchNative(): { ms: number; maxDiffH: number } {
   const n = 100;
-  const ground = new Float32Array(n * n);
-  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) ground[j * n + i] = 100 + 0.03 * i + 0.02 * j;
-  const heights = new Float32Array(2 * n * n);
-  const material = new Uint8Array(n * n);
-  for (let j = 92; j < n; j++) for (let i = 0; i < n; i++) { heights[j * n + i] = 14; heights[n * n + j * n + i] = 3; material[j * n + i] = Material.deciduous; }
-  for (let j = 30; j < 40; j++) for (let i = 60; i < 72; i++) { heights[j * n + i] = 7; material[j * n + i] = Material.opaque; }
-  const samples = prepareSamples(daySunSamples(new Date(Date.UTC(2026, 11, 21)), 42.25, -73.98, 15), { sampleHours: 0.25 });
+  const ground = makeGrid({ width: n, height: n, cell: 1, x0: 580000, y0: 4680100, zone: { zone: 18, hemisphere: 'N' } }, 0);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) ground.data[j * n + i] = 100 + 0.03 * i + 0.02 * j;
+  const s = emptySurface(ground);
+  for (let j = 92; j < n; j++) for (let i = 0; i < n; i++) { s.height[j * n + i] = 14; s.base[j * n + i] = 3; s.material[j * n + i] = Material.deciduous; }
+  for (let j = 30; j < 40; j++) for (let i = 60; i < 72; i++) { s.height[j * n + i] = 7; s.material[j * n + i] = Material.opaque; }
+  const samples = prepareSamples(daySunSamples(new Date(Date.UTC(2026, 11, 21, 12)), 42.25, -73.98, 15), { sampleHours: 0.25 });
   const smp = new Float32Array(samples.length * 4);
   samples.forEach((p, i) => smp.set([p.sx, p.sy, p.tanAlt, p.hours], i * 4));
+  const heights = new Float32Array(2 * n * n);
+  heights.set(s.height, 0);
+  heights.set(s.base, n * n);
+  const tr = DEFAULT_TRANSMITTANCE;
+  const out = new Float32Array(n * n);
   const t0 = performance.now();
-  ShadeNativeModule!.sunHours(ground, heights, material, smp, new Float32Array([1, 0, 0.6, 0.1, 0.8]), new Uint8Array(0), new Float32Array(n * n), new Float64Array([n, n, 1, 0.3, 250]));
-  return performance.now() - t0;
+  ShadeNativeModule!.sunHours(ground.data, heights, s.material, smp, new Float32Array([1, tr.opaque, tr.deciduousLeafOff, tr.evergreen, tr.film]),
+    new Uint8Array(n * n).fill(1), out, new Float64Array([n, n, 1, 0.3, 250]));
+  const ms = performance.now() - t0;
+  const js = sunHours(s, samples, { sampleHours: 0.25, leafOn: false });
+  let maxDiffH = 0;
+  for (let k = 0; k < out.length; k++) maxDiffH = Math.max(maxDiffH, Math.abs(out[k]! - js.data[k]!));
+  return { ms, maxDiffH };
 }
 
 export default function Settings() {
@@ -114,7 +127,7 @@ export default function Settings() {
           setTimeout(() => {
             const r = runShadeBenchmark({ sizeM: 100, cellM: 1 });
             const native = ShadeNativeModule ? benchNative() : null;
-            setBench(`JS: full day ${r.fullDayMs.toFixed(0)} ms, move-a-structure ${r.incrementalMs.toFixed(0)} ms${native !== null ? ` · native full day ${native.toFixed(0)} ms` : ' · native engine not linked'}`);
+            setBench(`JS: full day ${r.fullDayMs.toFixed(0)} ms, move-a-structure ${r.incrementalMs.toFixed(0)} ms${native !== null ? ` · native full day ${native.ms.toFixed(0)} ms, max difference from JS ${native.maxDiffH.toFixed(3)} h` : ' · native engine not linked'}`);
           }, 50);
         }} />
       </Card>

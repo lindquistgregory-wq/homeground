@@ -104,6 +104,7 @@ test('NASA POWER climatology: snaps to the 0.5° grid; rejects missing values', 
   const r = await solarClimatology(http, { lat: 42.253, lon: -73.9855 });
   assert.equal(r.status === 'ok' && r.value.ghi[5], 5.9);
   assert.match(calls[0]!.url, /latitude=42\.5&longitude=-74/);
+  assert.match(calls[0]!.url, /community=RE/, 'RE community reports kWh/m²/day; AG would be MJ');
   const { http: bad } = testClient([{ match: /power/, body: { properties: { parameter: { ALLSKY_SFC_SW_DWN: { ...param, JUN: -999 } } } } }]);
   assert.equal((await solarClimatology(bad, { lat: 42.2, lon: -74 })).status, 'unavailable');
   void MemoryCache;

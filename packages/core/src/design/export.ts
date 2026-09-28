@@ -20,7 +20,10 @@ export function designToGeoJSON(d: Design, boundary: Areal, frame: LocalFrame, o
   const features: unknown[] = d.objects.map((o) => ({
     type: 'Feature',
     geometry: { type: 'Polygon', coordinates: [footprintLonLat(o, frame)] },
-    properties: { id: o.id, kind: o.kind, name: o.label ?? objectType(o.kind)?.name ?? o.kind, width_m: o.width, length_m: o.length, height_m: o.height, rotation_deg: o.rotationDeg, cost_usd: o.costUsd ?? null },
+    properties: {
+      id: o.id, kind: o.kind, name: o.label ?? objectType(o.kind)?.name ?? o.kind, width_m: o.width, length_m: o.length, height_m: o.height, rotation_deg: o.rotationDeg, cost_usd: o.costUsd ?? null,
+      ...(o.existing ? { source: '© OpenStreetMap contributors', license: 'ODbL 1.0' } : {}),
+    },
   }));
   if (opts.includeBoundary) features.unshift({ type: 'Feature', geometry: boundary, properties: { kind: 'property-boundary', note: 'Approximate; not a survey' } });
   return JSON.stringify({ type: 'FeatureCollection', name: d.name, features }, null, 1);
@@ -33,20 +36,27 @@ export function designToKML(d: Design, boundary: Areal, frame: LocalFrame, opts:
   const parts: string[] = [];
   if (opts.includeBoundary) for (const p of toPolygons(boundary)) parts.push(poly('Property boundary (approximate)', p[0]!));
   for (const o of d.objects) parts.push(poly(o.label ?? objectType(o.kind)?.name ?? o.kind, footprintLonLat(o, frame)));
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${esc(d.name)}</name>${parts.join('')}</Document></kml>\n`;
+  const osm = d.objects.some((o) => o.existing) ? '<description>Existing building outlines © OpenStreetMap contributors (ODbL 1.0).</description>' : '';
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${esc(d.name)}</name>${osm}${parts.join('')}</Document></kml>\n`;
 }
 
-/** Minimal R12 DXF: one closed LWPOLYLINE per object, layers by category, coordinates in UTM metres. */
+/**
+ * AutoCAD R12 (AC1009) DXF: one closed POLYLINE/VERTEX/SEQEND per object, layers by category,
+ * coordinates in UTM metres. R12 is the most widely readable DXF flavour.
+ */
 export function designToDXF(d: Design, boundary: Areal, frame: LocalFrame, opts: ExportOptions): string {
-  const out: string[] = ['0', 'SECTION', '2', 'HEADER', '9', '$INSUNITS', '70', '6', '0', 'ENDSEC', '0', 'SECTION', '2', 'ENTITIES'];
+  const out: string[] = ['0', 'SECTION', '2', 'HEADER', '9', '$ACADVER', '1', 'AC1009', '9', '$INSUNITS', '70', '6', '0', 'ENDSEC', '0', 'SECTION', '2', 'ENTITIES'];
   const poly = (layer: string, pts: Array<[number, number]>) => {
-    out.push('0', 'LWPOLYLINE', '8', layer, '90', String(pts.length - 1), '70', '1');
-    for (const [x, y] of pts.slice(0, -1)) out.push('10', x.toFixed(3), '20', y.toFixed(3));
+    out.push('0', 'POLYLINE', '8', layer, '66', '1', '10', '0.0', '20', '0.0', '30', '0.0', '70', '1');
+    for (const [x, y] of pts.slice(0, -1)) out.push('0', 'VERTEX', '8', layer, '10', x.toFixed(3), '20', y.toFixed(3), '30', '0.0');
+    out.push('0', 'SEQEND', '8', layer);
   };
   if (opts.includeBoundary) for (const p of toPolygons(boundary)) poly('BOUNDARY', p[0]!.map((q) => project(frame, q)));
-  for (const o of d.objects) poly((objectType(o.kind)?.category ?? 'OTHER').toUpperCase().replace(/[^A-Z0-9]/g, '_'), footprintUtm(o, frame));
+  for (const o of d.objects) poly(o.existing ? 'EXISTING_OSM' : (objectType(o.kind)?.category ?? 'OTHER').toUpperCase().replace(/[^A-Z0-9]/g, '_'), footprintUtm(o, frame));
   out.push('0', 'ENDSEC', '0', 'EOF');
-  return `999\nPlotwright design "${d.name}" — UTM zone ${frame.zone.zone}${frame.zone.hemisphere} (EPSG:${utmEpsg(frame.zone)}), metres\n${out.join('\n')}\n`;
+  const ascii = (t: string) => t.replace(/[^\x20-\x7e]/g, '?');
+  const osm = d.objects.some((o) => o.existing) ? '\n999\nLayer EXISTING_OSM: building outlines (c) OpenStreetMap contributors, ODbL 1.0' : '';
+  return `999\n${ascii(`Plotwright design "${d.name}" - UTM zone ${frame.zone.zone}${frame.zone.hemisphere} (EPSG:${utmEpsg(frame.zone)}), metres`)}${osm}\n${out.join('\n')}\n`;
 }
 
 const CATEGORY_FILL: Record<string, string> = {
@@ -54,8 +64,8 @@ const CATEGORY_FILL: Record<string, string> = {
 };
 
 /**
- * To-scale SVG plan. `metresPerInch` sets the print scale (e.g. 10 → 1 in = 10 m); the page is sized
- * to fit. Includes a scale bar, a north arrow, a legend and the material list.
+ * To-scale SVG plan sized to fit the page, with a scale bar, a north arrow, a legend and the
+ * material list.
  */
 export function designToSVG(d: Design, boundary: Areal, frame: LocalFrame, opts: { units: 'imperial' | 'metric'; title?: string; marginPx?: number } ): string {
   const outer = toPolygons(boundary).map((p) => p[0]!.map((q) => project(frame, q)));
@@ -92,6 +102,6 @@ ${shapes.join('\n')}
 <g transform="translate(${W - margin - 20},${margin + 10})"><path d="M0,-18 L8,10 L0,4 L-8,10 Z" fill="#222"/><text x="0" y="28" font-size="14" text-anchor="middle">N</text></g>
 <g transform="translate(${margin},${margin + drawH + 30})"><rect width="${barPx.toFixed(1)}" height="6" fill="#222"/><text x="0" y="22" font-size="12">0</text><text x="${barPx.toFixed(1)}" y="22" font-size="12" text-anchor="end">${nice} ${unitLabel}</text></g>
 ${list.join('\n')}
-<text x="${margin}" y="${H - 12}" font-size="10" fill="#555">Property line approximate — not a survey. Generated by Plotwright.</text>
+<text x="${margin}" y="${H - 12}" font-size="10" fill="#555">Property line approximate — not a survey. Generated by Plotwright.${d.objects.some((o) => o.existing) ? ' Existing buildings © OpenStreetMap contributors.' : ''}</text>
 </svg>`;
 }

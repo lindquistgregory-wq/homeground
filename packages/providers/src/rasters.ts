@@ -62,7 +62,7 @@ interface TnmResponse {
 }
 
 /** Whether 1 m lidar-derived 3DEP exists here (TNM Access), for honest resolution labels. */
-export async function lidarAvailability(http: HttpClient, p: LatLon): Promise<{ has1m: boolean; project?: string; published?: string }> {
+export async function lidarAvailability(http: HttpClient, p: LatLon): Promise<{ has1m: boolean; project?: string; published?: string; unknown?: boolean }> {
   const d = 0.002;
   const url = `https://tnmaccess.nationalmap.gov/api/v1/products?${qs({
     datasets: 'Digital Elevation Model (DEM) 1 meter',
@@ -74,7 +74,7 @@ export async function lidarAvailability(http: HttpClient, p: LatLon): Promise<{ 
     const newest = [...(data.items ?? [])].sort((a, b) => String(b.publicationDate).localeCompare(String(a.publicationDate)))[0];
     return { has1m: !!newest, project: newest?.title, published: newest?.publicationDate };
   } catch {
-    return { has1m: false };
+    return { has1m: false, unknown: true };
   }
 }
 
@@ -110,7 +110,7 @@ export async function parcelTerrain(
       {
         source: DEM_SOURCE,
         license: PD,
-        resolution: lidar.has1m ? `1 m lidar (${lidar.project ?? '3DEP'})` : '~10 m (1/3 arc-second); no lidar here yet',
+        resolution: lidar.has1m ? `1 m lidar (${lidar.project ?? '3DEP'})` : lidar.unknown ? 'best available 3DEP (lidar availability could not be checked)' : '~10 m (1/3 arc-second); no lidar here yet',
         confidence: lidar.has1m ? 'high' : 'medium',
         basis: 'reference',
         notes: [
@@ -220,7 +220,7 @@ interface PowerResponse {
 export async function solarClimatology(http: HttpClient, p: LatLon): Promise<Layer<{ ghi: number[]; annual: number }>> {
   const lat = Math.round(p.lat * 2) / 2, lon = Math.round(p.lon * 2) / 2;
   const url = `https://power.larc.nasa.gov/api/temporal/climatology/point?${qs({
-    parameters: 'ALLSKY_SFC_SW_DWN', community: 'AG', latitude: lat, longitude: lon, format: 'JSON',
+    parameters: 'ALLSKY_SFC_SW_DWN', community: 'RE', latitude: lat, longitude: lon, format: 'JSON', // RE = kWh/m²/day (AG would be MJ)
   })}`;
   try {
     const { data } = await http.json<PowerResponse>(url, { ttlMs: TTL.static });
