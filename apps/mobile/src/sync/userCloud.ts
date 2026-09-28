@@ -47,7 +47,15 @@ const store: LocalStore = {
     if (rec.collection === 'parcels') {
       const d = (rec.data ?? {}) as Record<string, unknown>;
       if (rec.deleted) {
-        await db.runAsync('UPDATE parcels SET deleted = 1, updated_hlc = ? WHERE id = ?', rec.hlc, rec.id);
+        // Persist the tombstone even if this device never saw the parcel, so an older "create"
+        // arriving later can't bring it back. Its profile goes with it.
+        await db.runAsync(
+          `INSERT INTO parcels (id, name, geometry, boundary_source, area_m2, created_at, updated_hlc, deleted)
+           VALUES (?, '', 'null', 'drawn', 0, ?, ?, 1)
+           ON CONFLICT(id) DO UPDATE SET deleted = 1, updated_hlc = excluded.updated_hlc`,
+          rec.id, new Date().toISOString(), rec.hlc,
+        );
+        await db.runAsync('DELETE FROM site_profiles WHERE parcel_id = ?', rec.id);
         return;
       }
       await db.runAsync(
@@ -60,6 +68,8 @@ const store: LocalStore = {
         (d.county_fips as string | null) ?? null, (d.zip as string | null) ?? null, Number(d.area_m2), String(d.created_at), rec.hlc,
       );
     } else if (rec.collection === 'siteProfiles' && rec.data) {
+      const parent = await db.getFirstAsync<{ deleted: number }>('SELECT deleted FROM parcels WHERE id = ?', rec.id);
+      if (parent?.deleted === 1) return; // profile of a deleted parcel
       const p = rec.data as { computedAt: string };
       await db.runAsync(
         `INSERT INTO site_profiles (parcel_id, profile, computed_at, updated_hlc) VALUES (?, ?, ?, ?)
@@ -82,7 +92,8 @@ const store: LocalStore = {
 
   async markUploaded(records: SyncRecord[]): Promise<void> {
     const db = await getDb();
-    for (const r of records) await db.runAsync('DELETE FROM sync_pending WHERE collection = ? AND id = ?', r.collection, r.id);
+    // Only clear markers whose stamp is unchanged: an edit made during the upload stays pending.
+    for (const r of records) await db.runAsync('DELETE FROM sync_pending WHERE collection = ? AND id = ? AND hlc = ?', r.collection, r.id, r.hlc);
   },
 
   getCursor: async () => (await kvGet('sync.cursor')) || null,
@@ -90,7 +101,27 @@ const store: LocalStore = {
 };
 
 export async function syncNow() {
+  // A "Delete all my data" that couldn't reach the cloud must finish before we pull anything back.
+  if ((await kvGet('sync.pendingCloudWipe')) === '1') {
+    if (!(await transport.isAvailable())) return { unavailable: true as const };
+    await UserSync!.deleteAll();
+    await kvSet('sync.pendingCloudWipe', '0');
+    await kvSet('sync.cursor', '');
+  }
   return syncOnce(getDeviceId(), clock(), store, transport, newId);
+}
+
+/** Wipe the user's cloud copy. If that fails (offline), remember to retry before the next sync. */
+export async function wipeCloudData(): Promise<'done' | 'deferred' | 'none'> {
+  if (!UserSync) return 'none';
+  try {
+    if (!(await UserSync.isAvailable())) throw new Error('cloud unavailable');
+    await UserSync.deleteAll();
+    return 'done';
+  } catch {
+    await kvSet('sync.pendingCloudWipe', '1');
+    return 'deferred';
+  }
 }
 
 export async function cloudSyncAvailable(): Promise<boolean> {

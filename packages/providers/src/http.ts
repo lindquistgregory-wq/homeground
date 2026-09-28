@@ -81,6 +81,8 @@ export interface RequestOptions {
   cacheKey?: string;
   timeoutMs?: number;
   maxAttempts?: number;
+  /** Validate a body before it is returned or cached; throw to reject it. */
+  accept?: (body: string) => void;
 }
 
 export interface HttpResult<T> {
@@ -134,13 +136,42 @@ export class HttpClient {
     this.defaultTimeoutMs = opts.defaultTimeoutMs ?? 20_000;
   }
 
+  /**
+   * A view of this client that skips *fresh* cache entries (used by "Refresh") but still writes the
+   * cache and shares the same per-host rate limits.
+   */
+  fresh(): HttpClient {
+    const view = Object.create(this) as HttpClient;
+    (view as unknown as { ignoreFreshCache: boolean }).ignoreFreshCache = true;
+    return view;
+  }
+  private ignoreFreshCache = false;
+
+  /**
+   * GET/POST expecting JSON. The body is validated *before* it is cached: invalid JSON, and ArcGIS-style
+   * `{"error": …}` payloads that arrive with HTTP 200, are rejected and never stored.
+   */
   async json<T>(url: string, opts: RequestOptions = {}): Promise<HttpResult<T>> {
-    const res = await this.text(url, opts);
-    try {
-      return { ...res, data: JSON.parse(res.data) as T };
-    } catch {
-      throw new HttpError(`Invalid JSON from ${hostOf(url)}`, null, false, url);
-    }
+    let parsed: T | undefined;
+    const res = await this.text(url, {
+      ...opts,
+      accept: (body) => {
+        let d: unknown;
+        try {
+          d = JSON.parse(body);
+        } catch {
+          throw new HttpError(`Invalid JSON from ${hostOf(url)}`, null, true, url);
+        }
+        if (d && typeof d === 'object' && !Array.isArray(d) && 'error' in d && (d as { error: unknown }).error) {
+          const e = (d as { error: { message?: string; code?: number } | string }).error;
+          const msg = typeof e === 'string' ? e : e?.message ?? `code ${e?.code ?? '?'}`;
+          throw new HttpError(`${hostOf(url)} reported an error: ${msg}`, null, true, url);
+        }
+        opts.accept?.(body);
+        parsed = d as T;
+      },
+    });
+    return { ...res, data: parsed ?? (JSON.parse(res.data) as T) };
   }
 
   async text(url: string, opts: RequestOptions = {}): Promise<HttpResult<string>> {
@@ -148,18 +179,31 @@ export class HttpClient {
     const key = opts.cacheKey ?? `${method} ${url} ${opts.body ?? ''}`;
     const ttl = opts.ttlMs ?? 0;
     const cached = ttl > 0 && this.cache ? await this.cache.get(key) : undefined;
-    if (cached && cached.expiresAt > this.now()) {
-      return { data: cached.value, fromCache: true, stale: false, storedAt: cached.storedAt };
+    if (cached && cached.expiresAt > this.now() && !this.ignoreFreshCache) {
+      try {
+        opts.accept?.(cached.value);
+        return { data: cached.value, fromCache: true, stale: false, storedAt: cached.storedAt };
+      } catch {
+        /* a bad entry from an older app version: refetch */
+      }
     }
     try {
       const body = await this.fetchWithRetry(url, method, opts);
+      opts.accept?.(body); // throws before anything is cached
       if (ttl > 0 && this.cache) {
         const storedAt = this.now();
         await this.cache.set(key, { value: body, storedAt, expiresAt: storedAt + ttl });
       }
       return { data: body, fromCache: false, stale: false, storedAt: this.now() };
     } catch (err) {
-      if (cached) return { data: cached.value, fromCache: true, stale: true, storedAt: cached.storedAt };
+      if (cached) {
+        try {
+          opts.accept?.(cached.value);
+          return { data: cached.value, fromCache: true, stale: true, storedAt: cached.storedAt };
+        } catch {
+          /* fall through */
+        }
+      }
       throw err;
     }
   }
@@ -215,14 +259,25 @@ export class HttpClient {
     if (!st) this.hosts.set(host, (st = { lastStart: -Infinity, inFlight: 0, queue: [] }));
     const state = st;
     const maxConc = policy.maxConcurrent ?? 4;
-    if (state.inFlight >= maxConc) await new Promise<void>((resolve) => state.queue.push(resolve));
-    state.inFlight++;
-    const wait = (policy.minIntervalMs ?? 0) - (this.now() - state.lastStart);
-    if (wait > 0) await this.sleep(wait);
-    state.lastStart = this.now();
+    if (state.inFlight >= maxConc) {
+      // The releasing request hands its slot straight to us (inFlight is not decremented), so no
+      // newcomer can slip in between the release and this waiter resuming.
+      await new Promise<void>((resolve) => state.queue.push(resolve));
+    } else {
+      state.inFlight++;
+    }
+    const interval = policy.minIntervalMs ?? 0;
+    if (interval > 0) {
+      // Reserve our start time before sleeping so concurrent waiters space themselves correctly.
+      const start = Math.max(this.now(), state.lastStart + interval);
+      state.lastStart = start;
+      const wait = start - this.now();
+      if (wait > 0) await this.sleep(wait);
+    } else state.lastStart = this.now();
     return () => {
-      state.inFlight--;
-      state.queue.shift()?.();
+      const next = state.queue.shift();
+      if (next) next();
+      else state.inFlight--;
     };
   }
 }

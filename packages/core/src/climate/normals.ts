@@ -129,6 +129,12 @@ export function normalsDataTypes(): string[] {
   return types;
 }
 
+/** Station publishes median 32 °F spring and fall freeze dates. (Elevation is checked separately.) */
 export function hasFreezeData(s: StationNormals): boolean {
-  return s.lastSpring[32]?.[50] !== undefined && s.firstFall[32]?.[50] !== undefined && Number.isFinite(s.elevationM);
+  return s.lastSpring[32]?.[50] !== undefined && s.firstFall[32]?.[50] !== undefined;
+}
+
+/** Station reports temperature normals at all (precipitation-only stations don't). */
+export function hasTemperatureData(s: StationNormals): boolean {
+  return Object.values(s.tminF).some((v) => v !== undefined);
 }

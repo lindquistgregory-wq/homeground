@@ -1,6 +1,6 @@
 import * as Crypto from 'expo-crypto';
 import { HybridClock } from '@homeground/core';
-import { kvGet, kvSet } from '../db/database';
+import { kvGet, kvSet, maxStoredHlc } from '../db/database';
 
 let deviceId: string | null = null;
 let hlc: HybridClock | null = null;
@@ -13,6 +13,10 @@ export async function initIdentity(): Promise<string> {
   deviceId = (await kvGet('deviceId')) ?? newId();
   await kvSet('deviceId', deviceId);
   hlc = new HybridClock(deviceId);
+  // The clock restarts at zero on every launch; move it past every stamp already stored so a slow or
+  // reset wall clock can't make new local edits lose to older ones.
+  const seen = await maxStoredHlc();
+  if (seen) hlc.receive(seen);
   return deviceId;
 }
 

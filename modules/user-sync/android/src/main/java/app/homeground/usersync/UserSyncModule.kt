@@ -27,7 +27,8 @@ class UserSyncModule : Module() {
     AsyncFunction("isAvailable") { false }
 
     AsyncFunction("upload") { _: String, _: String ->
-      throw UnsupportedOperationException("Google Drive sync is not implemented yet")
+      // Explicit Unit result: a body that only throws would infer `Nothing`, which Expo can't reify.
+      run<Unit> { throw UnsupportedOperationException("Google Drive sync is not implemented yet") }
     }
 
     AsyncFunction("listSince") { _: String? ->

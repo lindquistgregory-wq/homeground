@@ -15,7 +15,7 @@
     "@homeground/data": "workspace:*",
     "@homeground/providers": "workspace:*",
     "@homeground/user-sync": "workspace:*",
-    "@maplibre/maplibre-react-native": "^10.0.0",
+    "@maplibre/maplibre-react-native": "^11.4.0",
     "expo": "~55.0.0",
     "expo-crypto": "*",
     "expo-dev-client": "*",

@@ -54,9 +54,9 @@ const fromRow = (r: Row): ParcelRecord => ({
   createdAt: r.created_at,
 });
 
-async function markPending(collection: string, id: string) {
+async function markPending(collection: string, id: string, hlc: string) {
   const db = await getDb();
-  await db.runAsync('INSERT OR IGNORE INTO sync_pending (collection, id) VALUES (?, ?)', collection, id);
+  await db.runAsync('INSERT OR REPLACE INTO sync_pending (collection, id, hlc) VALUES (?, ?, ?)', collection, id, hlc);
 }
 
 export async function listParcels(): Promise<ParcelRecord[]> {
@@ -72,6 +72,7 @@ export async function getParcel(id: string): Promise<ParcelRecord | undefined> {
 
 export async function saveParcel(input: Omit<ParcelRecord, 'id' | 'createdAt' | 'areaM2'> & { id?: string }): Promise<ParcelRecord> {
   const db = await getDb();
+  const hlc = clock().tick();
   const rec: ParcelRecord = {
     ...input,
     id: input.id ?? newId(),
@@ -85,17 +86,19 @@ export async function saveParcel(input: Omit<ParcelRecord, 'id' | 'createdAt' | 
        boundary_meta = excluded.boundary_meta, county_fips = excluded.county_fips, zip = excluded.zip,
        area_m2 = excluded.area_m2, updated_hlc = excluded.updated_hlc, deleted = 0`,
     rec.id, rec.name, JSON.stringify(rec.geometry), rec.boundarySource, JSON.stringify(rec.boundaryMeta),
-    rec.countyFips ?? null, rec.zip ?? null, rec.areaM2, rec.createdAt, clock().tick(),
+    rec.countyFips ?? null, rec.zip ?? null, rec.areaM2, rec.createdAt, hlc,
   );
-  await markPending('parcels', rec.id);
+  await markPending('parcels', rec.id, hlc);
   return rec;
 }
 
 export async function deleteParcel(id: string): Promise<void> {
   const db = await getDb();
-  await db.runAsync('UPDATE parcels SET deleted = 1, updated_hlc = ? WHERE id = ?', clock().tick(), id);
+  const hlc = clock().tick();
+  await db.runAsync('UPDATE parcels SET deleted = 1, updated_hlc = ? WHERE id = ?', hlc, id);
   await db.runAsync('DELETE FROM site_profiles WHERE parcel_id = ?', id);
-  await markPending('parcels', id);
+  await db.runAsync("DELETE FROM sync_pending WHERE collection = 'siteProfiles' AND id = ?", id);
+  await markPending('parcels', id, hlc);
 }
 
 export async function getSiteProfile(parcelId: string): Promise<SiteProfile | undefined> {
@@ -106,12 +109,13 @@ export async function getSiteProfile(parcelId: string): Promise<SiteProfile | un
 
 export async function saveSiteProfile(parcelId: string, p: SiteProfile): Promise<void> {
   const db = await getDb();
+  const hlc = clock().tick();
   await db.runAsync(
     `INSERT INTO site_profiles (parcel_id, profile, computed_at, updated_hlc) VALUES (?, ?, ?, ?)
      ON CONFLICT(parcel_id) DO UPDATE SET profile = excluded.profile, computed_at = excluded.computed_at, updated_hlc = excluded.updated_hlc`,
-    parcelId, JSON.stringify(p), p.computedAt, clock().tick(),
+    parcelId, JSON.stringify(p), p.computedAt, hlc,
   );
-  await markPending('siteProfiles', parcelId);
+  await markPending('siteProfiles', parcelId, hlc);
 }
 
 export async function listUserEndpoints(): Promise<ParcelEndpoint[]> {

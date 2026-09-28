@@ -62,7 +62,8 @@ export function georeferenceWith(result: ImportResult, crs: CrsChoice): Areal {
     def = result.crsHint;
   } else if (crs.kind === 'utm') {
     const units = crs.units === 'us-ft' ? ' +units=us-ft' : ' +units=m';
-    def = `+proj=tmerc +lat_0=0 +lon_0=${centralMeridian(crs.zone)} +k=0.9996 +x_0=${crs.units === 'us-ft' ? 1640416.6667 : 500000} +y_0=${crs.south ? (crs.units === 'us-ft' ? 32808333.333 : 10000000) : 0} +datum=WGS84${units} +no_defs`;
+    // PROJ always takes false easting/northing in metres, whatever +units says.
+    def = `+proj=tmerc +lat_0=0 +lon_0=${centralMeridian(crs.zone)} +k=0.9996 +x_0=500000 +y_0=${crs.south ? 10000000 : 0} +datum=WGS84${units} +no_defs`;
   } else def = crs.definition;
   const t = proj4(def, 'EPSG:4326');
   return georeference(result, (x, y) => t.forward([x, y]) as [number, number]);

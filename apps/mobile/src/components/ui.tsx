@@ -84,7 +84,7 @@ export function LayerCard<T>({ title, layer, children }: { title: string; layer:
     return (
       <Card title={title} right={<Text style={[styles.badge, { color: t.muted, borderColor: t.muted }]}>unavailable</Text>}>
         <Body muted>{layer.reason}</Body>
-        <Text style={[styles.source, { color: t.muted }]}>Source tried: {layer.source}{layer.retryable ? ' · will retry' : ''}</Text>
+        <Text style={[styles.source, { color: t.muted }]}>Source tried: {layer.source}{layer.retryable ? ' · tap Refresh to try again' : ''}</Text>
       </Card>
     );
   }

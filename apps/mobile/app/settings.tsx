@@ -1,4 +1,4 @@
-import { PRODUCT_IDS } from '@homeground/core';
+import { centroid, PRODUCT_IDS } from '@homeground/core';
 import { validateUserEndpoint } from '@homeground/providers';
 import { UserSync } from '@homeground/user-sync';
 import { router } from 'expo-router';
@@ -11,7 +11,7 @@ import { deleteAllLocalData } from '../src/db/database';
 import { listParcels, saveUserEndpoint } from '../src/db/parcels';
 import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
-import { cloudSyncAvailable, syncNow } from '../src/sync/userCloud';
+import { cloudSyncAvailable, syncNow, wipeCloudData } from '../src/sync/userCloud';
 
 export default function Settings() {
   const t = useTheme();
@@ -29,8 +29,8 @@ export default function Settings() {
     const [parcel] = await listParcels();
     if (!parcel?.countyFips) return Alert.alert('Add a property first', 'We test the link against your property location.');
     setChecking(true);
-    const c = parcel.geometry.type === 'Polygon' ? parcel.geometry.coordinates[0]![0]! : parcel.geometry.coordinates[0]![0]![0]!;
-    const v = await validateUserEndpoint(http, endpointUrl, parcel.countyFips, { lon: c[0], lat: c[1] });
+    // Test at the parcel's interior centroid; a boundary vertex is shared with neighbours.
+    const v = await validateUserEndpoint(http, endpointUrl, parcel.countyFips, centroid(parcel.geometry));
     setChecking(false);
     if (v.ok && v.suggested) {
       await saveUserEndpoint(v.suggested);
@@ -101,7 +101,12 @@ export default function Settings() {
                 style: 'destructive',
                 onPress: async () => {
                   await deleteAllLocalData();
-                  await UserSync?.deleteAll().catch(() => undefined);
+                  const cloudResult = await wipeCloudData();
+                  if (cloudResult === 'deferred')
+                    Alert.alert(
+                      'Deleted from this device',
+                      "Your cloud copy couldn't be reached. It will be deleted the next time this device connects, before anything syncs back.",
+                    );
                   router.replace('/');
                 },
               },

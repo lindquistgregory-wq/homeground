@@ -62,7 +62,17 @@ export function walkToPolygon(fixes: GpsFix[], opts: WalkOptions = {}): WalkResu
 
   const frame = localFrame({ lat: good[0]!.lat, lon: good[0]!.lon });
   const xy = good.map((f) => project(frame, [f.lon, f.lat]));
-  const simple = dpSimplify(xy, tol);
+  // A walked boundary is a loop that usually ends where it started, which makes the start→end chord
+  // zero-length. Split the loop at the point farthest from the start and simplify each half.
+  let far = 0, farD = -1;
+  xy.forEach(([x, y], i) => {
+    const d = Math.hypot(x - xy[0]![0], y - xy[0]![1]);
+    if (d > farD) (farD = d), (far = i);
+  });
+  const simple = far > 0 ? [...dpSimplify(xy.slice(0, far + 1), tol).slice(0, -1), ...dpSimplify(xy.slice(far), tol)] : dpSimplify(xy, tol);
+  // Drop a closing point that duplicates the start (normalizeAreal re-closes the ring).
+  const last = simple[simple.length - 1]!;
+  if (simple.length > 3 && Math.hypot(last[0] - simple[0]![0], last[1] - simple[0]![1]) <= tol) simple.pop();
   if (simple.length < 3) return { polygon: null, kept: good.length, dropped, medianAccuracyM };
   const ring = simple.map((p) => unproject(frame, p));
   const polygon = normalizeAreal({ type: 'Polygon', coordinates: [ring] }) as Polygon;

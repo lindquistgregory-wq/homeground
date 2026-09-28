@@ -52,6 +52,14 @@ export interface FloodSummary {
   headline: string;
 }
 
+/** Trust FEMA's SFHA_TF flag when present; otherwise A and V zones (but not "AREA NOT INCLUDED") are SFHA. */
+export function isSfha(zone: string, flag: unknown): boolean {
+  const f = typeof flag === 'string' ? flag.trim().toUpperCase() : '';
+  if (f === 'T') return true;
+  if (f === 'F') return false;
+  return /^(A|V)(?!REA)/i.test(zone) && !/OPEN WATER/i.test(zone);
+}
+
 export function summarizeFlood(features: EsriFeatures['features']): FloodSummary {
   const seen = new Map<string, FloodZone>();
   for (const f of features ?? []) {
@@ -62,12 +70,15 @@ export function summarizeFlood(features: EsriFeatures['features']): FloodSummary
     const bfe = Number(a.STATIC_BFE);
     const key = `${zone}|${subtype ?? ''}`;
     if (!seen.has(key))
-      seen.set(key, { zone, subtype, sfha: String(a.SFHA_TF).toUpperCase() === 'T' || /^(A|V)/.test(zone), staticBfeFt: bfe > -9000 && Number.isFinite(bfe) ? bfe : undefined });
+      seen.set(key, { zone, subtype, sfha: isSfha(zone, a.SFHA_TF), staticBfeFt: bfe > -9000 && Number.isFinite(bfe) ? bfe : undefined });
   }
-  const zones = [...seen.values()];
+  const zones = [...seen.values()].filter((z) => !/^AREA NOT INCLUDED$/i.test(z.zone));
+  const notIncluded = seen.size > zones.length;
   const sfha = zones.some((z) => z.sfha);
   const headline = zones.length === 0
-    ? 'No mapped flood zone touches this parcel (the area may be unmapped).'
+    ? notIncluded
+      ? 'This area is not included in FEMA flood mapping.'
+      : 'No mapped flood zone touches this parcel (the area may be unmapped).'
     : sfha
       ? `Part of this parcel is in a high-risk flood zone (${zones.filter((z) => z.sfha).map((z) => z.zone).join(', ')}).`
       : `Mapped as minimal/moderate flood risk (${zones.map((z) => z.zone).join(', ')}).`;

@@ -7,7 +7,8 @@ import { HttpClient, MemoryCache, type FetchLike } from './http';
 export interface Route {
   match: RegExp | ((url: string, body?: string) => boolean);
   status?: number;
-  body: unknown;
+  /** Response body, or a function producing one per call. */
+  body: unknown | ((url: string, body?: string) => unknown);
   headers?: Record<string, string>;
   /** Number of times this route should fail with `failStatus` before succeeding. */
   failTimes?: number;
@@ -35,7 +36,8 @@ export function fakeFetch(routes: Route[]): { fetch: FetchLike; calls: RecordedC
       return { ok: false, status, headers: { get: (h) => route.headers?.[h.toLowerCase()] ?? null }, text: async () => '' };
     }
     const status = route.status ?? 200;
-    const text = typeof route.body === 'string' ? route.body : JSON.stringify(route.body);
+    const raw = typeof route.body === 'function' ? (route.body as (u: string, b?: string) => unknown)(url, init.body) : route.body;
+    const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
     return { ok: status < 400, status, headers: { get: (h) => route.headers?.[h.toLowerCase()] ?? null }, text: async () => text };
   };
   return { fetch, calls };

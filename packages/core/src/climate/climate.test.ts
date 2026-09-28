@@ -137,3 +137,18 @@ test('no stations within range → null; frost-free stations → freezeRare', ()
   assert.equal(est.dates.freezeRare, true);
   assert.equal(est.dates.lastSpring[32][50], null);
 });
+
+test('a station without published elevation is still used (unadjusted), never read as "frost rare"', () => {
+  const s = parseNormalsRow({ ...ALBANY_ROW, ELEVATION: undefined })!;
+  assert.ok(Number.isNaN(s.elevationM));
+  const est = estimateFrostDates({ lat: 42.75, lon: -73.8, elevationM: 300 }, [s])!;
+  assert.equal(est.dates.freezeRare, false);
+  assert.equal(est.dates.lastSpring[32][50], mmddToDoy('04/27'));
+  assert.equal(est.confidence, 'medium');
+  assert.ok(est.notes.some((n) => /No published elevation/.test(n)));
+});
+
+test('precipitation-only stations alone give no estimate rather than "frost rare"', () => {
+  const precipOnly: StationNormals = { stationId: 'US1NYAL0001', lat: 42.7, lon: -73.8, elevationM: 50, lastSpring: {}, firstFall: {}, growingSeasonDays: {}, tminF: {} };
+  assert.equal(estimateFrostDates({ lat: 42.7, lon: -73.8, elevationM: 50 }, [precipOnly]), null);
+});

@@ -24,9 +24,10 @@ export default function Profile() {
   const [profile, setProfile] = useState<SiteProfile | null>(null);
   const [loading, setLoading] = useState<string[]>([]);
 
-  const compute = useCallback(async (p: ParcelRecord) => {
+  const compute = useCallback(async (p: ParcelRecord, refresh = false) => {
     setLoading(['starting']);
-    const result = await buildSiteProfile({ http, zoneTable: bundledZoneTable }, p.geometry, { countyFips: p.countyFips, zip: p.zip }, (layer, status) =>
+    // "Refresh" bypasses fresh cache entries; the first build uses whatever is cached.
+    const result = await buildSiteProfile({ http: refresh ? http.fresh() : http, zoneTable: bundledZoneTable }, p.geometry, { countyFips: p.countyFips, zip: p.zip }, (layer, status) =>
       setLoading((l) => (status === 'started' ? [...l, String(layer)] : l.filter((x) => x !== layer && x !== 'starting'))),
     );
     await saveSiteProfile(p.id, result);
@@ -149,12 +150,12 @@ export default function Profile() {
         </Card>
       )}
 
-      <Button title={loading.length ? 'Updating…' : 'Refresh site profile'} onPress={() => compute(parcel)} disabled={loading.length > 0} />
+      <Button title={loading.length ? 'Updating…' : 'Refresh site profile'} onPress={() => compute(parcel, true)} disabled={loading.length > 0} />
       <Button
         title="Delete this property"
         kind="secondary"
         onPress={() =>
-          Alert.alert('Delete property?', 'This removes the boundary and profile from this device and your cloud sync.', [
+          Alert.alert('Delete property?', 'This removes the boundary and profile from this device and marks them deleted on your other devices. Older synced copies stay in your iCloud until you use “Delete all my data”.', [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Delete', style: 'destructive', onPress: async () => { await deleteParcel(parcel.id); router.replace('/'); } },
           ])
@@ -173,7 +174,7 @@ function FrostTable({ title, table, spring }: { title: string; table: Record<Thr
     <View style={{ marginBottom: 8 }}>
       <Text style={{ color: t.text, fontWeight: '600', marginBottom: 2 }}>{title}</Text>
       {([32, 28] as ThresholdF[]).map((th) => (
-        <Text key={th} style={{ color: t.text }} accessibilityLabel={`${title} at ${label(th)}: 90 percent chance ${spring ? 'before' : 'after'} ${cell(table[th][90])}, median ${cell(table[th][50])}, 10 percent chance ${spring ? 'after' : 'before'} ${cell(table[th][10])}`}>
+        <Text key={th} style={{ color: t.text }} accessibilityLabel={`${title} at ${label(th)}: 9 in 10 years ${spring ? 'after' : 'before'} ${cell(table[th][90])}, median ${cell(table[th][50])}, 1 in 10 years ${spring ? 'after' : 'before'} ${cell(table[th][10])}`}>
           {label(th)}: median {cell(table[th][50])} · range {spring ? `${cell(table[th][90])}–${cell(table[th][10])}` : `${cell(table[th][10])}–${cell(table[th][90])}`}
         </Text>
       ))}

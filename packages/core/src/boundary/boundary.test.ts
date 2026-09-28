@@ -155,3 +155,23 @@ test('walk-the-line drops inaccurate fixes and simplifies jitter', () => {
   const truth = areaM2({ type: 'Polygon', coordinates: [SQUARE as [number, number][]] });
   assert.ok(Math.abs(areaM2(r.polygon!) - truth) / truth < 0.01);
 });
+
+test('walk-the-line: a loop that ends exactly where it started', () => {
+  const corners = SQUARE.slice(0, 4);
+  const fixes: GpsFix[] = [];
+  let t = 0;
+  for (let e = 0; e < 4; e++) {
+    const [a, b] = [corners[e]!, corners[(e + 1) % 4]!];
+    for (let i = 0; i < 10; i++) {
+      const f = i / 10;
+      fixes.push({ lon: a[0]! + (b[0]! - a[0]!) * f, lat: a[1]! + (b[1]! - a[1]!) * f, accuracyM: 4, timestamp: t++ });
+    }
+  }
+  fixes.push({ lon: corners[0]![0]!, lat: corners[0]![1]!, accuracyM: 4, timestamp: t++ }); // back at the start
+  const r = walkToPolygon(fixes);
+  assert.ok(r.polygon, 'closed walk must produce a polygon');
+  const ring = r.polygon!.coordinates[0]!;
+  assert.equal(ring.length, 5, `expected 4 corners + closing point, got ${ring.length}`);
+  const truth = areaM2({ type: 'Polygon', coordinates: [SQUARE as [number, number][]] });
+  assert.ok(Math.abs(areaM2(r.polygon!) - truth) / truth < 0.001);
+});

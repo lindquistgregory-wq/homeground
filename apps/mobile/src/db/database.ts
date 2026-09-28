@@ -23,7 +23,7 @@ const MIGRATIONS: string[] = [
     deleted INTEGER NOT NULL DEFAULT 0
   );
   CREATE TABLE IF NOT EXISTS site_profiles (
-    parcel_id TEXT PRIMARY KEY REFERENCES parcels(id),
+    parcel_id TEXT PRIMARY KEY,        -- no FK: sync may deliver a profile before its parcel
     profile TEXT NOT NULL,             -- JSON SiteProfile
     computed_at TEXT NOT NULL,
     updated_hlc TEXT NOT NULL
@@ -41,6 +41,7 @@ const MIGRATIONS: string[] = [
   CREATE TABLE IF NOT EXISTS sync_pending (
     collection TEXT NOT NULL,
     id TEXT NOT NULL,
+    hlc TEXT NOT NULL,                 -- stamp of the local write; cleared only if unchanged at upload
     PRIMARY KEY (collection, id)
   );
   CREATE TABLE IF NOT EXISTS kv (
@@ -97,6 +98,15 @@ export class SqliteHttpCache implements KeyValueCache {
       key, e.value, e.storedAt, e.expiresAt,
     );
   }
+}
+
+/** Highest sync stamp stored locally, used to seed the clock after a restart. */
+export async function maxStoredHlc(): Promise<string | undefined> {
+  const db = await getDb();
+  const r = await db.getFirstAsync<{ m: string | null }>(
+    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles)',
+  );
+  return r?.m ?? undefined;
 }
 
 /** §11 privacy: the user can wipe everything the app stores on this device. */

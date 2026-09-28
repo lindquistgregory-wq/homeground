@@ -14,7 +14,7 @@ import { distanceM } from '../geo/measure';
 import type { LatLon } from '../geo/types';
 import type { Confidence } from '../provenance';
 import { deltaCToF } from '../units';
-import { formatDoy, hasFreezeData, type DayOfYear, type StationNormals } from './normals';
+import { formatDoy, hasFreezeData, hasTemperatureData, type DayOfYear, type StationNormals } from './normals';
 
 export const DEFAULT_LAPSE_RATE_C_PER_KM = 6.5;
 const MAX_SHIFT_DAYS = 30;
@@ -99,10 +99,10 @@ export function estimateFrostDates(
 
   const withFreeze = ranked.filter((x) => hasFreezeData(x.s));
   if (withFreeze.length === 0) {
-    // Nearby stations exist but none publish a 32 °F freeze date: frost is rare here.
-    const nearest = ranked[0]!;
-    const hasTemps = nearest.s.tminF.ANN !== undefined;
-    if (!hasTemps) return null;
+    // Only conclude "frost is rare" when nearby stations measure temperature yet publish no freeze
+    // dates. Precipitation-only stations tell us nothing either way.
+    const nearest = ranked.find((x) => hasTemperatureData(x.s));
+    if (!nearest || nearest.km > preferred) return null;
     const nullTable = () => ({ 10: null, 50: null, 90: null });
     return {
       dates: {
@@ -122,9 +122,12 @@ export function estimateFrostDates(
 
   const contributions: StationContribution[] = [];
   let wSum = 0;
+  const noElevation: string[] = [];
   for (const { s, km } of chosen) {
     const w = 1 / Math.max(1, km) ** 2;
-    const dz = parcel.elevationM - s.elevationM;
+    const knownElevation = Number.isFinite(s.elevationM);
+    if (!knownElevation) noElevation.push(s.name ?? s.stationId);
+    const dz = knownElevation ? parcel.elevationM - s.elevationM : 0;
     const shift = elevationShiftDays(s, dz, lapse);
     contributions.push({
       stationId: s.stationId,
@@ -179,8 +182,9 @@ export function estimateFrostDates(
 
   const nearest = contributions[0]!;
   const maxDz = Math.max(...contributions.map((c) => Math.abs(c.elevationDiffM)));
-  const confidence: Confidence =
+  let confidence: Confidence =
     nearest.distanceKm <= 15 && maxDz <= 100 ? 'high' : nearest.distanceKm <= 40 && maxDz <= 300 ? 'medium' : 'low';
+  if (noElevation.length && confidence === 'high') confidence = 'medium';
 
   const notes: string[] = [
     `Blended from ${contributions.length} NOAA 1991–2020 normals station${contributions.length > 1 ? 's' : ''} (nearest ${nearest.distanceKm.toFixed(0)} km).`,
@@ -191,6 +195,7 @@ export function estimateFrostDates(
   ];
   if (ls !== null && ff !== null)
     notes.push(`Median last 32 °F freeze ${formatDoy(ls)}; median first ${formatDoy(ff)}.`);
+  if (noElevation.length) notes.push(`No published elevation for ${noElevation.join(', ')}; dates from ${noElevation.length > 1 ? 'those stations' : 'that station'} are not elevation-adjusted.`);
   if (extra !== 0) notes.push(`Includes a local adjustment of ${fmtShift(extra)} for cold-air pooling.`);
   if (confidence === 'low') notes.push('Stations are distant or at very different elevations — treat these dates as rough.');
 

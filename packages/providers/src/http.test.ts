@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HttpError, MemoryCache } from './http';
+import { HttpClient, HttpError, MemoryCache } from './http';
 import { testClient } from './testing';
 
 test('sends a descriptive User-Agent and caches with TTL', async () => {
@@ -62,4 +62,37 @@ test('Nominatim requests are spaced ≥1.1 s apart', async () => {
   t += 100;
   await http.json('https://nominatim.openstreetmap.org/search?q=b');
   assert.deepEqual(sleeps, [1000]);
+});
+
+test('per-host concurrency cap holds when new requests race a release', async () => {
+  let inFlight = 0, peak = 0;
+  const gates: Array<() => void> = [];
+  const http = new HttpClient({
+    userAgent: 'test',
+    sleep: async () => {},
+    hostPolicies: { 'one.gov': { maxConcurrent: 1 } },
+    fetch: async () => {
+      inFlight++;
+      peak = Math.max(peak, inFlight);
+      await new Promise<void>((r) => gates.push(r));
+      inFlight--;
+      return { ok: true, status: 200, headers: { get: () => null }, text: async () => '{}' };
+    },
+  });
+  void http.text('https://one.gov/1');
+  void http.text('https://one.gov/2'); // queued
+  await new Promise((r) => setTimeout(r, 5));
+  gates.shift()!();
+  // Start a new request on every microtask hop so one lands between release() and the waiter resuming.
+  let k = 0;
+  const spin = () => {
+    if (k++ < 30) {
+      void http.text(`https://one.gov/n${k}`);
+      queueMicrotask(spin);
+    }
+  };
+  queueMicrotask(spin);
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(peak, 1);
+  while (gates.length) gates.shift()!();
 });

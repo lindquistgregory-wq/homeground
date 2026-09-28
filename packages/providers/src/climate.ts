@@ -37,9 +37,24 @@ export function parseStationSearch(resp: SearchResponse): StationRef[] {
     const id = st?.id ?? /([A-Z0-9]{11})\.csv$/.exec(r.filePath ?? '')?.[1];
     const coords = st?.coordinates ?? r.boundingPoints?.[0]?.coordinates;
     const [lon, lat] = coords ?? [];
-    if (id && Number.isFinite(lon) && Number.isFinite(lat)) out.push({ id, lon: lon!, lat: lat! });
+    if (id && Number.isFinite(lon) && Number.isFinite(lat) && usableForFrost(r, id)) out.push({ id, lon: lon!, lat: lat! });
   }
   return out;
+}
+
+/**
+ * CoCoRaHS volunteer gauges (ids starting "US1") are precipitation-only and crowd populated areas, so
+ * they're dropped before choosing which stations to fetch. When the search result says which elements
+ * a station has, stations without freeze probabilities are dropped too.
+ */
+export function usableForFrost(r: SearchResult, id: string): boolean {
+  if (/^US1/.test(id)) return false;
+  const types = r.stations?.[0]?.dataTypes;
+  if (Array.isArray(types) && types.length > 0) {
+    const ids = types.map((t) => (typeof t === 'string' ? t : (t as { id?: string })?.id)).filter(Boolean) as string[];
+    if (ids.length > 0) return ids.some((t) => /PRBLST-T32FP50/.test(t));
+  }
+  return true;
 }
 
 export async function findNormalsStations(http: HttpClient, p: LatLon, radiusKm = 60): Promise<StationRef[]> {
@@ -47,7 +62,7 @@ export async function findNormalsStations(http: HttpClient, p: LatLon, radiusKm 
   const url = `https://www.ncei.noaa.gov/access/services/search/v1/data?${qs({
     dataset: DATASET,
     bbox: `${n.toFixed(4)},${w.toFixed(4)},${s.toFixed(4)},${e.toFixed(4)}`,
-    limit: 100,
+    limit: 200,
     offset: 0,
   })}`;
   const { data } = await http.json<SearchResponse>(url, { ttlMs: TTL.static });
@@ -82,12 +97,19 @@ export async function parcelClimate(
   if (p.elevationM === null)
     return unavailable(NORMALS_SOURCE, 'Frost dates need the parcel elevation, which is unavailable.', true);
   try {
-    let refs = await findNormalsStations(http, p, 60);
-    if (refs.length === 0) refs = await findNormalsStations(http, p, 150);
-    if (refs.length === 0) return unavailable(NORMALS_SOURCE, 'No NOAA normals stations within 150 km.', false);
-    // Many stations are precipitation-only; request extra so ≥3 with temperature usually remain.
-    const stations = await fetchStationNormals(http, refs.slice(0, 12).map((r) => r.id));
-    const frost = estimateFrostDates({ lat: p.lat, lon: p.lon, elevationM: p.elevationM }, stations, opts);
+    // Try the local radius first, then widen if it yields no usable freeze statistics.
+    let stations: StationNormals[] = [];
+    let frost: FrostEstimate | null = null;
+    let searched = 0;
+    for (const radius of [60, 150]) {
+      const refs = await findNormalsStations(http, p, radius);
+      searched += refs.length;
+      if (refs.length === 0) continue;
+      stations = await fetchStationNormals(http, refs.slice(0, 12).map((r) => r.id));
+      frost = estimateFrostDates({ lat: p.lat, lon: p.lon, elevationM: p.elevationM }, stations, { ...opts, maxRadiusKm: radius });
+      if (frost) break;
+    }
+    if (searched === 0) return unavailable(NORMALS_SOURCE, 'No NOAA normals stations within 150 km.', false);
     if (!frost) return unavailable(NORMALS_SOURCE, 'Nearby stations do not publish freeze statistics.', false);
     const nearestTemp = stations
       .filter((s) => s.tminF.ANN !== undefined)

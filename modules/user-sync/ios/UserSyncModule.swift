@@ -32,7 +32,11 @@ public class UserSyncModule: Module {
       } else {
         record["payload"] = payload as CKRecordValue
       }
-      _ = try await self.db.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
+      let (saveResults, _) = try await self.db.modifyRecords(saving: [record], deleting: [], savePolicy: .allKeys)
+      // Per-record failures (quota exceeded, record too large) are reported here, not thrown.
+      for (_, result) in saveResults {
+        if case .failure(let error) = result { throw error }
+      }
     }
 
     AsyncFunction("listSince") { (cursor: String?) async throws -> [String: Any] in
@@ -44,7 +48,20 @@ public class UserSyncModule: Module {
       var batches: [String] = []
       var more = true
       while more {
-        let changes = try await self.db.recordZoneChanges(inZoneWith: self.zoneID, since: token)
+        let changes: (modificationResultsByID: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, Error>],
+                      deletions: [CKDatabase.RecordZoneChange.Deletion],
+                      changeToken: CKServerChangeToken,
+                      moreComing: Bool)
+        do {
+          changes = try await self.db.recordZoneChanges(inZoneWith: self.zoneID, since: token)
+        } catch let error as CKError where token != nil && (error.code == .changeTokenExpired || error.code == .zoneNotFound) {
+          // The zone was wiped by another device, or Apple expired our token: start over from the
+          // beginning. Re-applying batches is safe because merges are last-writer-wins by stamp.
+          try await self.ensureZone()
+          token = nil
+          batches.removeAll()
+          continue
+        }
         for (_, result) in changes.modificationResultsByID {
           guard case .success(let mod) = result else { continue }
           let rec = mod.record
@@ -63,11 +80,21 @@ public class UserSyncModule: Module {
     }
 
     AsyncFunction("deleteAll") { () async throws in
-      _ = try? await self.db.modifyRecordZones(saving: [], deleting: [self.zoneID])
+      do {
+        let (_, deleteResults) = try await self.db.modifyRecordZones(saving: [], deleting: [self.zoneID])
+        for (_, result) in deleteResults {
+          if case .failure(let error) = result, (error as? CKError)?.code != .zoneNotFound { throw error }
+        }
+      } catch let error as CKError where error.code == .zoneNotFound {
+        // Already gone.
+      }
     }
   }
 
   private func ensureZone() async throws {
-    _ = try await db.modifyRecordZones(saving: [CKRecordZone(zoneID: zoneID)], deleting: [])
+    let (saveResults, _) = try await db.modifyRecordZones(saving: [CKRecordZone(zoneID: zoneID)], deleting: [])
+    for (_, result) in saveResults {
+      if case .failure(let error) = result { throw error }
+    }
   }
 }

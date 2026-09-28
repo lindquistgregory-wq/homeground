@@ -17,6 +17,7 @@ The machine-readable version of this file, used by the app and by CI, is [`packa
 | FEMA NFHL (MapServer layer 28) | Flood zones | Public domain | No | POST query, cached 30 days |
 | USGS NHD (MapServer layers 6, 12) | Streams and waterbodies | Public domain | No | Cached 180 days |
 | NYS Tax Parcels Public; Wisconsin V12 Statewide Parcels | Parcel boundary lookup | Public web services; display only | No | **Only id and acreage fields are requested.** Owner fields are never downloaded |
+| Parcel endpoints from the remote registry | Parcel boundary lookup | Recorded per entry in `packages/data/registry/parcel-endpoints.json` | No | Hosts vary by county; each entry must carry its licence and attribution before it is merged |
 | User-added county ArcGIS layers | Parcel boundary lookup | User-supplied; terms not reviewed | No | Stored on that device only; same field allowlist |
 | GitHub Pages (this repo) | Refreshable parcel registry | Project-owned | No | Free only for public repos (see `docs/STATIC_HOSTING.md`) |
 

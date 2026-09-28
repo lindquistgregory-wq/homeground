@@ -61,6 +61,7 @@ export class HybridClock {
 }
 
 export type SyncCollection = 'parcels' | 'siteProfiles' | 'designs' | 'plantings' | 'sensorReadings' | 'settings';
+const COLLECTION_ORDER: SyncCollection[] = ['settings', 'parcels', 'siteProfiles', 'designs', 'plantings', 'sensorReadings'];
 
 export interface SyncRecord<T = unknown> {
   collection: SyncCollection;
@@ -88,10 +89,15 @@ export interface CloudTransport {
 
 export interface LocalStore {
   get(collection: SyncCollection, id: string): Promise<SyncRecord | undefined>;
-  /** Store a record that arrived from another device. Must NOT mark it as a pending local change. */
+  /**
+   * Store a record that arrived from another device. Must NOT mark it as a pending local change, and
+   * must persist tombstones even for rows this device has never seen (so an older create can't
+   * resurrect them).
+   */
   applyRemote(record: SyncRecord): Promise<void>;
   /** Records changed locally since the last successful upload. */
   pendingChanges(): Promise<SyncRecord[]>;
+  /** Clear pending markers only for records whose stamp still equals the uploaded one (edits made during the upload stay pending). */
   markUploaded(records: SyncRecord[]): Promise<void>;
   getCursor(): Promise<string | null>;
   setCursor(cursor: string | null): Promise<void>;
@@ -121,9 +127,13 @@ export async function syncOnce(
   // 1. Pull first so our upload's stamps are ordered after anything we've seen.
   let applied = 0, skipped = 0;
   const { batches, cursor } = await transport.listSince(await store.getCursor());
-  for (const batch of batches) {
+  // Cloud stores may list batches in any order (CloudKit does). Apply them in causal order, and within
+  // a batch apply parents (parcels) before children (site profiles).
+  const ordered = [...batches].sort((a, b) => compareHlc(a.createdHlc, b.createdHlc));
+  for (const batch of ordered) {
     if (batch.deviceId === deviceId) continue;
-    for (const rec of batch.records) {
+    const records = [...batch.records].sort((a, b) => COLLECTION_ORDER.indexOf(a.collection) - COLLECTION_ORDER.indexOf(b.collection));
+    for (const rec of records) {
       clock.receive(rec.hlc);
       const local = await store.get(rec.collection, rec.id);
       const winner = mergeRecord(local, rec);

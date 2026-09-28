@@ -43,6 +43,7 @@ export interface Limits {
 }
 
 export type Feature =
+  | 'layers.core' // elevation, zone, frost dates, soils summary, sun path — every tier
   | 'layers.standard' // all standard Site Profile layers
   | 'layers.advancedTerrain' // 1 m DEM analysis, cold-air drainage, keyline/water flow
   | 'layers.canopyShade'
@@ -64,7 +65,9 @@ export type Feature =
   | 'planner.full'
   | 'planner.income';
 
+const FREE_FEATURES: Feature[] = ['layers.core'];
 const GROWER_FEATURES: Feature[] = [
+  ...FREE_FEATURES,
   'layers.standard',
   'sun.heatmaps',
   'design.fullLibrary',
@@ -90,7 +93,7 @@ const PRO_ONLY: Feature[] = [
 ];
 
 export const TIER_FEATURES: Record<Tier, ReadonlySet<Feature>> = {
-  free: new Set<Feature>(),
+  free: new Set<Feature>(FREE_FEATURES),
   grower: new Set<Feature>(GROWER_FEATURES),
   pro: new Set<Feature>([...GROWER_FEATURES, ...PRO_ONLY]),
 };

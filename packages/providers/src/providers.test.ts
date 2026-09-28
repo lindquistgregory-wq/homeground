@@ -152,19 +152,20 @@ test('EPQS point elevation (recorded) and no-data handling', async () => {
   assert.equal(layer.status, 'unavailable');
 });
 
-test('parcel elevation summarises 5 samples with attribution', async () => {
+test('parcel elevation summarises 5 samples with min/max/relief', async () => {
+  const values = [200, 212.5, 190, 205, 199];
   let i = 0;
-  const { http } = testClient([{ match: /epqs/, body: '' }]);
-  // Replace body per call to vary elevation.
-  const { http: varied } = testClient([{ match: (u) => /epqs/.test(u) && (i++, true), body: { value: '200', resolution: 1 } }]);
-  const layer = await parcelElevation(varied, LOT);
+  const { http } = testClient([{ match: /epqs/, body: () => ({ value: String(values[i++]), resolution: 1 }) }]);
+  const layer = await parcelElevation(http, LOT);
   assert.equal(layer.status, 'ok');
-  if (layer.status === 'ok') {
-    assert.equal(layer.value.samples, 5);
-    assert.equal(layer.attribution.confidence, 'high');
-    assert.match(layer.attribution.source, /3DEP/);
-  }
-  void http;
+  if (layer.status !== 'ok') return;
+  assert.equal(layer.value.samples, 5);
+  assert.equal(layer.value.centroidM, 200);
+  assert.equal(layer.value.minM, 190);
+  assert.equal(layer.value.maxM, 212.5);
+  assert.equal(layer.value.reliefM, 22.5);
+  assert.equal(layer.attribution.confidence, 'high');
+  assert.match(layer.attribution.source, /3DEP/);
 });
 
 // ---------- hardiness ----------
@@ -192,11 +193,26 @@ const NCEI_SEARCH = {
   ],
 };
 
-test('parses NCEI search results from filePath/boundingPoints or station objects', () => {
-  assert.deepEqual(parseStationSearch(NCEI_SEARCH), [
-    { id: 'USC00304025', lon: -73.7922, lat: 42.2475 },
-    { id: 'US1NYGR0001', lon: -74.0, lat: 42.3 },
+test('parses NCEI search results; drops precipitation-only stations', () => {
+  assert.deepEqual(parseStationSearch(NCEI_SEARCH), [{ id: 'USC00304025', lon: -73.7922, lat: 42.2475 }]);
+  const typed = parseStationSearch({
+    results: [
+      { stations: [{ id: 'USC00000001', coordinates: [-74, 42], dataTypes: [{ id: 'ANN-PRCP-NORMAL' }] }] },
+      { stations: [{ id: 'USC00000002', coordinates: [-74, 42], dataTypes: [{ id: 'ANN-TMIN-PRBLST-T32FP50' }] }] },
+    ],
+  });
+  assert.deepEqual(typed.map((r) => r.id), ['USC00000002']);
+});
+
+test('frost dates survive a crowd of nearby precipitation-only gauges', async () => {
+  const gauges = Array.from({ length: 13 }, (_, i) => ({ stations: [{ id: `US1NYGR${String(i).padStart(4, '0')}`, coordinates: [-73.99 + i * 0.001, 42.25] }] }));
+  const { http, calls } = testClient([
+    { match: /search\/v1\/data/, body: { results: [...gauges, { filePath: '/x/USC00304025.csv', boundingPoints: [{ coordinates: [-73.7922, 42.2475] }] }] } },
+    { match: /services\/data\/v1/, body: [{ STATION: 'USC00304025', LATITUDE: '42.2475', LONGITUDE: '-73.7922', ELEVATION: '9.1', 'ANN-TMIN-PRBLST-T32FP50': '04/25', 'ANN-TMIN-PRBFST-T32FP50': '10/18', 'ANN-TMIN-NORMAL': '39' }] },
   ]);
+  const layer = await parcelClimate(http, { lat: 42.2528, lon: -73.9857, elevationM: 208 });
+  assert.equal(layer.status, 'ok');
+  assert.match(calls[1]!.url, /stations=USC00304025&/);
 });
 
 test('parcel climate: search → data → elevation-adjusted frost dates', async () => {
@@ -220,7 +236,7 @@ test('parcel climate: search → data → elevation-adjusted frost dates', async
   assert.equal(layer.attribution.basis, 'modeled');
   assert.ok(layer.attribution.notes!.some((n) => /199 m higher/.test(n)));
   assert.match(calls[1]!.url, /includeStationLocation=1/);
-  assert.match(calls[1]!.url, /stations=US1NYGR0001%2CUSC00304025/);
+  assert.match(calls[1]!.url, /stations=USC00304025&/);
   const noElev = await parcelClimate(http, { lat: 42, lon: -74, elevationM: null });
   assert.equal(noElev.status, 'unavailable');
 });
@@ -276,6 +292,11 @@ test('flood zones summarised; SFHA detected', async () => {
   assert.equal(s.inSpecialFloodHazardArea, true);
   assert.equal(s.zones[1]!.staticBfeFt, undefined);
   assert.match(s.headline, /high-risk.*AE/);
+  const conflict = summarizeFlood([{ attributes: { FLD_ZONE: 'AREA NOT INCLUDED', SFHA_TF: 'F' } }]);
+  assert.equal(conflict.inSpecialFloodHazardArea, false);
+  assert.match(conflict.headline, /not included in FEMA flood mapping/);
+  assert.equal(summarizeFlood([{ attributes: { FLD_ZONE: 'AE' } }]).inSpecialFloodHazardArea, true, 'no flag: zone decides');
+  assert.equal(summarizeFlood([{ attributes: { FLD_ZONE: 'A', SFHA_TF: 'F' } }]).inSpecialFloodHazardArea, false, 'explicit flag wins');
   const none = summarizeFlood([]);
   assert.match(none.headline, /unmapped/);
 
@@ -299,4 +320,21 @@ test('water features sorted by distance', async () => {
   assert.equal(layer.value.features[1]!.name, 'Catskill Creek');
   assert.ok(Math.abs(layer.value.features[1]!.distanceM - 372) < 5, `creek distance ${layer.value.features[1]!.distanceM}`);
   assert.ok(areaM2(LOT) > 0);
+});
+
+test('an ArcGIS error returned with HTTP 200 is not cached', async () => {
+  let n = 0;
+  const { http, calls } = testClient([
+    { match: /NFHL/, body: () => (n++ === 0 ? { error: { code: 500, message: 'Unable to complete operation.' } } : { features: [{ attributes: { FLD_ZONE: 'X', SFHA_TF: 'F' } }] }) },
+  ]);
+  const first = await parcelFlood(http, LOT);
+  assert.equal(first.status, 'unavailable');
+  const second = await parcelFlood(http, LOT);
+  assert.equal(second.status, 'ok');
+  assert.equal(calls.length, 2);
+  // Now cached; a "fresh" view refetches but keeps sharing the cache.
+  await parcelFlood(http, LOT);
+  assert.equal(calls.length, 2);
+  await parcelFlood(http.fresh(), LOT);
+  assert.equal(calls.length, 3);
 });
