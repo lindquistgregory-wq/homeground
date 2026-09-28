@@ -12,6 +12,7 @@ import { ParcelMap } from '../src/components/ParcelMap';
 import { Body, Button, useTheme } from '../src/components/ui';
 import { http } from '../src/services/http';
 import { useOnboarding, type LocatedPlace } from '../src/services/onboarding';
+import { CONTACT_EMAIL } from '../src/config';
 
 export default function Locate() {
   const t = useTheme();
@@ -31,7 +32,7 @@ export default function Locate() {
     setBusy(true);
     setMessage(null);
     try {
-      const r = await geocode(http, query);
+      const r = await geocode(http, query, { contactEmail: CONTACT_EMAIL });
       setResults(r);
       if (r.length === 0) setMessage('No match. Try adding the town and state, or tap your property on the map.');
     } catch (e) {

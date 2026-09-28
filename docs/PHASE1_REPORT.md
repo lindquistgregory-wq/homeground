@@ -46,9 +46,9 @@ No paid, metered or trial service was added. Every dependency is MIT or Apache-2
 
 ## Owner action items
 
-1. Set `CONTACT` in `apps/mobile/src/config.ts` to a real email or URL. NWS and Nominatim ask for a way to reach you.
+1. ~~Set a contact email~~ Done: handlenterprises1988@gmail.com is sent in the User-Agent and to Nominatim.
 2. Create the iCloud container `iCloud.app.homeground.planner` and change the bundle ID `app.homeground.planner` if you prefer another.
-3. Decide whether the repo will be public, which determines whether GitHub Pages is free.
+3. ~~Make the repo public~~ Done. Now set Settings → Pages → Source to "GitHub Actions" once.
 4. Run the first-build steps above, plus `pnpm build:zones` and the fixture recorder, and share anything that fails.
 
 ## Next: Phase 2 (sun & design)
