@@ -32,6 +32,11 @@ const ALBANY_ROW = {
   'JJA-TMIN-NORMAL': '60.1',
   'SON-TMIN-NORMAL': '41.8',
   'ANN-TMIN-NORMAL': '39.4',
+  'DJF-TMAX-NORMAL': '35.7',
+  'MAM-TMAX-NORMAL': '58.6',
+  'JJA-TMAX-NORMAL': '81.8',
+  'SON-TMAX-NORMAL': '61.8',
+  'ANN-TMAX-NORMAL': '59.4',
   'ANN-GRDD-BASE50': '2886.3',
   'ANN-PRCP-NORMAL': '40.68',
   'ANN-SNOW-NORMAL': '59.20',
@@ -69,6 +74,7 @@ test('parses a padded NCEI normals row', () => {
   assert.equal(s.firstFall[28]?.[90], mmddToDoy('11/10'));
   assert.equal(s.growingSeasonDays[32]?.[50], 169);
   assert.deepEqual(s.tminF, { DJF: 18.7, MAM: 37, JJA: 60.1, SON: 41.8, ANN: 39.4 });
+  assert.deepEqual(s.tmaxF, { DJF: 35.7, MAM: 58.6, JJA: 81.8, SON: 61.8, ANN: 59.4 });
   assert.equal(s.gddBase50F, 2886.3);
 });
 
@@ -131,7 +137,7 @@ test('no stations within range → null; frost-free stations → freezeRare', ()
   assert.equal(estimateFrostDates({ lat: 30, lon: -90, elevationM: 0 }, [albany]), null);
   const keyWest: StationNormals = {
     stationId: 'USW00012836', lat: 24.5557, lon: -81.7552, elevationM: 1.2,
-    lastSpring: {}, firstFall: {}, growingSeasonDays: {}, tminF: { ANN: 73.9 },
+    lastSpring: {}, firstFall: {}, growingSeasonDays: {}, tminF: { ANN: 73.9 }, tmaxF: {},
   };
   const est = estimateFrostDates({ lat: 24.56, lon: -81.78, elevationM: 2 }, [keyWest])!;
   assert.equal(est.dates.freezeRare, true);
@@ -149,6 +155,6 @@ test('a station without published elevation is still used (unadjusted), never re
 });
 
 test('precipitation-only stations alone give no estimate rather than "frost rare"', () => {
-  const precipOnly: StationNormals = { stationId: 'US1NYAL0001', lat: 42.7, lon: -73.8, elevationM: 50, lastSpring: {}, firstFall: {}, growingSeasonDays: {}, tminF: {} };
+  const precipOnly: StationNormals = { stationId: 'US1NYAL0001', lat: 42.7, lon: -73.8, elevationM: 50, lastSpring: {}, firstFall: {}, growingSeasonDays: {}, tminF: {}, tmaxF: {} };
   assert.equal(estimateFrostDates({ lat: 42.7, lon: -73.8, elevationM: 50 }, [precipOnly]), null);
 });

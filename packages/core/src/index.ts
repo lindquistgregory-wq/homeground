@@ -20,3 +20,4 @@ export * from './design/library';
 export * from './design/design';
 export * from './design/export';
 export * from './design/siting';
+export * from './plants/index';
