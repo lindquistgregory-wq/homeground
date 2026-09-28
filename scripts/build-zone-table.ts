@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'packages', 'data', 'zones', 'phzm-zip.json');
 
-const res = await fetch('https://phzmapi.org/all.json', { headers: { 'User-Agent': 'Homeground build script (+https://github.com/lindquistgregory-wq/homeground)' } });
+const res = await fetch('https://phzmapi.org/all.json', { headers: { 'User-Agent': 'Plotwright build script (+https://github.com/lindquistgregory-wq/homeground)' } });
 if (!res.ok) throw new Error(`Download failed: HTTP ${res.status}`);
 const all = (await res.json()) as Record<string, { zone?: string }>;
 const table: Record<string, string> = {};

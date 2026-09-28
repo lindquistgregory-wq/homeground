@@ -25,7 +25,7 @@
 
 ## Not verified (this build environment could not do it)
 
-1. **The app has not been compiled or run.** The package registries were blocked, so nothing could be installed. Screens were type-checked against our own packages with the RN/Expo types stubbed out. The MapLibre usage was checked against the v11.4.0 source. **First step on your machine:** `pnpm install && pnpm --filter @homeground/mobile exec expo install --fix && pnpm --filter @homeground/mobile typecheck`, then `pnpm ios` / `pnpm android`.
+1. **The app has not been compiled or run.** The package registries were blocked, so nothing could be installed. Screens were type-checked against our own packages with the RN/Expo types stubbed out. The MapLibre usage was checked against the v11.4.0 source. **First step on your machine:** `pnpm install && pnpm --filter @plotwright/mobile exec expo install --fix && pnpm --filter @plotwright/mobile typecheck`, then `pnpm ios` / `pnpm android`.
 2. **Swift (CloudKit) and Kotlin code have not been compiled.**
 3. **Live calls to NCEI search, SDA, NFHL, NHD and the NY/WI parcel services** have only been tested against synthetic fixtures. Run `pnpm tsx scripts/record-fixtures.ts`: it builds a real profile for a test lot, prints each layer's status and the cold-start time against the 30 s target, and saves the raw responses. The riskiest assumption is **SDA's AOI macros** (`~GetClippedMapunits~`). If they're rejected, the code falls back to the list of map units without area percentages.
 4. **Acceptance timing** (< 30 s cold, < 2 s cached) is measured by the recorder script, not yet on a phone.
@@ -47,7 +47,7 @@ No paid, metered or trial service was added. Every dependency is MIT or Apache-2
 ## Owner action items
 
 1. ~~Set a contact email~~ Done: handlenterprises1988@gmail.com is sent in the User-Agent and to Nominatim.
-2. Create the iCloud container `iCloud.app.homeground.planner` and change the bundle ID `app.homeground.planner` if you prefer another.
+2. Create the iCloud container `iCloud.app.plotwright.planner` and change the bundle ID `app.plotwright.planner` if you prefer another.
 3. ~~Make the repo public~~ Done. Now set Settings → Pages → Source to "GitHub Actions" once.
 4. Run the first-build steps above, plus `pnpm build:zones` and the fixture recorder, and share anything that fails.
 

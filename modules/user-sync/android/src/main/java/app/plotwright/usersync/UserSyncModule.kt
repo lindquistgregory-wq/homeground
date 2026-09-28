@@ -1,4 +1,4 @@
-package app.homeground.usersync
+package app.plotwright.usersync
 
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition

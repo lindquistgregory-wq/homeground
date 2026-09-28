@@ -3,7 +3,7 @@
  * Public domain, keyless. Endpoint: https://epqs.nationalmap.gov/v1/json (the old nationalmap.gov/epqs was retired 2023).
  * Real response (2026-09-28): {"location":{...},"locationId":0,"value":"208.355560303","rasterId":73791,"resolution":1}
  */
-import { bbox, centroid, sourced, unavailable, type Areal, type Layer, type LatLon } from '@homeground/core';
+import { bbox, centroid, sourced, unavailable, type Areal, type Layer, type LatLon } from '@plotwright/core';
 import { type HttpClient, TTL } from './http';
 import { qs } from './qs';
 

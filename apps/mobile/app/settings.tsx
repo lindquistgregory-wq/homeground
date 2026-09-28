@@ -1,6 +1,6 @@
-import { centroid, PRODUCT_IDS } from '@homeground/core';
-import { validateUserEndpoint } from '@homeground/providers';
-import { UserSync } from '@homeground/user-sync';
+import { centroid, PRODUCT_IDS } from '@plotwright/core';
+import { validateUserEndpoint } from '@plotwright/providers';
+import { UserSync } from '@plotwright/user-sync';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, TextInput } from 'react-native';
@@ -51,7 +51,7 @@ export default function Settings() {
           {cloud === null
             ? 'Checking…'
             : cloud
-              ? `Syncing through your ${Platform.OS === 'ios' ? 'iCloud' : 'Google Drive'}. Homeground has no server of its own.`
+              ? `Syncing through your ${Platform.OS === 'ios' ? 'iCloud' : 'Google Drive'}. Plotwright has no server of its own.`
               : UserSync
                 ? `${Platform.OS === 'ios' ? 'Sign in to iCloud' : 'Google Drive sync is coming soon'}. Until then your data stays on this device.`
                 : 'Cloud sync is not available in this build. Your data stays on this device.'}
@@ -89,7 +89,7 @@ export default function Settings() {
       </Card>
 
       <Card title="Your data">
-        <Body muted>Nothing you enter is sent to a Homeground server. You can erase everything on this device (and in your cloud sync).</Body>
+        <Body muted>Nothing you enter is sent to a Plotwright server. You can erase everything on this device (and in your cloud sync).</Body>
         <Button
           title="Delete all my data"
           kind="secondary"

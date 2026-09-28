@@ -108,7 +108,7 @@ export const DATA_SOURCES: DataSource[] = [
     caveat: 'Only parcel id and acreage are requested. Owner fields are never downloaded.',
   },
   {
-    id: 'static-host', name: 'Homeground registry (GitHub Pages)', provider: 'This project',
+    id: 'static-host', name: 'Plotwright registry (GitHub Pages)', provider: 'This project',
     use: 'Refreshable parcel-endpoint registry (static JSON)', hosts: ['lindquistgregory-wq.github.io'],
     license: 'Project-owned', commercialUse: true, attribution: '', url: 'https://pages.github.com/', reviewed: '2026-09-28',
   },

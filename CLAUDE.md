@@ -1,4 +1,4 @@
-# Homeground — instructions for Claude sessions
+# Plotwright — instructions for Claude sessions
 
 Read `docs/PLAN.md` (phases and architecture) and `docs/PHASE1_REPORT.md` (current state and known gaps) before changing anything.
 
@@ -7,7 +7,7 @@ Read `docs/PLAN.md` (phases and architecture) and `docs/PHASE1_REPORT.md` (curre
 - New npm dependency → add it to `licenses.json`. New network host → add it to `packages/data/src/sources.ts` and `DATA_SOURCES.md`. `pnpm check:licenses` enforces both.
 - No shared API keys. A key that's needed has to be the user's own, stored in the keychain.
 - Privacy: never request or store parcel owner names or mailing addresses. Parcel queries use the id/acreage allowlist (`sanitizeAttributes`).
-- Every derived number carries attribution: `Sourced<T>` or `Unavailable` from `@homeground/core/provenance`.
+- Every derived number carries attribution: `Sourced<T>` or `Unavailable` from `@plotwright/core/provenance`.
 - Work in phases. At the end of each phase, run tests, summarize, confirm no paid dependency was added, list limitations, and ask before starting the next phase.
 
 ## Conventions

@@ -1,5 +1,5 @@
 import * as Crypto from 'expo-crypto';
-import { HybridClock } from '@homeground/core';
+import { HybridClock } from '@plotwright/core';
 import { kvGet, kvSet, maxStoredHlc } from '../db/database';
 
 let deviceId: string | null = null;

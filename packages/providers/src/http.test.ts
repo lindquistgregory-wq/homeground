@@ -10,7 +10,7 @@ test('sends a descriptive User-Agent and caches with TTL', async () => {
   const r1 = await http.json<{ a: number }>('https://example.gov/x', { ttlMs: 100 });
   assert.equal(r1.data.a, 1);
   assert.equal(r1.fromCache, false);
-  assert.match(calls[0]!.headers['User-Agent']!, /^Homeground/);
+  assert.match(calls[0]!.headers['User-Agent']!, /^Plotwright/);
   const r2 = await http.json('https://example.gov/x', { ttlMs: 100 });
   assert.equal(r2.fromCache, true);
   assert.equal(calls.length, 1);

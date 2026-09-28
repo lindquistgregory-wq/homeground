@@ -1,5 +1,5 @@
 {
   "platforms": ["apple", "android"],
   "apple": { "modules": ["UserSyncModule"] },
-  "android": { "modules": ["app.homeground.usersync.UserSyncModule"] }
+  "android": { "modules": ["app.plotwright.usersync.UserSyncModule"] }
 }

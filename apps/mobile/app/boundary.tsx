@@ -5,8 +5,8 @@
  */
 import {
   areaM2, formatArea, normalizeAreal, walkToPolygon, type Areal, type GpsFix, type ImportResult, type Position,
-} from '@homeground/core';
-import { findParcel, reverseCensus, type ParcelCandidate } from '@homeground/providers';
+} from '@plotwright/core';
+import { findParcel, reverseCensus, type ParcelCandidate } from '@plotwright/providers';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';

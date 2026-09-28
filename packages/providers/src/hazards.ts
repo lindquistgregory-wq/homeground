@@ -6,7 +6,7 @@
 import {
   bbox, bufferBBox, centroid, localFrame, project, sourced, toPolygons, unavailable,
   type Areal, type Layer, type LineString, type Polygon, type Position,
-} from '@homeground/core';
+} from '@plotwright/core';
 import { type HttpClient, TTL } from './http';
 import { qs } from './qs';
 

@@ -1,9 +1,9 @@
 /**
- * Wires @homeground/core's sync engine to SQLite (LocalStore) and the native user-cloud module
+ * Wires @plotwright/core's sync engine to SQLite (LocalStore) and the native user-cloud module
  * (CloudTransport). Nothing here talks to a developer server.
  */
-import { syncOnce, type ChangeBatch, type CloudTransport, type LocalStore, type SyncCollection, type SyncRecord } from '@homeground/core';
-import { UserSync } from '@homeground/user-sync';
+import { syncOnce, type ChangeBatch, type CloudTransport, type LocalStore, type SyncCollection, type SyncRecord } from '@plotwright/core';
+import { UserSync } from '@plotwright/user-sync';
 import { getDb, kvGet, kvSet } from '../db/database';
 import { clock, getDeviceId, newId } from '../services/identity';
 

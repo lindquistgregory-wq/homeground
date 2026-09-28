@@ -1,5 +1,5 @@
-/** In-app attribution & licensing screen (§11). Content comes from @homeground/data/sources. */
-import { DATA_SOURCES } from '@homeground/data';
+/** In-app attribution & licensing screen (§11). Content comes from @plotwright/data/sources. */
+import { DATA_SOURCES } from '@plotwright/data';
 import { Linking, ScrollView, Text } from 'react-native';
 import { Body, Card, useTheme } from '../src/components/ui';
 
@@ -8,7 +8,7 @@ export default function DataSources() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       <Body muted>
-        Homeground runs on free public data. Your location, boundary and profile stay on this device and in your own iCloud
+        Plotwright runs on free public data. Your location, boundary and profile stay on this device and in your own iCloud
         or Google Drive. The services below receive only the coordinates or boundary needed to answer each request.
       </Body>
       {DATA_SOURCES.map((s) => (

@@ -9,12 +9,12 @@ export type Tier = 'free' | 'grower' | 'pro';
 export type BusinessModel = 'tiers' | 'openSource';
 
 export const PRODUCT_IDS = {
-  growerMonthly: 'homeground.grower.monthly',
-  growerAnnual: 'homeground.grower.annual',
-  proMonthly: 'homeground.pro.monthly',
-  proAnnual: 'homeground.pro.annual',
-  proLifetime: 'homeground.pro.lifetime',
-  removeAds: 'homeground.removeads',
+  growerMonthly: 'plotwright.grower.monthly',
+  growerAnnual: 'plotwright.grower.annual',
+  proMonthly: 'plotwright.pro.monthly',
+  proAnnual: 'plotwright.pro.annual',
+  proLifetime: 'plotwright.pro.lifetime',
+  removeAds: 'plotwright.removeads',
 } as const;
 
 const PRODUCT_TIER: Record<string, Tier> = {

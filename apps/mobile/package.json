@@ -1,5 +1,5 @@
 {
-  "name": "@homeground/mobile",
+  "name": "@plotwright/mobile",
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
@@ -11,10 +11,10 @@
     "doctor": "npx expo-doctor"
   },
   "dependencies": {
-    "@homeground/core": "workspace:*",
-    "@homeground/data": "workspace:*",
-    "@homeground/providers": "workspace:*",
-    "@homeground/user-sync": "workspace:*",
+    "@plotwright/core": "workspace:*",
+    "@plotwright/data": "workspace:*",
+    "@plotwright/providers": "workspace:*",
+    "@plotwright/user-sync": "workspace:*",
     "@maplibre/maplibre-react-native": "^11.4.0",
     "expo": "~55.0.0",
     "expo-crypto": "*",

@@ -96,7 +96,7 @@ export interface HttpResult<T> {
 
 export interface HttpClientOptions {
   fetch: FetchLike;
-  /** e.g. "Homeground/0.1 (+https://github.com/…; contact@…)" */
+  /** e.g. "Plotwright/0.1 (+https://github.com/…; contact@…)" */
   userAgent: string;
   cache?: KeyValueCache;
   hostPolicies?: Record<string, HostPolicy>;

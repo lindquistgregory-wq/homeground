@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Areal } from '@homeground/core';
+import type { Areal } from '@plotwright/core';
 
 export interface LocatedPlace {
   lat: number;

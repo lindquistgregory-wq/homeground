@@ -1,31 +1,31 @@
 {
   "expo": {
-    "name": "Homeground",
-    "slug": "homeground",
-    "scheme": "homeground",
+    "name": "Plotwright",
+    "slug": "plotwright",
+    "scheme": "plotwright",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "app.homeground.planner",
+      "bundleIdentifier": "app.plotwright.planner",
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Homeground uses your location to find your property and to trace its boundary as you walk it. Your location stays on your device."
+        "NSLocationWhenInUseUsageDescription": "Plotwright uses your location to find your property and to trace its boundary as you walk it. Your location stays on your device."
       },
       "entitlements": {
-        "com.apple.developer.icloud-container-identifiers": ["iCloud.app.homeground.planner"],
+        "com.apple.developer.icloud-container-identifiers": ["iCloud.app.plotwright.planner"],
         "com.apple.developer.icloud-services": ["CloudKit"]
       }
     },
     "android": {
-      "package": "app.homeground.planner",
+      "package": "app.plotwright.planner",
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
     },
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      ["expo-location", { "locationWhenInUsePermission": "Homeground uses your location to find your property and to trace its boundary as you walk it. Your location stays on your device." }],
+      ["expo-location", { "locationWhenInUsePermission": "Plotwright uses your location to find your property and to trace its boundary as you walk it. Your location stays on your device." }],
       "@maplibre/maplibre-react-native"
     ],
     "experiments": { "typedRoutes": true }

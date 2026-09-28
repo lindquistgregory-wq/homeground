@@ -1,4 +1,4 @@
-import { HttpClient, type FetchLike } from '@homeground/providers';
+import { HttpClient, type FetchLike } from '@plotwright/providers';
 import { SqliteHttpCache } from '../db/database';
 import { USER_AGENT } from '../config';
 

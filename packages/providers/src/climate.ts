@@ -7,7 +7,7 @@
 import {
   bufferBBox, distanceM, estimateFrostDates, normalsDataTypes, parseNormalsRow, sourced, unavailable,
   type FrostEstimate, type LatLon, type Layer, type StationNormals,
-} from '@homeground/core';
+} from '@plotwright/core';
 import { type HttpClient, TTL } from './http';
 import { qs } from './qs';
 

@@ -1,5 +1,5 @@
-import { bundledParcelRegistry, REMOTE_REGISTRY_URL, type ParcelRegistry } from '@homeground/data';
-import { mergeRegistries, TTL } from '@homeground/providers';
+import { bundledParcelRegistry, REMOTE_REGISTRY_URL, type ParcelRegistry } from '@plotwright/data';
+import { mergeRegistries, TTL } from '@plotwright/providers';
 import { http } from './http';
 
 /** Bundled registry, refreshed from the static JSON on the free host when reachable (cached 30 days). */

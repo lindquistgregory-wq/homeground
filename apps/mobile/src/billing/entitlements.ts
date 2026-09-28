@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { resolveEntitlements, type Entitlements, type VerifiedTransaction } from '@homeground/core';
+import { resolveEntitlements, type Entitlements, type VerifiedTransaction } from '@plotwright/core';
 import { billing } from './adapter';
 import { BUSINESS_MODEL } from '../config';
 

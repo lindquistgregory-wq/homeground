@@ -4,7 +4,7 @@
  * Schema changes are append-only numbered migrations.
  */
 import * as SQLite from 'expo-sqlite';
-import type { CacheEntry, KeyValueCache } from '@homeground/providers';
+import type { CacheEntry, KeyValueCache } from '@plotwright/providers';
 
 const MIGRATIONS: string[] = [
   // 1 — Phase 1 foundation
@@ -55,7 +55,7 @@ let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export function getDb(): Promise<SQLite.SQLiteDatabase> {
   dbPromise ??= (async () => {
-    const db = await SQLite.openDatabaseAsync('homeground.db');
+    const db = await SQLite.openDatabaseAsync('plotwright.db');
     await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
     const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
     const current = row?.user_version ?? 0;

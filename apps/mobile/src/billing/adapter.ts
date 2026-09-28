@@ -3,9 +3,9 @@
  *  - iOS: StoreKit 2 (transactions verified on-device via signed JWS)
  *  - Android: Google Play Billing Library (on-device purchase state)
  * Both go straight to the stores — no subscription SaaS and no receipt server.
- * Everything above this interface only sees `VerifiedTransaction[]`, so tier logic stays in @homeground/core.
+ * Everything above this interface only sees `VerifiedTransaction[]`, so tier logic stays in @plotwright/core.
  */
-import { PRODUCT_IDS, type VerifiedTransaction } from '@homeground/core';
+import { PRODUCT_IDS, type VerifiedTransaction } from '@plotwright/core';
 import { kvGet, kvSet } from '../db/database';
 
 export interface BillingAdapter {

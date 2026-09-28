@@ -1,5 +1,5 @@
 /** Small shared UI pieces. Colours meet WCAG AA against their backgrounds (§11 accessibility). */
-import type { Attribution, Layer } from '@homeground/core';
+import type { Attribution, Layer } from '@plotwright/core';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 

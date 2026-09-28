@@ -48,7 +48,7 @@ export function testClient(routes: Route[], opts: { cache?: MemoryCache; now?: (
   const sleeps: number[] = [];
   const http = new HttpClient({
     fetch,
-    userAgent: 'Homeground-test/0.0 (+https://example.invalid)',
+    userAgent: 'Plotwright-test/0.0 (+https://example.invalid)',
     cache: opts.cache ?? new MemoryCache(),
     now: opts.now,
     sleep: async (ms) => {

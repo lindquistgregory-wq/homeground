@@ -25,7 +25,7 @@ The machine-readable version of this file, used by the app and by CI, is [`packa
 
 | Service | Cost | Note |
 |---|---|---|
-| iCloud CloudKit private database | Uses the user's iCloud quota | Needs the `iCloud.app.homeground.planner` container in the Apple Developer account |
+| iCloud CloudKit private database | Uses the user's iCloud quota | Needs the `iCloud.app.plotwright.planner` container in the Apple Developer account |
 | Google Drive appDataFolder | Uses the user's Drive quota | Not implemented yet. Needs a free OAuth client, and Google may require a verification review for the scope |
 | Apple Developer Program / Google Play registration | Membership fees | Needed to publish. These are platform costs, not running costs |
 | App-store commission | % of sales | Enroll in the Apple and Google small-business programs |

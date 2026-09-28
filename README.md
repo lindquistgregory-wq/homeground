@@ -1,6 +1,8 @@
-# Homeground
+# Plotwright
 
 A parcel-aware homestead and garden planner for iOS and Android. It works from your actual land (boundary, elevation, soils, frost dates, flood zones, water) rather than just your ZIP code, and it has **zero running costs**: free public data, no developer server, and sync through the user's own iCloud or Google Drive.
+
+**Name:** Plotwright. A preliminary trademark knockout search on 2026-09-28 found no US marks for it. Get an attorney clearance search before filing. "Homeground" was dropped because of a live US registration covering software (Reg. 6891418).
 
 The build plan is in [`docs/PLAN.md`](docs/PLAN.md). Phase 1 status and known limitations are in [`docs/PHASE1_REPORT.md`](docs/PHASE1_REPORT.md).
 
@@ -23,7 +25,7 @@ Requirements: Node 22, pnpm 10, and Xcode 16+ (iOS) or Android Studio (Android).
 
 ```bash
 pnpm install
-pnpm --filter @homeground/mobile exec expo install --fix   # pin Expo-compatible versions of the expo-* packages
+pnpm --filter @plotwright/mobile exec expo install --fix   # pin Expo-compatible versions of the expo-* packages
 pnpm check                                                 # type-check + tests + zero-cost gate
 pnpm build:zones                                           # generate the offline hardiness-zone table (commit the result)
 pnpm tsx scripts/record-fixtures.ts                        # hit the live public APIs once and report each layer

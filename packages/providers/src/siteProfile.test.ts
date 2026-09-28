@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Polygon } from '@homeground/core';
+import type { Polygon } from '@plotwright/core';
 import { MemoryCache } from './http';
 import { buildSiteProfile } from './siteProfile';
 import { fixture, testClient, type Route } from './testing';

@@ -3,8 +3,8 @@
  * Privacy (§2.2): we request ONLY the allow-listed id/acreage fields via `outFields`, so owner names
  * and mailing addresses are never downloaded; `sanitizeAttributes` is a second line of defence.
  */
-import { areaM2, normalizeAreal, pointInAreal, ringSignedAreaDeg, type Areal, type LatLon, type Ring } from '@homeground/core';
-import type { ParcelEndpoint, ParcelRegistry } from '@homeground/data';
+import { areaM2, normalizeAreal, pointInAreal, ringSignedAreaDeg, type Areal, type LatLon, type Ring } from '@plotwright/core';
+import type { ParcelEndpoint, ParcelRegistry } from '@plotwright/data';
 import { type HttpClient, HttpError, TTL } from '../http';
 import { hostname, qs } from '../qs';
 

@@ -33,5 +33,5 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --no-frozen-lockfile
-      - run: pnpm --filter @homeground/mobile exec expo install --check || true
-      - run: pnpm --filter @homeground/mobile typecheck
+      - run: pnpm --filter @plotwright/mobile exec expo install --check || true
+      - run: pnpm --filter @plotwright/mobile typecheck

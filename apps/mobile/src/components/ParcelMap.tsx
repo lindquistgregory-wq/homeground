@@ -3,8 +3,8 @@
  * OpenFreeMap vector basemap and USGS public-domain aerial imagery on top. API: @maplibre/maplibre-react-native v11.
  */
 import { Camera, GeoJSONSource, Layer, Map, RasterSource } from '@maplibre/maplibre-react-native';
-import { bbox, type Areal, type Position } from '@homeground/core';
-import { OPENFREEMAP_STYLE_URL, USGS_IMAGERY } from '@homeground/providers';
+import { bbox, type Areal, type Position } from '@plotwright/core';
+import { OPENFREEMAP_STYLE_URL, USGS_IMAGERY } from '@plotwright/providers';
 import { StyleSheet, View } from 'react-native';
 
 export interface ParcelMapProps {

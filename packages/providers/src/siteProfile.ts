@@ -3,7 +3,7 @@
  * resolves to data-with-attribution or an explicit "unavailable" reason; one failing service never
  * blocks the others. Elevation is fetched first because the frost engine needs it.
  */
-import { areaM2, centroid, perimeterM, type Areal, type LatLon, type Layer } from '@homeground/core';
+import { areaM2, centroid, perimeterM, type Areal, type LatLon, type Layer } from '@plotwright/core';
 import type { HttpClient } from './http';
 import { parcelElevation, type ElevationSummary } from './elevation';
 import { hardinessZone, type HardinessZone, type ZoneTable } from './hardiness';

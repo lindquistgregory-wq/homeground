@@ -24,7 +24,7 @@ const recordingFetch: FetchLike = async (url, init) => {
   recorded.push({ url, method: init.method, body: init.body, status: res.status, response: text.slice(0, 200_000) });
   return { ok: res.ok, status: res.status, headers: { get: (n) => res.headers.get(n) }, text: async () => text };
 };
-const http = new HttpClient({ fetch: recordingFetch, userAgent: 'Homeground fixture recorder (+https://github.com/lindquistgregory-wq/homeground)' });
+const http = new HttpClient({ fetch: recordingFetch, userAgent: 'Plotwright fixture recorder (+https://github.com/lindquistgregory-wq/homeground)' });
 
 const LOT: Polygon = { type: 'Polygon', coordinates: [[[-73.987, 42.252], [-73.984, 42.252], [-73.984, 42.254], [-73.987, 42.254], [-73.987, 42.252]]] };
 

@@ -9,7 +9,7 @@ export interface UserSyncNative {
   isAvailable(): Promise<boolean>;
   upload(batchId: string, payload: string): Promise<void>;
   listSince(cursor: string | null): Promise<{ batches: string[]; cursor: string | null }>;
-  /** Deletes every Homeground record in the user's cloud (§11 data delete). */
+  /** Deletes every Plotwright record in the user's cloud (§11 data delete). */
   deleteAll(): Promise<void>;
 }
 

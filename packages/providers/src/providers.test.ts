@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { areaM2, type Polygon } from '@homeground/core';
-import { bundledParcelRegistry, type ParcelEndpoint } from '@homeground/data';
+import { areaM2, type Polygon } from '@plotwright/core';
+import { bundledParcelRegistry, type ParcelEndpoint } from '@plotwright/data';
 import { geocode, geocodeCensus, reverseCensus } from './geocode';
 import {
   endpointsFor, esriRingsToGeoJson, findParcel, mergeRegistries, normalizeLayerUrl, sanitizeAttributes, validateUserEndpoint,

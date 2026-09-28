@@ -3,7 +3,7 @@
  * property" GPS, or tap on the map. Geocoding only happens when the user presses Search (no
  * autocomplete-as-you-type, per Nominatim policy).
  */
-import { geocode, type GeocodeResult } from '@homeground/providers';
+import { geocode, type GeocodeResult } from '@plotwright/providers';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useState } from 'react';

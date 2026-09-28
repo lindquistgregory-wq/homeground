@@ -5,9 +5,9 @@ import ExpoModulesCore
 /// storage counts against the user's iCloud quota and the developer runs no server (§0 rule 3).
 /// Change tracking uses CloudKit's zone change tokens, so no custom indexes are needed in the schema.
 public class UserSyncModule: Module {
-  private let container = CKContainer(identifier: "iCloud.app.homeground.planner")
+  private let container = CKContainer(identifier: "iCloud.app.plotwright.planner")
   private var db: CKDatabase { container.privateCloudDatabase }
-  private let zoneID = CKRecordZone.ID(zoneName: "HomegroundSync", ownerName: CKCurrentUserDefaultName)
+  private let zoneID = CKRecordZone.ID(zoneName: "PlotwrightSync", ownerName: CKCurrentUserDefaultName)
   private let recordType = "ChangeBatch"
 
   public func definition() -> ModuleDefinition {

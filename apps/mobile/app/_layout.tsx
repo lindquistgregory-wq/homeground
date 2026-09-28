@@ -28,7 +28,7 @@ export default function RootLayout() {
   if (!ready) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.bg }}>
-        <ActivityIndicator accessibilityLabel="Loading Homeground" />
+        <ActivityIndicator accessibilityLabel="Loading Plotwright" />
       </View>
     );
   }
@@ -37,7 +37,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StatusBar style="auto" />
       <Stack screenOptions={{ contentStyle: { backgroundColor: t.bg }, headerTintColor: t.accent }}>
-        <Stack.Screen name="index" options={{ title: 'Homeground' }} />
+        <Stack.Screen name="index" options={{ title: 'Plotwright' }} />
         <Stack.Screen name="locate" options={{ title: 'Find your property' }} />
         <Stack.Screen name="boundary" options={{ title: 'Property boundary' }} />
         <Stack.Screen name="profile/[id]" options={{ title: 'Site profile' }} />

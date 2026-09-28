@@ -21,5 +21,5 @@ test('an unrecorded paid API host is caught', () => {
 test('dependencies across the monorepo are collected, workspace links skipped', () => {
   const deps = collectDependencies(join(import.meta.dirname ?? '.', '..'));
   assert.ok(deps.has('@maplibre/maplibre-react-native'));
-  assert.ok(!deps.has('@homeground/core'));
+  assert.ok(!deps.has('@plotwright/core'));
 });

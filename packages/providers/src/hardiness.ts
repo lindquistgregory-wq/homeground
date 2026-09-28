@@ -5,7 +5,7 @@
  * files at phzmapi.org (the same dataset, hosted as static JSON).
  * Resolution is ZIP/ZCTA-level, so confidence is 'medium' — the true PHZM grid is ~800 m.
  */
-import { sourced, unavailable, type Layer } from '@homeground/core';
+import { sourced, unavailable, type Layer } from '@plotwright/core';
 import { type HttpClient, TTL } from './http';
 
 export const PHZM_SOURCE = 'USDA Plant Hardiness Zone Map 2023 (PRISM/OSU)';

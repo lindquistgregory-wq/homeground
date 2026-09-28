@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { UnitSystem } from '@homeground/core';
+import type { UnitSystem } from '@plotwright/core';
 import { kvGet, kvSet } from '../db/database';
 
 interface SettingsState {

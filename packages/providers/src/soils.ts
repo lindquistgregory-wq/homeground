@@ -7,7 +7,7 @@
  *   2. Properties for those map units: drainage, hydrologic group, available water, hydric rating,
  *      farmland class, and the dominant component's surface horizon (texture, pH, organic matter).
  */
-import { toPolygons, sourced, unavailable, type Areal, type Layer } from '@homeground/core';
+import { toPolygons, sourced, unavailable, type Areal, type Layer } from '@plotwright/core';
 import { type HttpClient, TTL } from './http';
 
 export const SDA_SOURCE = 'USDA-NRCS Soil Data Access (SSURGO)';

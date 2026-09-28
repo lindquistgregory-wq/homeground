@@ -1,4 +1,4 @@
-import { formatArea } from '@homeground/core';
+import { formatArea } from '@plotwright/core';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -30,7 +30,7 @@ export default function Home() {
         ListEmptyComponent={
           <Card title="Welcome">
             <Body>
-              Homeground builds a profile of your actual land (elevation, soils, frost dates, flood zones and water) from free
+              Plotwright builds a profile of your actual land (elevation, soils, frost dates, flood zones and water) from free
               public data, so every recommendation fits your parcel rather than just your ZIP code.
             </Body>
           </Card>

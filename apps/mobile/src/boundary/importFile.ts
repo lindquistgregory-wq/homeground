@@ -1,6 +1,6 @@
 /**
  * File import for boundaries: KML/KMZ, GeoJSON, zipped Shapefile, GPX, DXF.
- * Parsing lives in @homeground/core (tested); this file only picks and reads the file, unzips with
+ * Parsing lives in @plotwright/core (tested); this file only picks and reads the file, unzips with
  * fflate (MIT) and reprojects with proj4 (MIT) when the source isn't lon/lat.
  */
 import * as DocumentPicker from 'expo-document-picker';
@@ -10,7 +10,7 @@ import proj4 from 'proj4';
 import {
   BoundaryImportError, centralMeridian, detectFormat, georeference, parseDxf, parseGeoJson, parseGpx, parseKml, parseKmz,
   parseZippedShapefile, type Areal, type ImportResult,
-} from '@homeground/core';
+} from '@plotwright/core';
 
 export interface PickedBoundary {
   fileName: string;
