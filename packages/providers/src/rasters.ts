@@ -199,7 +199,7 @@ export async function parcelCanopy(http: HttpClient, target: Grid, inflate?: Inf
       basis: 'modeled',
       notes: [
         'Tree heights are estimated from satellite imagery and can be off by several metres; imagery dates vary.',
-        'Tap a tree to correct its height, crown width or leaf type.',
+        'Add trees the satellite missed from the object library. Lowering an over-estimated tree is not supported yet.',
       ],
       url: 'https://registry.opendata.aws/dataforgood-fb-forestsv2/',
     });
