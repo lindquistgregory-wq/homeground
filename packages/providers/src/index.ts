@@ -9,3 +9,4 @@ export * from './soils';
 export * from './hazards';
 export * from './basemaps';
 export * from './siteProfile';
+export * from './rasters';

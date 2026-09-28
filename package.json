@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check:licenses": "tsx scripts/check-licenses.ts",
     "check": "pnpm typecheck && pnpm test && pnpm check:licenses",
-    "build:zones": "tsx scripts/build-zone-table.ts"
+    "build:zones": "tsx scripts/build-zone-table.ts",
+    "bench:shade": "tsx scripts/bench-shade.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

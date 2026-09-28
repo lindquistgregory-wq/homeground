@@ -16,6 +16,11 @@ The machine-readable version of this file, used by the app and by CI, is [`packa
 | USDA-NRCS Soil Data Access | SSURGO soils | Public domain | No | One request at a time (single-threaded server), cached 180 days |
 | FEMA NFHL (MapServer layer 28) | Flood zones | Public domain | No | POST query, cached 30 days |
 | USGS NHD (MapServer layers 6, 12) | Streams and waterbodies | Public domain | No | Cached 180 days |
+| USGS 3DEP ImageServer (`exportImage`) | Elevation grids: 1 m where lidar exists, parcel + 120 m; 30 m out to 5 km for the far horizon | Public domain | No | Two requests per parcel, cached 180 days |
+| USGS TNM Access API | Whether 1 m lidar exists here (for honest resolution labels) | Public domain | No | One request per parcel, cached |
+| Meta & WRI Canopy Height Maps v2 (AWS Open Data) | Tree heights for shading | **CC BY 4.0**, credit shown in app | No | HTTP Range reads of only the needed part of one zoom-10 tile; cached 180 days |
+| NASA POWER climatology | Monthly solar radiation (insolation, solar-array estimate) | NASA open data; acknowledgement shown | No | One request per 0.5° cell, cached 1 year |
+| USGS Shaded Relief basemap | Hillshade layer in design mode | Public domain | No | Standard tiles |
 | NYS Tax Parcels Public; Wisconsin V12 Statewide Parcels | Parcel boundary lookup | Public web services; display only | No | **Only id and acreage fields are requested.** Owner fields are never downloaded |
 | Parcel endpoints from the remote registry | Parcel boundary lookup | Recorded per entry in `packages/data/registry/parcel-endpoints.json` | No | Hosts vary by county; each entry must carry its licence and attribution before it is merged |
 | User-added county ArcGIS layers | Parcel boundary lookup | User-supplied; terms not reviewed | No | Stored on that device only; same field allowlist |
@@ -36,4 +41,4 @@ Regrid and other commercial parcel APIs · Open-Meteo (free tier is non-commerci
 
 ## Coming in later phases (verify terms when they're added)
 
-NWS api.weather.gov (forecasts and alerts) · NASA POWER (history and solar) · 3DEP COGs and Meta/WRI canopy heights on AWS Open Data · NRCS SCAN/SNOTEL · NOAA CPC outlooks · NLCD · USDA PLANTS · manufacturer weather APIs using the user's own keys · AdMob + UMP (Phase 6, consent-gated).
+NWS api.weather.gov (forecasts and alerts) · NASA POWER daily history · NRCS SCAN/SNOTEL · NOAA CPC outlooks · NLCD · USDA PLANTS · manufacturer weather APIs using the user's own keys · AdMob + UMP (Phase 6, consent-gated).
