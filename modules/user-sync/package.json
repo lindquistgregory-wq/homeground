@@ -1,0 +1,12 @@
+{
+  "name": "@homeground/user-sync",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Stores Homeground sync batches in the user's own cloud: CloudKit private database (iOS), Google Drive appDataFolder (Android).",
+  "main": "index.ts",
+  "types": "index.ts",
+  "peerDependencies": {
+    "expo": "*",
+    "expo-modules-core": "*"
+  }
+}

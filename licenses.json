@@ -1,0 +1,28 @@
+{
+  "$comment": "Every npm dependency must be listed here with a licence that allows free commercial use. `pnpm check:licenses` fails CI otherwise. Re-verify when adding or upgrading.",
+  "packages": {
+    "@maplibre/maplibre-react-native": { "license": "MIT", "commercialUse": true, "note": "Open-source MapLibre Native bindings; no key or tile fees" },
+    "expo": { "license": "MIT", "commercialUse": true, "note": "Local builds are free; EAS cloud build is optional and has its own free-tier quota" },
+    "expo-crypto": { "license": "MIT", "commercialUse": true },
+    "expo-dev-client": { "license": "MIT", "commercialUse": true },
+    "expo-document-picker": { "license": "MIT", "commercialUse": true },
+    "expo-file-system": { "license": "MIT", "commercialUse": true },
+    "expo-location": { "license": "MIT", "commercialUse": true, "note": "Uses OS location services only; no third-party location API" },
+    "expo-modules-core": { "license": "MIT", "commercialUse": true },
+    "expo-router": { "license": "MIT", "commercialUse": true },
+    "expo-sqlite": { "license": "MIT", "commercialUse": true },
+    "expo-status-bar": { "license": "MIT", "commercialUse": true },
+    "fflate": { "license": "MIT", "commercialUse": true },
+    "proj4": { "license": "MIT", "commercialUse": true },
+    "react": { "license": "MIT", "commercialUse": true },
+    "react-native": { "license": "MIT", "commercialUse": true },
+    "react-native-safe-area-context": { "license": "MIT", "commercialUse": true },
+    "react-native-screens": { "license": "MIT", "commercialUse": true },
+    "zustand": { "license": "MIT", "commercialUse": true },
+    "@types/node": { "license": "MIT", "commercialUse": true, "note": "dev only" },
+    "@types/proj4": { "license": "MIT", "commercialUse": true, "note": "dev only" },
+    "@types/react": { "license": "MIT", "commercialUse": true, "note": "dev only" },
+    "tsx": { "license": "MIT", "commercialUse": true, "note": "dev only" },
+    "typescript": { "license": "Apache-2.0", "commercialUse": true, "note": "dev only" }
+  }
+}
