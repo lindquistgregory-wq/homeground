@@ -338,3 +338,21 @@ test('an ArcGIS error returned with HTTP 200 is not cached', async () => {
   await parcelFlood(http.fresh(), LOT);
   assert.equal(calls.length, 3);
 });
+
+test('parcel climate includes daily curves, chill hours and summer peak when seasonal normals exist', async () => {
+  const { http } = testClient([
+    { match: /search\/v1\/data/, body: { results: [{ filePath: '/x/USW00014735.csv', boundingPoints: [{ coordinates: [-73.8092, 42.7431] }] }] } },
+    { match: /services\/data\/v1/, body: [{
+      STATION: 'USW00014735', LATITUDE: '42.7431', LONGITUDE: '-73.8092', ELEVATION: '85.6',
+      'ANN-TMIN-PRBLST-T32FP50': '04/27', 'ANN-TMIN-PRBFST-T32FP50': '10/15', 'ANN-TMIN-NORMAL': '39.4',
+      'DJF-TMIN-NORMAL': '18.7', 'MAM-TMIN-NORMAL': '37.0', 'JJA-TMIN-NORMAL': '60.1', 'SON-TMIN-NORMAL': '41.8',
+      'DJF-TMAX-NORMAL': '35.7', 'MAM-TMAX-NORMAL': '58.6', 'JJA-TMAX-NORMAL': '81.8', 'SON-TMAX-NORMAL': '61.8', 'ANN-GRDD-BASE50': '2886.3',
+    }] },
+  ]);
+  const layer = await parcelClimate(http, { lat: 42.75, lon: -73.8, elevationM: 85.6 });
+  assert.equal(layer.status, 'ok');
+  if (layer.status !== 'ok') return;
+  assert.ok(layer.value.curves && layer.value.chillHours! > 400 && layer.value.peakSummerMaxF! > 78);
+  assert.ok(layer.attribution.notes!.some((n) => /seasonal normals/.test(n)));
+  assert.match(JSON.stringify(layer.value.curves), /"tmin"/, 'curves serialise into the cached profile');
+});

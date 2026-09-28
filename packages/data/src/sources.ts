@@ -128,10 +128,21 @@ export const DATA_SOURCES: DataSource[] = [
   },
   {
     id: 'nasa-power', name: 'NASA POWER', provider: 'NASA Langley Research Center',
-    use: 'Monthly solar radiation for insolation and solar-array estimates', hosts: ['power.larc.nasa.gov'],
+    use: 'Monthly solar radiation (insolation, solar-array estimates) and humidity (disease pressure)', hosts: ['power.larc.nasa.gov'],
     license: 'NASA open data; acknowledgement requested', commercialUse: true,
     attribution: 'Data from the NASA Langley Research Center POWER Project, funded through the NASA Earth Science Directorate Applied Science Program.',
     policy: 'One request per 0.5° grid cell, cached 1 year', url: 'https://power.larc.nasa.gov/', reviewed: '2026-09-28',
+  },
+  {
+    id: 'nws', name: 'NWS forecast API', provider: 'NOAA National Weather Service',
+    use: '7-day forecast for frost, heat and wind alerts about what you have planted', hosts: ['api.weather.gov'],
+    license: 'Public domain (U.S. Government work)', commercialUse: true, attribution: 'National Weather Service',
+    policy: 'Identifying User-Agent with contact email; forecast cached 1 hour, grid lookup 30 days', url: 'https://www.weather.gov/documentation/services-web-api', reviewed: '2026-09-28',
+  },
+  {
+    id: 'extension-guides', name: 'Cooperative Extension growing guides (links only)', provider: 'Land-grant universities (UMN, Illinois, Maryland, Utah State, Clemson, Cornell, UGA) and USDA SARE',
+    use: '"How to grow" links for every plant, plus your state extension office. Opened in the browser; the app does not download them',
+    hosts: [], license: 'Linked, not copied', commercialUse: true, attribution: '', url: 'https://www.nifa.usda.gov/about-nifa/how-we-work/extension/cooperative-extension-system', reviewed: '2026-09-28',
   },
   {
     id: 'static-host', name: 'Plotwright registry (GitHub Pages)', provider: 'This project',
@@ -144,7 +155,7 @@ export const DATA_SOURCES: DataSource[] = [
 export const NON_SERVICE_HOSTS = [
   'github.com', 'www.usgs.gov', 'websoilsurvey.nrcs.usda.gov', 'msc.fema.gov', 'planthardiness.ars.usda.gov',
   'operations.osmfoundation.org', 'openfreemap.org', 'pages.github.com', 'example.gov', 'example.invalid',
-  'www.googleapis.com', 'www.fema.gov', 'www.sco.wisc.edu', 'gis.ny.gov',
+  'www.googleapis.com', 'www.fema.gov', 'www.sco.wisc.edu', 'gis.ny.gov', 'www.weather.gov', 'www.nifa.usda.gov',
   'www.opengis.net', 'www.w3.org', // XML namespaces in exports
   'registry.opendata.aws', 'power.larc.nasa.gov', 'www.usgs.gov', // documentation links
 ];

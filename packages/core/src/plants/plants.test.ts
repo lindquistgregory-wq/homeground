@@ -86,10 +86,12 @@ test('elevation lowers the parcel curves by the lapse rate', () => {
 test('tomato calendar in Albany (cautious): starts indoors in March, out after soil warms', () => {
   const cal = plantCalendar(p('tomato'), { frost: FROST, curves: CURVES });
   const ev = (k: string) => cal.events.find((e) => e.kind === k)!;
-  // 10 % last-frost date is May 11 → indoors 8–6 weeks before: Mar 16 – Mar 30.
-  assert.equal(formatDoy(ev('start-indoors').start), 'Mar 16');
-  assert.equal(formatDoy(ev('start-indoors').end), 'Mar 30');
-  assert.ok(ev('transplant').start >= mmddToDoy('05/18')!, 'a week after the cautious frost date');
+  // Seeds start 8–6 weeks before the transplant window opens, whatever delayed it.
+  assert.equal(ev('start-indoors').start, ev('transplant').start - 56);
+  assert.equal(ev('start-indoors').end, ev('transplant').start - 42);
+  assert.ok(ev('start-indoors').start >= mmddToDoy('03/15')! && ev('start-indoors').start <= mmddToDoy('04/15')!, formatDoy(ev('start-indoors').start));
+  assert.ok(ev('transplant').start >= mmddToDoy('05/11')!, 'never before the 1-in-10 late frost');
+  assert.match(ev('transplant').basis, /median last frost/);
   assert.match(ev('transplant').basis, /soil 60 °F/);
   assert.ok(ev('transplant').end - ev('transplant').start >= 14, 'a soil delay shifts the window instead of squeezing it');
   assert.ok(ev('harden-off').end < ev('transplant').start);
@@ -107,11 +109,17 @@ test('cool-season, fall and perennial timing', () => {
   const g = garlic.events.find((e) => e.label === 'Plant cloves')!;
   assert.ok(g.start >= FROST.firstFall[32][50]! && g.end <= FROST.firstFall[32][50]! + 28, 'garlic: first frost to 4 weeks after');
   const lettuce = plantCalendar(p('lettuce'), { frost: FROST, curves: CURVES });
-  assert.ok(lettuce.events.some((e) => e.kind === 'succession'));
+  const succ = lettuce.events.find((e) => e.kind === 'succession')!;
+  assert.ok(succ.end <= FROST.firstFall[32][50]! + 14 - 30, 'last succession still matures before hard frost');
+  for (const cal of PLANTS.map((pl) => plantCalendar(pl, { frost: FROST, curves: CURVES }))) {
+    const planted = cal.events.find((e) => e.kind === 'transplant' || e.kind === 'direct-sow' || e.kind === 'plant');
+    const harvest = cal.events.find((e) => e.kind === 'harvest');
+    if (planted && harvest) assert.ok(harvest.start >= planted.start + 14, `${cal.plantId}: harvest before planting`);
+  }
 });
 
 test('short seasons flag crops that cannot mature', () => {
-  const short = { ...FROST, lastSpring: { ...FROST.lastSpring, 32: { 10: 160, 50: 155, 90: 150 } }, firstFall: { ...FROST.firstFall, 32: { 10: 225, 50: 230, 90: 235 } }, freezeFreeDays: 75 };
+  const short = { ...FROST, lastSpring: { ...FROST.lastSpring, 32: { 10: 160, 50: 155, 90: 150 } }, firstFall: { ...FROST.firstFall, 32: { 10: 210, 50: 215, 90: 220 } }, freezeFreeDays: 60 };
   const cal = plantCalendar(p('watermelon'), { frost: short });
   assert.equal(cal.fits, false);
   assert.ok(cal.warnings.some((w) => /frost-free days/.test(w)));
@@ -199,4 +207,15 @@ test('weather alerts name only the crops at risk', () => {
   assert.ok(!frost.body.includes('Kale'));
   assert.ok(alerts.some((a) => a.kind === 'heat' && a.plantingIds.includes('t')));
   assert.ok(alerts.some((a) => a.kind === 'wind' && a.plantingIds.includes('c')));
+});
+
+test('transplanted seed-counted crops get credit for their indoor weeks; typical mode uses the median', () => {
+  const cuke = plantCalendar(p('cucumber'), { frost: FROST, curves: CURVES });
+  const t = cuke.events.find((e) => e.kind === 'transplant')!;
+  const h = cuke.events.find((e) => e.kind === 'harvest')!;
+  // 50–70 days from seed, 2–4 weeks of that indoors → first harvest ~29 days after transplanting.
+  assert.equal(h.start - t.start, 50 - 21);
+  assert.match(h.basis, /already indoors/);
+  const typical = plantCalendar(p('tomato'), { frost: FROST, risk: 'typical' });
+  assert.equal(typical.events.find((e) => e.kind === 'transplant')!.start, FROST.lastSpring[32][50]! + 7);
 });

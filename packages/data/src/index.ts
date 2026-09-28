@@ -51,3 +51,28 @@ import zones from '../zones/phzm-zip.json';
  * then falls back to phzmapi.org per ZIP. Commit the generated file so the table ships offline.
  */
 export const bundledZoneTable: Record<string, string> = zones as Record<string, string>;
+
+import cropGuides from '../extension/crop-guides.json';
+import stateHubs from '../extension/state-hubs.json';
+
+export interface ExtensionLink {
+  url: string;
+  publisher: string;
+  title: string;
+  verified_by: 'fetch' | 'search';
+  checked: string;
+  institution?: string;
+  state?: string;
+}
+
+/** Crop-specific growing guide from a land-grant extension service (link out only). */
+export function cropGuide(plantId: string): ExtensionLink | null {
+  return ((cropGuides.crops as Record<string, ExtensionLink | null>)[plantId] ?? null);
+}
+
+/** The user's state extension home-garden hub, by 2-digit state FIPS. */
+export function stateExtensionHub(stateFips: string | undefined): ExtensionLink | null {
+  if (!stateFips) return null;
+  const s = (stateHubs.states as Record<string, (Omit<ExtensionLink, 'publisher'> & { institution: string; state: string }) | null>)[stateFips];
+  return s ? { ...s, publisher: s.institution } : null;
+}

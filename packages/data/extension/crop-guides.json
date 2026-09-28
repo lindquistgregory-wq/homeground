@@ -1,0 +1,538 @@
+{
+ "checked": "2026-09-28",
+ "note": "Crop-specific growing guides from land-grant Cooperative Extension services (and SARE for cover crops). Link out only; do not copy text. Each URL was loaded and its heading checked on the date shown.",
+ "crops": {
+  "tomato": {
+   "url": "https://extension.umn.edu/vegetables/growing-tomatoes",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing tomatoes in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "pepper-sweet": {
+   "url": "https://extension.umn.edu/vegetables/growing-peppers",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing peppers in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "pepper-hot": {
+   "url": "https://extension.umn.edu/vegetables/growing-peppers",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing peppers in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "eggplant": {
+   "url": "https://extension.umn.edu/vegetables/growing-eggplant",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing eggplant in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "potato": {
+   "url": "https://extension.umn.edu/vegetables/growing-potatoes",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing potatoes in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "sweet-potato": {
+   "url": "https://extension.umd.edu/resource/growing-sweet-potatoes-home-garden",
+   "publisher": "University of Maryland Extension",
+   "title": "Growing Sweet Potatoes in a Home Garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "lettuce": {
+   "url": "https://extension.umn.edu/vegetables/growing-lettuce-endive-and-radicchio",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing lettuce, endive and radicchio in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "spinach": {
+   "url": "https://extension.umn.edu/vegetables/growing-spinach-and-swiss-chard",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing spinach and Swiss chard in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "kale": {
+   "url": "https://extension.umn.edu/vegetables/growing-collards-and-kale",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing collards and kale in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "collards": {
+   "url": "https://extension.umn.edu/vegetables/growing-collards-and-kale",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing collards and kale in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "cabbage": {
+   "url": "https://extension.umn.edu/vegetables/growing-cabbage",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing cabbage in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "broccoli": {
+   "url": "https://extension.umn.edu/vegetables/growing-broccoli",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing broccoli in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "cauliflower": {
+   "url": "https://extension.umn.edu/vegetables/growing-cauliflower",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing cauliflower in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "brussels-sprouts": {
+   "url": "https://extension.umn.edu/vegetables/growing-brussels-sprouts",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing Brussels sprouts in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "kohlrabi": {
+   "url": "https://extension.umn.edu/vegetables/growing-kohlrabi",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing kohlrabi in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "swiss-chard": {
+   "url": "https://extension.umn.edu/vegetables/growing-spinach-and-swiss-chard",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing spinach and Swiss chard in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "beet": {
+   "url": "https://extension.umd.edu/resource/growing-beets-home-garden",
+   "publisher": "University of Maryland Extension",
+   "title": "Growing Beets in a Home Garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "carrot": {
+   "url": "https://extension.umn.edu/vegetables/growing-carrots-and-parsnips",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing carrots and parsnips in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "radish": {
+   "url": "https://extension.umn.edu/vegetables/growing-radishes",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing radishes in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "turnip": {
+   "url": "https://extension.umn.edu/vegetables/growing-turnips-and-rutabagas",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing turnips and rutabagas in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "parsnip": {
+   "url": "https://extension.umn.edu/vegetables/growing-carrots-and-parsnips",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing carrots and parsnips in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "onion": {
+   "url": "https://extension.umn.edu/vegetables/growing-onions",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing onions in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "garlic": {
+   "url": "https://extension.umn.edu/vegetables/growing-garlic",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing garlic in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "leek": {
+   "url": "https://extension.umn.edu/vegetables/growing-leeks",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing leeks in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "scallion": {
+   "url": "https://extension.umn.edu/vegetables/growing-scallions-home-gardens",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing scallions in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "pea": {
+   "url": "https://extension.umn.edu/vegetables/growing-peas",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing peas in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "bean-bush": {
+   "url": "https://extension.umn.edu/vegetables/growing-beans",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing beans in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "bean-pole": {
+   "url": "https://extension.umn.edu/vegetables/growing-beans",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing beans in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "bean-dry": {
+   "url": "https://extension.umn.edu/vegetables/growing-beans",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing beans in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "bean-lima": {
+   "url": "https://extension.umn.edu/vegetables/growing-beans",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing beans in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "cucumber": {
+   "url": "https://extension.umn.edu/vegetables/growing-cucumbers",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing cucumbers in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "squash-summer": {
+   "url": "https://extension.umn.edu/vegetables/growing-summer-squash-and-zucchini",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing summer squash and zucchini in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "squash-winter": {
+   "url": "https://extension.umn.edu/vegetables/pumpkins-and-winter-squash",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing pumpkins and winter squash in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "pumpkin": {
+   "url": "https://extension.umn.edu/vegetables/pumpkins-and-winter-squash",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing pumpkins and winter squash in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "watermelon": {
+   "url": "https://extension.umn.edu/fruit/growing-melons-home-garden",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing melons in the home garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "muskmelon": {
+   "url": "https://extension.umn.edu/fruit/growing-melons-home-garden",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing melons in the home garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "corn": {
+   "url": "https://extension.umn.edu/vegetables/growing-sweet-corn",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing sweet corn in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "okra": {
+   "url": "https://extension.umd.edu/resource/growing-okra-home-garden",
+   "publisher": "University of Maryland Extension",
+   "title": "Growing Okra in a Home Garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "celery": {
+   "url": "https://extension.usu.edu/yardandgarden/research/celery-in-the-garden",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow Celery in Your Garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "arugula": {
+   "url": "https://gardening.cals.cornell.edu/garden-guidance/foodgarden/vegetable-growing-guides/arugula/",
+   "publisher": "Cornell Cooperative Extension (Cornell Garden-Based Learning)",
+   "title": "Arugula growing guide",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "bok-choy": {
+   "url": "https://extension.umn.edu/vegetables/growing-chinese-cabbage-and-bok-choy",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing Chinese cabbage and bok choy in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "mustard-greens": {
+   "url": "https://extension.illinois.edu/gardening/mustard",
+   "publisher": "University of Illinois Extension",
+   "title": "Mustard",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "asparagus": {
+   "url": "https://extension.umn.edu/vegetables/growing-asparagus",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing asparagus in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "rhubarb": {
+   "url": "https://extension.umn.edu/vegetables/growing-rhubarb",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing rhubarb in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "basil": {
+   "url": "https://extension.umn.edu/vegetables/growing-basil",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing basil in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "parsley": {
+   "url": "https://extension.umn.edu/vegetables/growing-parsley",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing parsley in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "cilantro": {
+   "url": "https://extension.illinois.edu/herbs/cilantro",
+   "publisher": "University of Illinois Extension",
+   "title": "Cilantro",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "dill": {
+   "url": "https://extension.umn.edu/vegetables/growing-dill",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing dill in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "chives": {
+   "url": "https://extension.umn.edu/vegetables/growing-chives",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing chives in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "thyme": {
+   "url": "https://extension.illinois.edu/herbs/thyme",
+   "publisher": "University of Illinois Extension",
+   "title": "Thyme",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "oregano": {
+   "url": "https://extension.illinois.edu/herbs/oregano",
+   "publisher": "University of Illinois Extension",
+   "title": "Oregano",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "rosemary": {
+   "url": "https://extension.illinois.edu/herbs/rosemary",
+   "publisher": "University of Illinois Extension",
+   "title": "Rosemary",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "sage": {
+   "url": "https://extension.illinois.edu/herbs/sage",
+   "publisher": "University of Illinois Extension",
+   "title": "Sage",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "mint": {
+   "url": "https://extension.illinois.edu/herbs/mint",
+   "publisher": "University of Illinois Extension",
+   "title": "Mint",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "strawberry": {
+   "url": "https://extension.umn.edu/fruit/growing-strawberries-home-garden",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing strawberries in the home garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "blueberry": {
+   "url": "https://extension.umd.edu/resource/growing-blueberries-home-garden",
+   "publisher": "University of Maryland Extension",
+   "title": "Growing Blueberries in a Home Garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "raspberry": {
+   "url": "https://extension.umn.edu/fruit/growing-raspberries-home-garden",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing raspberries in the home garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "blackberry": {
+   "url": "https://extension.illinois.edu/small-fruits/growing-blackberries",
+   "publisher": "University of Illinois Extension",
+   "title": "Growing Blackberries",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "grape": {
+   "url": "https://extension.umn.edu/fruit/growing-grapes-home-garden",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing grapes in the home garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "apple": {
+   "url": "https://extension.umn.edu/fruit/growing-apples",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing apples in the home garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "pear": {
+   "url": "https://extension.umn.edu/fruit/growing-pears",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing pears in the home garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "peach": {
+   "url": "https://extension.usu.edu/yardandgarden/research/peaches-in-the-garden",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow Peaches in Your Garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "plum": {
+   "url": "https://extension.illinois.edu/fruit-trees/plums",
+   "publisher": "University of Illinois Extension",
+   "title": "Growing Plum Trees",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "cherry-sour": {
+   "url": "https://extension.illinois.edu/fruit-trees/cherries",
+   "publisher": "University of Illinois Extension",
+   "title": "Growing Cherry Trees",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "cherry-sweet": {
+   "url": "https://extension.illinois.edu/fruit-trees/cherries",
+   "publisher": "University of Illinois Extension",
+   "title": "Growing Cherry Trees",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "fig": {
+   "url": "https://hgic.clemson.edu/factsheet/figs-how-to-grow-and-care-for-figs-in-south-carolina/",
+   "publisher": "Clemson Cooperative Extension Home & Garden Information Center",
+   "title": "Figs: How to Grow and Care for Figs in South Carolina",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "persimmon-american": {
+   "url": "https://fieldreport.caes.uga.edu/publications/C784/home-garden-persimmons/",
+   "publisher": "University of Georgia Cooperative Extension",
+   "title": "Home Garden Persimmons",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "pawpaw": {
+   "url": "https://hgic.clemson.edu/factsheet/pawpaw/",
+   "publisher": "Clemson Cooperative Extension Home & Garden Information Center",
+   "title": "Pawpaw",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "hazelnut": {
+   "url": "https://extension.usu.edu/yardandgarden/research/hazelnuts-in-the-home-orchard",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "Hazelnuts in the Home Orchard",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "currant": {
+   "url": "https://extension.umn.edu/gardening-minnesota/growing-currants-and-gooseberries-home-garden",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing currants and gooseberries in the home garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "elderberry": {
+   "url": "https://extension.usu.edu/yardandgarden/research/elderberry-in-the-garden",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow Elderberry in Your Garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "winter-rye": {
+   "url": "https://www.sare.org/publications/managing-cover-crops-profitably/nonlegume-cover-crops/cereal-rye/",
+   "publisher": "SARE (USDA Sustainable Agriculture Research and Education)",
+   "title": "Cereal Rye",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "crimson-clover": {
+   "url": "https://www.sare.org/publications/managing-cover-crops-profitably/legume-cover-crops/crimson-clover/",
+   "publisher": "SARE (USDA Sustainable Agriculture Research and Education)",
+   "title": "Crimson Clover",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "buckwheat": {
+   "url": "https://www.sare.org/publications/managing-cover-crops-profitably/nonlegume-cover-crops/buckwheat/",
+   "publisher": "SARE (USDA Sustainable Agriculture Research and Education)",
+   "title": "Buckwheat Cover Crop",
+   "verified_by": "search",
+   "checked": "2026-09-28"
+  },
+  "sunflower": {
+   "url": "https://extension.umn.edu/flowers/sunflowers",
+   "publisher": "University of Minnesota Extension",
+   "title": "Sunflowers",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "blueberry-rabbiteye": {
+   "url": "https://hgic.clemson.edu/factsheet/blueberry/",
+   "publisher": "Clemson Cooperative Extension Home & Garden Information Center",
+   "title": "Blueberry",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  }
+ }
+}

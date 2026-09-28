@@ -22,11 +22,11 @@ export type Texture = 'sandy' | 'loamy' | 'clayey';
 export interface SowingPlan {
   /** How it's usually established. 'plant' = crowns, sets, bare-root or container stock. */
   method: 'direct' | 'transplant' | 'either' | 'plant';
-  /** Weeks before the median last spring frost to start seeds indoors, [earliest, latest]. */
+  /** Seedling age at transplanting: start seeds indoors this many weeks before transplanting, [earliest, latest]. */
   indoorStartWeeks?: [number, number];
-  /** Days relative to the last spring frost to set out transplants (negative = before). */
+  /** Days relative to the median last spring frost to set out transplants (negative = before). */
   transplantDays?: [number, number];
-  /** Days relative to the last spring frost to direct-sow or plant (negative = before). */
+  /** Days relative to the median last spring frost to direct-sow or plant (negative = before). */
   directSowDays?: [number, number];
   /** Minimum soil temperature (°F) at planting depth to sow or transplant. */
   minSoilF?: number;

@@ -1,0 +1,422 @@
+{
+ "checked": "2026-09-28",
+ "note": "Each state/territory land-grant extension home & vegetable gardening hub, keyed by 2-digit state FIPS.",
+ "states": {
+  "01": {
+   "state": "Alabama",
+   "institution": "Alabama Cooperative Extension System (Auburn University)",
+   "url": "https://www.aces.edu/blog/category/lawn-garden/",
+   "title": "Lawn & Garden - Alabama Cooperative Extension System",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "02": {
+   "state": "Alaska",
+   "institution": "University of Alaska Fairbanks Cooperative Extension Service",
+   "url": "https://www.uaf.edu/ces/garden/",
+   "title": "Gardens | Cooperative Extension Service",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "04": {
+   "state": "Arizona",
+   "institution": "University of Arizona Cooperative Extension",
+   "url": "https://extension.arizona.edu/topics/vegetables",
+   "title": "Vegetables | UA Cooperative Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "05": {
+   "state": "Arkansas",
+   "institution": "University of Arkansas System Division of Agriculture Cooperative Extension Service",
+   "url": "https://www.uaex.uada.edu/yard-garden/",
+   "title": "Arkansas Yard & Garden Resources | Gardening and lawn care in Arkansas",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "06": {
+   "state": "California",
+   "institution": "UC Agriculture and Natural Resources (UC Master Gardener Program)",
+   "url": "https://ucanr.edu/program/uc-master-gardener-program/edible-gardening",
+   "title": "Edible Gardening | UC Master Gardener Program",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "08": {
+   "state": "Colorado",
+   "institution": "Colorado State University Extension",
+   "url": "https://extension.colostate.edu/topic-areas/yard-garden/",
+   "title": "Garden & Landscape | Colorado State University Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "09": {
+   "state": "Connecticut",
+   "institution": "UConn Extension (Home & Garden Education Center)",
+   "url": "https://homegarden.cahnr.uconn.edu/",
+   "title": "Home & Garden Education Center | University of Connecticut",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "10": {
+   "state": "Delaware",
+   "institution": "University of Delaware Cooperative Extension",
+   "url": "https://www.udel.edu/academics/colleges/canr/cooperative-extension/environmental-stewardship/lawn-and-garden/",
+   "title": "Lawn and Garden | Cooperative Extension | University of Delaware",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "11": {
+   "state": "District of Columbia",
+   "institution": "University of the District of Columbia (CAUSES) Cooperative Extension",
+   "url": "https://www.udc.edu/causes/land-grant/center-for-urban-agriculture-gardening-education/master-gardener-program",
+   "title": "Master Gardener Program | College of Agriculture, Urban Sustainability and Environmental Sciences | University of the District of Columbia",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "12": {
+   "state": "Florida",
+   "institution": "UF/IFAS Extension",
+   "url": "https://gardeningsolutions.ifas.ufl.edu/",
+   "title": "Gardening Solutions \u2013 Florida-Friendly gardening information from UF/IFAS",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "13": {
+   "state": "Georgia",
+   "institution": "University of Georgia Cooperative Extension",
+   "url": "https://extension.uga.edu/topic-areas/lawn-garden-landscapes/fruits-vegetables.html",
+   "title": "Fruits & Vegetables | UGA Cooperative Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "15": {
+   "state": "Hawaii",
+   "institution": "University of Hawaii CTAHR Cooperative Extension (Master Gardener Program)",
+   "url": "https://www3.ctahr.hawaii.edu/uhmg/",
+   "title": "University of Hawaii - Master Gardener Program",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "16": {
+   "state": "Idaho",
+   "institution": "University of Idaho Extension",
+   "url": "https://www.uidaho.edu/extension/horticulture",
+   "title": "Horticulture and Small Farms at University of Idaho Extension | University of Idaho",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "17": {
+   "state": "Illinois",
+   "institution": "University of Illinois Extension",
+   "url": "https://extension.illinois.edu/gardening",
+   "title": "Home Vegetable Gardening | Illinois Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "18": {
+   "state": "Indiana",
+   "institution": "Purdue Extension (Purdue Consumer Horticulture)",
+   "url": "https://www.purdue.edu/hla/sites/yardandgarden/gardenersresources/",
+   "title": "Purdue Extension Online Resources for Gardeners - Indiana Yard and Garden - Purdue Consumer Horticulture",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "19": {
+   "state": "Iowa",
+   "institution": "Iowa State University Extension and Outreach",
+   "url": "https://yardandgarden.extension.iastate.edu/",
+   "title": "Yard and Garden",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "20": {
+   "state": "Kansas",
+   "institution": "K-State Research and Extension",
+   "url": "https://extension.k-state.edu/program-areas/lawn-and-garden/fruit-and-vegetable-gardening.html",
+   "title": "Fruit and Vegetable Gardening | K-State | Kansas State University",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "21": {
+   "state": "Kentucky",
+   "institution": "University of Kentucky Cooperative Extension (Department of Horticulture)",
+   "url": "https://horticulture.mgcafe.uky.edu/growers/home/vegetables",
+   "title": "Resources for Home Growers: Vegetables",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "22": {
+   "state": "Louisiana",
+   "institution": "LSU AgCenter",
+   "url": "https://www.lsuagcenter.com/topics/lawn_garden/home_gardening",
+   "title": "Home Gardening",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "23": {
+   "state": "Maine",
+   "institution": "University of Maine Cooperative Extension",
+   "url": "https://extension.umaine.edu/gardening/",
+   "title": "Garden & Yard - University of Maine Cooperative Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "24": {
+   "state": "Maryland",
+   "institution": "University of Maryland Extension (Home and Garden Information Center)",
+   "url": "https://extension.umd.edu/programs/environment-natural-resources/program-areas/home-and-garden-information-center",
+   "title": "Home and Garden Information Center | University of Maryland Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "25": {
+   "state": "Massachusetts",
+   "institution": "UMass Extension (Center for Agriculture, Food, and the Environment)",
+   "url": "https://www.umass.edu/agriculture-food-environment/resources/home-lawn-garden",
+   "title": "Home Lawn and Garden : Home Lawn & Garden Resources : Center for Agriculture, Food, and the Environment (CAFE) at UMass Amherst",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "26": {
+   "state": "Michigan",
+   "institution": "Michigan State University Extension",
+   "url": "https://www.canr.msu.edu/home_gardening/",
+   "title": "Gardening in Michigan",
+   "verified_by": "search",
+   "checked": "2026-09-28"
+  },
+  "27": {
+   "state": "Minnesota",
+   "institution": "University of Minnesota Extension",
+   "url": "https://extension.umn.edu/yard-and-garden",
+   "title": "Yard and garden | UMN Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "28": {
+   "state": "Mississippi",
+   "institution": "Mississippi State University Extension Service",
+   "url": "http://extension.msstate.edu/lawn-and-garden",
+   "title": "Lawn and Garden | Mississippi State University Extension Service",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "29": {
+   "state": "Missouri",
+   "institution": "University of Missouri Extension",
+   "url": "https://extension.missouri.edu/topics/horticulture-and-gardening",
+   "title": "Horticulture and gardening | MU Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "30": {
+   "state": "Montana",
+   "institution": "Montana State University Extension",
+   "url": "https://www.montana.edu/extension/yardandgarden/index.html",
+   "title": "Yard and Garden | Montana State University",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "31": {
+   "state": "Nebraska",
+   "institution": "Nebraska Extension (University of Nebraska-Lincoln)",
+   "url": "https://mastergardener.unl.edu/",
+   "title": "Nebraska Extension Master Gardener Volunteer Program | Nebraska",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "32": {
+   "state": "Nevada",
+   "institution": "University of Nevada, Reno Extension",
+   "url": "https://extension.unr.edu/trees-lawn-landscape.aspx",
+   "title": "Gardens, Trees & Landscapes | Extension | University of Nevada, Reno",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "33": {
+   "state": "New Hampshire",
+   "institution": "UNH Cooperative Extension",
+   "url": "https://extension.unh.edu/agriculture-gardens/yard-garden",
+   "title": "Yard & Garden - UNH Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "34": {
+   "state": "New Jersey",
+   "institution": "Rutgers Cooperative Extension (NJAES)",
+   "url": "https://extension.rutgers.edu/home-lawn-garden",
+   "title": "Home, Lawn & Garden | Rutgers Cooperative Extension",
+   "verified_by": "search",
+   "checked": "2026-09-28"
+  },
+  "35": {
+   "state": "New Mexico",
+   "institution": "New Mexico State University Cooperative Extension Service",
+   "url": "https://extension.nmsu.edu/areas/garden.html",
+   "title": "Yard & Garden | New Mexico State University",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "36": {
+   "state": "New York",
+   "institution": "Cornell Cooperative Extension (Cornell Garden-Based Learning)",
+   "url": "https://gardening.cals.cornell.edu/",
+   "title": "Cornell Garden-Based Learning",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "37": {
+   "state": "North Carolina",
+   "institution": "NC State Extension",
+   "url": "https://gardening.ces.ncsu.edu/",
+   "title": "Gardening | NC State Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "38": {
+   "state": "North Dakota",
+   "institution": "NDSU Extension",
+   "url": "https://www.ndsu.edu/agriculture/extension/extension-topics/gardening-and-horticulture",
+   "title": "Gardening and Horticulture | NDSU Agriculture",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "39": {
+   "state": "Ohio",
+   "institution": "Ohio State University Extension (Ohioline)",
+   "url": "https://ohioline.osu.edu/topic/home-yard-and-garden",
+   "title": "Home, Yard and Garden | Ohioline",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "40": {
+   "state": "Oklahoma",
+   "institution": "Oklahoma State University Extension",
+   "url": "https://extension.okstate.edu/programs/gardening/",
+   "title": "Home Landscape & Gardening | Oklahoma State University",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "41": {
+   "state": "Oregon",
+   "institution": "Oregon State University Extension Service",
+   "url": "https://extension.oregonstate.edu/gardening",
+   "title": "Gardening, lawn and landscape | OSU Extension Service",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "42": {
+   "state": "Pennsylvania",
+   "institution": "Penn State Extension",
+   "url": "https://extension.psu.edu/trees-lawns-and-landscaping/home-gardening",
+   "title": "Home Gardening Resources | Penn State Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "44": {
+   "state": "Rhode Island",
+   "institution": "URI Cooperative Extension (Master Gardener Program)",
+   "url": "https://web.uri.edu/coopext/programs/mgp/gardening-resources/",
+   "title": "Gardening Resources \u2013 Cooperative Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "45": {
+   "state": "South Carolina",
+   "institution": "Clemson Cooperative Extension (Home & Garden Information Center)",
+   "url": "https://hgic.clemson.edu/",
+   "title": "Home & Garden Information Center | Clemson Cooperative Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "46": {
+   "state": "South Dakota",
+   "institution": "SDSU Extension",
+   "url": "https://extension.sdstate.edu/garden-yard/vegetables",
+   "title": "Vegetables - SDSU Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "47": {
+   "state": "Tennessee",
+   "institution": "UT Extension (University of Tennessee)",
+   "url": "https://utextensionanr.tennessee.edu/residential-and-consumer-horticulture/",
+   "title": "Residential and Consumer Horticulture | Agriculture and Natural Resources",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "48": {
+   "state": "Texas",
+   "institution": "Texas A&M AgriLife Extension (Aggie Horticulture)",
+   "url": "https://aggie-horticulture.tamu.edu/vegetable/",
+   "title": "Vegetable Resources",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "49": {
+   "state": "Utah",
+   "institution": "Utah State University Extension",
+   "url": "https://extension.usu.edu/yardandgarden/",
+   "title": "Yard & Garden | Extension | USU",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "50": {
+   "state": "Vermont",
+   "institution": "UVM Extension (Master Gardener Program)",
+   "url": "https://www.uvm.edu/extension/mastergardener/gardening-resources",
+   "title": "Gardening Resources | The University of Vermont",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "51": {
+   "state": "Virginia",
+   "institution": "Virginia Cooperative Extension (Virginia Tech)",
+   "url": "https://ext.vt.edu/lawn-garden.html",
+   "title": "Lawn & Garden | Virginia Cooperative Extension | Virginia Tech",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "53": {
+   "state": "Washington",
+   "institution": "Washington State University Extension",
+   "url": "https://extension.wsu.edu/yard-garden/",
+   "title": "Yard & Garden | WSU Extension | Washington State University",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "54": {
+   "state": "West Virginia",
+   "institution": "West Virginia University Extension",
+   "url": "https://extension.wvu.edu/lawn-gardening-pests/gardening",
+   "title": "Gardening | Extension | West Virginia University",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "55": {
+   "state": "Wisconsin",
+   "institution": "University of Wisconsin-Madison Division of Extension",
+   "url": "https://hort.extension.wisc.edu/",
+   "title": "Wisconsin Horticulture \u2013 Division of Extension",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "56": {
+   "state": "Wyoming",
+   "institution": "University of Wyoming Extension (Barnyards & Backyards)",
+   "url": "https://www.uwyo.edu/barnbackyard/resources/gardening.html",
+   "title": "Gardening",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  },
+  "72": {
+   "state": "Puerto Rico",
+   "institution": "Servicio de Extensi\u00f3n Agr\u00edcola, Universidad de Puerto Rico - Mayag\u00fcez",
+   "url": "https://www.uprm.edu/sea/huerto-familiar/",
+   "title": "Huerto Familiar - Servicio de Extensi\u00f3n Agr\u00edcola",
+   "verified_by": "fetch",
+   "checked": "2026-09-28"
+  }
+ }
+}

@@ -20,6 +20,9 @@ The machine-readable version of this file, used by the app and by CI, is [`packa
 | USGS TNM Access API | Whether 1 m lidar exists here (for honest resolution labels) | Public domain | No | One request per parcel, cached |
 | Meta & WRI Canopy Height Maps v2 (AWS Open Data) | Tree heights for shading | **CC BY 4.0**, credit shown in app | No | HTTP Range reads of only the needed part of one zoom-10 tile; cached 180 days |
 | NASA POWER climatology | Monthly solar radiation (insolation, solar-array estimate) | NASA open data; acknowledgement shown | No | One request per 0.5° cell, cached 1 year |
+| NWS api.weather.gov | 7-day forecast for frost/heat/wind alerts on what's planted | Public domain | No | Identifying User-Agent with contact email; forecast cached 1 h |
+| NASA POWER RH2M climatology | Summer humidity for disease-pressure warnings | NASA open data; acknowledged | No | One request per 0.5° cell, cached 1 year |
+| Cooperative Extension growing guides (links only) | "How to grow" link per plant + state extension hub | Linked, not copied | No | Opened in the browser; never downloaded by the app. URLs verified 2026-09-28 |
 | USGS Shaded Relief basemap | Hillshade layer in design mode | Public domain | No | Standard tiles |
 | NYS Tax Parcels Public; Wisconsin V12 Statewide Parcels | Parcel boundary lookup | Public web services; display only | No | **Only id and acreage fields are requested.** Owner fields are never downloaded |
 | Parcel endpoints from the remote registry | Parcel boundary lookup | Recorded per entry in `packages/data/registry/parcel-endpoints.json` | No | Hosts vary by county; each entry must carry its licence and attribution before it is merged |
@@ -41,4 +44,4 @@ Regrid and other commercial parcel APIs · Open-Meteo (free tier is non-commerci
 
 ## Coming in later phases (verify terms when they're added)
 
-NWS api.weather.gov (forecasts and alerts) · NASA POWER daily history · NRCS SCAN/SNOTEL · NOAA CPC outlooks · NLCD · USDA PLANTS · manufacturer weather APIs using the user's own keys · AdMob + UMP (Phase 6, consent-gated).
+NASA POWER daily history · NRCS SCAN/SNOTEL · NOAA CPC outlooks · NLCD · USDA PLANTS · manufacturer weather APIs using the user's own keys · AdMob + UMP (Phase 6, consent-gated).

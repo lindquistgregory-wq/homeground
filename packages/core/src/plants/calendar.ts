@@ -42,11 +42,15 @@ export interface CalendarContext {
 const clampDoy = (d: number) => Math.max(1, Math.min(365, Math.round(d)));
 const win = (a: number, b: number): [number, number] => (a <= b ? [a, b] : [b, a]);
 
-function lastFrost(ctx: CalendarContext, tender: boolean): { doy: number; label: string } | null {
-  const level: RiskLevel = tender && ctx.risk !== 'typical' ? 10 : 50;
-  const d = ctx.frost.lastSpring[32][level];
+/**
+ * Spring timing is anchored to the median last frost, as extension offsets are written. In cautious
+ * mode, frost-tender crops are also never set out before the 10 % (late) frost date; the offset is not
+ * applied on top of that date, which would double-count the caution.
+ */
+function lastFrost(ctx: CalendarContext): { doy: number; late: number | null; label: string } | null {
+  const d = ctx.frost.lastSpring[32][50];
   if (d === null) return null;
-  return { doy: d, label: level === 10 ? `last 32 °F frost (only 1 year in 10 is later: ${formatDoy(d)})` : `median last frost (${formatDoy(d)})` };
+  return { doy: d, late: ctx.frost.lastSpring[32][10], label: `median last frost (${formatDoy(d)})` };
 }
 
 function firstFrost(ctx: CalendarContext, plant: PlantSpec): { doy: number; label: string } | null {
@@ -67,7 +71,7 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
   if (ctx.frost.freezeRare) {
     warnings.push('Frost is rare here: plant cool-season crops in fall and winter, warm-season crops in spring.');
   }
-  const lf = lastFrost(ctx, tender);
+  const lf = lastFrost(ctx);
   const ff = firstFrost(ctx, plant);
   if (!lf || !ff) {
     return { plantId: plant.id, events, fits: true, warnings: [...warnings, 'No frost dates for this parcel, so timing can’t be personalised yet.'] };
@@ -76,28 +80,36 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
   // Soil-temperature gate: the first day soil stays at or above the crop's minimum.
   const soilReady = sow.minSoilF !== undefined && soil ? firstDayAtLeast(soil, sow.minSoilF, 1, 250) : null;
   const soilNote = soilReady !== null ? ` and soil ${sow.minSoilF} °F+ (≈${formatDoy(soilReady)}${ctx.soilF ? '' : ', modeled'})` : '';
-  const gate = (d: number) => (soilReady !== null ? Math.max(d, soilReady) : d);
+  const cautious = tender && ctx.risk !== 'typical' && lf.late !== null;
+  const cautionNote = cautious ? `, not before the 1-in-10-years late frost (${formatDoy(lf.late!)})` : '';
+  const gate = (d: number) => {
+    let g = d;
+    if (cautious) g = Math.max(g, lf.late!);
+    if (soilReady !== null) g = Math.max(g, soilReady);
+    return g;
+  };
 
   let establish: number | null = null; // day the crop goes in the ground (for maturity)
   let establishFromTransplant = false;
 
-  if (sow.indoorStartWeeks && (sow.method === 'transplant' || sow.method === 'either')) {
-    const [early, late] = sow.indoorStartWeeks;
-    events.push({ kind: 'start-indoors', start: clampDoy(lf.doy - early * 7), end: clampDoy(lf.doy - late * 7), label: 'Start seeds indoors', basis: `${early}–${late} weeks before the ${lf.label}` });
-  }
   if (sow.transplantDays && (sow.method === 'transplant' || sow.method === 'either')) {
     const [a, b] = win(lf.doy + sow.transplantDays[0], lf.doy + sow.transplantDays[1]);
-    // If warm soil comes later than the frost-based window, shift the whole window rather than squeeze it.
+    // If caution or warm soil come later than the frost-based window, shift the window rather than squeeze it.
     const start = clampDoy(gate(a)), end = clampDoy(start + (b - a));
+    if (sow.indoorStartWeeks) {
+      // Seedlings are started so they reach transplant size when the transplant window opens.
+      const [older, younger] = sow.indoorStartWeeks;
+      events.push({ kind: 'start-indoors', start: clampDoy(start - older * 7), end: clampDoy(start - younger * 7), label: 'Start seeds indoors', basis: `${younger}–${older} weeks before transplanting` });
+    }
     events.push({ kind: 'harden-off', start: clampDoy(start - 10), end: clampDoy(start - 1), label: 'Harden off seedlings', basis: 'the 7–10 days before transplanting' });
-    events.push({ kind: 'transplant', start, end, label: 'Transplant outdoors', basis: `${describeOffset(sow.transplantDays)} the ${lf.label}${soilNote}` });
+    events.push({ kind: 'transplant', start, end, label: 'Transplant outdoors', basis: `${describeOffset(sow.transplantDays)} the ${lf.label}${cautionNote}${soilNote}` });
     establish = start;
     establishFromTransplant = true;
   }
   if (sow.directSowDays && (sow.method === 'direct' || sow.method === 'either' || sow.method === 'plant')) {
     const [a, b] = win(lf.doy + sow.directSowDays[0], lf.doy + sow.directSowDays[1]);
     const start = clampDoy(gate(a)), end = clampDoy(Math.max(b, start + Math.min(14, b - a)));
-    events.push({ kind: sow.method === 'plant' ? 'plant' : 'direct-sow', start, end, label: sow.method === 'plant' ? 'Plant out' : 'Sow outdoors', basis: `${describeOffset(sow.directSowDays)} the ${lf.label}${soilNote}` });
+    events.push({ kind: sow.method === 'plant' ? 'plant' : 'direct-sow', start, end, label: sow.method === 'plant' ? 'Plant out' : 'Sow outdoors', basis: `${describeOffset(sow.directSowDays)} the ${lf.label}${cautionNote}${soilNote}` });
     if (establish === null) establish = start;
   }
 
@@ -106,13 +118,19 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
   if (establish !== null && dtm) {
     let harvestStart: number | null = null;
     let basis: string;
-    const fromLabel = plant.maturityFrom === 'transplant' && !establishFromTransplant ? 'seeding (+ ~2 weeks vs. transplants)' : plant.maturityFrom ?? 'planting';
-    const extra = plant.maturityFrom === 'transplant' && !establishFromTransplant ? 14 : 0;
+    // Days-to-maturity is published either from seeding or from transplanting. Convert to the way
+    // this crop is actually established: direct-seeded transplant-type crops take ~2 weeks longer;
+    // seed-counted crops set out as transplants already have their seedling weeks behind them.
+    const seedlingDays = sow.indoorStartWeeks ? Math.round(((sow.indoorStartWeeks[0] + sow.indoorStartWeeks[1]) / 2) * 7) : 28;
+    const extra = plant.maturityFrom === 'transplant' && !establishFromTransplant ? 14
+      : plant.maturityFrom === 'seed' && establishFromTransplant ? -seedlingDays : 0;
+    const fromLabel = extra > 0 ? 'seeding (+ ~2 weeks vs. transplants)' : extra < 0 ? `seeding (≈${Math.round(-extra / 7)} weeks of that already indoors)` : plant.maturityFrom ?? 'planting';
     if (ctx.dynamicGdd && plant.gddToMaturity && ctx.curves) {
       harvestStart = dayGddReached(ctx.curves, establish, plant.gddToMaturity, plant.gddBaseF ?? 50);
       basis = `${plant.gddToMaturity} heat units (base ${plant.gddBaseF ?? 50} °F) after ${formatDoy(establish)}`;
     } else {
-      harvestStart = establish + dtm[0] + extra;
+      // Even a well-grown transplant needs a couple of weeks in the ground before the first harvest.
+      harvestStart = establish + Math.max(14, dtm[0] + extra);
       basis = `${dtm[0]}–${dtm[1]} days from ${fromLabel}`;
     }
     if (harvestStart !== null && harvestStart <= 365 + 60) {
@@ -123,7 +141,8 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
       }
     }
     if (sow.successionDays && harvestStart !== null) {
-      const lastSow = (tender ? ff.doy : ff.doy + 14) - dtm[0] - extra;
+      // Successions are direct-sown: count from seed (transplant-counted crops take ~2 weeks longer).
+      const lastSow = (tender ? ff.doy : ff.doy + 14) - dtm[0] - (plant.maturityFrom === 'transplant' ? 14 : 0);
       if (lastSow > establish + sow.successionDays)
         events.push({ kind: 'succession', start: clampDoy(establish + sow.successionDays), end: clampDoy(lastSow), label: `Sow again every ${sow.successionDays} days`, basis: `last sowing leaves ${dtm[0]} days before the ${ff.label}` });
     }
@@ -146,7 +165,7 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
   // Season length check for tender annuals.
   let fits = true;
   if (tender && plant.lifecycle !== 'perennial' && dtm && ctx.frost.freezeFreeDays !== null) {
-    const needed = dtm[0] + (plant.maturityFrom === 'transplant' && !establishFromTransplant ? 14 : 0);
+    const needed = dtm[0] + (plant.maturityFrom === 'transplant' && !establishFromTransplant ? 14 : 0) - (plant.maturityFrom === 'seed' && establishFromTransplant && sow.indoorStartWeeks ? Math.round(((sow.indoorStartWeeks[0] + sow.indoorStartWeeks[1]) / 2) * 7) : 0);
     const available = ff.doy - (establish ?? lf.doy);
     if (available < needed) {
       fits = false;
