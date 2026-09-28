@@ -27,6 +27,10 @@ export interface DesignObject {
   crownBase?: number;
   /** Explicit polyline [lon, lat][] for line objects (swales, fences, paths). */
   path?: Array<[number, number]>;
+  /** Explicit footprint ring [lon, lat][] (e.g. an existing building traced from map data). */
+  polygon?: Array<[number, number]>;
+  /** Existing feature detected from map data (not something the user plans to build). */
+  existing?: boolean;
   costUsd?: number;
   notes?: string;
 }
@@ -71,6 +75,12 @@ export function trueNorthGridDeg(frame: LocalFrame, p: [number, number]): number
 
 /** Footprint polygon ring in UTM metres (closed). */
 export function footprintUtm(o: DesignObject, frame: LocalFrame): Array<[number, number]> {
+  if (o.polygon && o.polygon.length >= 3) {
+    const ring = o.polygon.map((p) => project(frame, p));
+    const f = ring[0]!, l = ring[ring.length - 1]!;
+    if (f[0] !== l[0] || f[1] !== l[1]) ring.push([f[0], f[1]]);
+    return ring;
+  }
   if (o.shape === 'line' && o.path && o.path.length >= 2) return bufferLine(o.path.map((p) => project(frame, p)), Math.max(o.width, 0.05) / 2);
   const [cx, cy] = project(frame, o.center);
   if (o.shape === 'circle') {

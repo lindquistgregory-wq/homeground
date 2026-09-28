@@ -1,0 +1,9 @@
+{
+  "name": "@plotwright/shade-native",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Native (Swift/Kotlin) inner loop of the shade engine. Mirrors packages/core/src/sun/shade.ts sunHours().",
+  "main": "index.ts",
+  "types": "index.ts",
+  "peerDependencies": { "expo": "*", "expo-modules-core": "*" }
+}

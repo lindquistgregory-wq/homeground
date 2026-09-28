@@ -152,3 +152,13 @@ test('PV: flat plane equals GHI; south tilt boosts winter; sanity of annual yiel
   assert.ok(north.annualKWh < pv.annualKWh * 0.75);
   assert.ok(objectType('solar-array'));
 });
+
+test('existing buildings use their traced polygon footprint', () => {
+  const b = newObject('building', { lat: 42.2530, lon: -73.9860 }, 'b1');
+  b.polygon = [[-73.9861, 42.2529], [-73.9859, 42.2529], [-73.9859, 42.2531], [-73.9861, 42.2531]];
+  const frame = localFrame({ lat: 42.253, lon: -73.986 });
+  const ring = footprintUtm(b, frame);
+  assert.equal(ring.length, 5, 'ring is closed');
+  const area = footprintAreaM2(b, frame);
+  assert.ok(area > 350 && area < 400, `area ${area}`); // ≈16.5 m × 22.2 m
+});

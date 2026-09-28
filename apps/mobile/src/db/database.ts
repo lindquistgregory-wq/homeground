@@ -49,6 +49,36 @@ const MIGRATIONS: string[] = [
     value TEXT NOT NULL
   );
   `,
+  // 2 — Phase 2 design mode
+  `
+  CREATE TABLE IF NOT EXISTS designs (
+    id TEXT PRIMARY KEY,
+    parcel_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    objects TEXT NOT NULL,             -- JSON DesignObject[]
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    updated_hlc TEXT NOT NULL,
+    deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS designs_parcel ON designs(parcel_id);
+  CREATE TABLE IF NOT EXISTS design_versions (
+    id TEXT PRIMARY KEY,
+    design_id TEXT NOT NULL,
+    label TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    objects TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS sun_checks (
+    id TEXT PRIMARY KEY,
+    parcel_id TEXT NOT NULL,
+    lat REAL NOT NULL,
+    lon REAL NOT NULL,
+    at TEXT NOT NULL,
+    observed_sun INTEGER NOT NULL,     -- user says the spot is in direct sun right now
+    modeled_sun INTEGER                -- what the shade model predicted for that moment
+  );
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -104,7 +134,7 @@ export class SqliteHttpCache implements KeyValueCache {
 export async function maxStoredHlc(): Promise<string | undefined> {
   const db = await getDb();
   const r = await db.getFirstAsync<{ m: string | null }>(
-    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles)',
+    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs)',
   );
   return r?.m ?? undefined;
 }
@@ -113,6 +143,6 @@ export async function maxStoredHlc(): Promise<string | undefined> {
 export async function deleteAllLocalData(): Promise<void> {
   const db = await getDb();
   await db.execAsync(
-    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv;',
+    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks;',
   );
 }

@@ -14,6 +14,7 @@
     "@plotwright/core": "workspace:*",
     "@plotwright/data": "workspace:*",
     "@plotwright/providers": "workspace:*",
+    "@plotwright/shade-native": "workspace:*",
     "@plotwright/user-sync": "workspace:*",
     "@maplibre/maplibre-react-native": "^11.4.0",
     "expo": "~55.0.0",
@@ -22,7 +23,9 @@
     "expo-document-picker": "*",
     "expo-file-system": "*",
     "expo-location": "*",
+    "expo-print": "*",
     "expo-router": "*",
+    "expo-sharing": "*",
     "expo-sqlite": "*",
     "expo-status-bar": "*",
     "fflate": "^0.8.2",
@@ -31,6 +34,7 @@
     "react-native": "*",
     "react-native-safe-area-context": "*",
     "react-native-screens": "*",
+    "react-native-svg": "*",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

@@ -66,6 +66,7 @@ export const OBJECT_LIBRARY: ObjectType[] = [
   T({ kind: 'greenhouse-gable', name: 'Greenhouse (gable)', category: 'structure', shape: 'rect', width: 3, length: 4.3, height: 2.9, material: Material.film, isStructure: true, tier: 'grower' }),
   T({ kind: 'greenhouse-dome', name: 'Greenhouse (geodesic dome)', category: 'structure', shape: 'circle', width: 6, length: 6, height: 3, material: Material.film, isStructure: true, tier: 'grower' }),
   T({ kind: 'high-tunnel', name: 'High tunnel', category: 'structure', shape: 'rect', width: 9, length: 18, height: 4, material: Material.film, isStructure: true, tier: 'grower' }),
+  T({ kind: 'building', name: 'Existing building', category: 'structure', shape: 'rect', width: 8, length: 12, height: 6, material: Material.opaque, isStructure: true, tier: 'free', notes: 'House, garage or neighbour building. Heights from map data are estimates; edit to match.' }),
   T({ kind: 'potting-shed', name: 'Potting shed', category: 'structure', shape: 'rect', width: 2.4, length: 3, height: 2.7, material: Material.opaque, isStructure: true, tier: 'free' }),
   T({ kind: 'tool-shed', name: 'Tool shed', category: 'structure', shape: 'rect', width: 2.4, length: 3, height: 3.05, material: Material.opaque, isStructure: true, tier: 'free' }),
   T({ kind: 'root-cellar', name: 'Root cellar', category: 'structure', shape: 'rect', width: 2.4, length: 3.6, height: 1, material: Material.opaque, isStructure: true, tier: 'grower' }),

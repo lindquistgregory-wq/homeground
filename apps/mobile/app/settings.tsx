@@ -1,4 +1,5 @@
-import { centroid, PRODUCT_IDS } from '@plotwright/core';
+import { Material, centroid, daySunSamples, prepareSamples, PRODUCT_IDS, runShadeBenchmark } from '@plotwright/core';
+import { ShadeNativeModule } from '@plotwright/shade-native';
 import { validateUserEndpoint } from '@plotwright/providers';
 import { UserSync } from '@plotwright/user-sync';
 import { router } from 'expo-router';
@@ -13,6 +14,23 @@ import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
 import { cloudSyncAvailable, syncNow, wipeCloudData } from '../src/sync/userCloud';
 
+/** Same synthetic scene as runShadeBenchmark, run through the native module. */
+function benchNative(): number {
+  const n = 100;
+  const ground = new Float32Array(n * n);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) ground[j * n + i] = 100 + 0.03 * i + 0.02 * j;
+  const heights = new Float32Array(2 * n * n);
+  const material = new Uint8Array(n * n);
+  for (let j = 92; j < n; j++) for (let i = 0; i < n; i++) { heights[j * n + i] = 14; heights[n * n + j * n + i] = 3; material[j * n + i] = Material.deciduous; }
+  for (let j = 30; j < 40; j++) for (let i = 60; i < 72; i++) { heights[j * n + i] = 7; material[j * n + i] = Material.opaque; }
+  const samples = prepareSamples(daySunSamples(new Date(Date.UTC(2026, 11, 21)), 42.25, -73.98, 15), { sampleHours: 0.25 });
+  const smp = new Float32Array(samples.length * 4);
+  samples.forEach((p, i) => smp.set([p.sx, p.sy, p.tanAlt, p.hours], i * 4));
+  const t0 = performance.now();
+  ShadeNativeModule!.sunHours(ground, heights, material, smp, new Float32Array([1, 0, 0.6, 0.1, 0.8]), new Uint8Array(0), new Float32Array(n * n), new Float64Array([n, n, 1, 0.3, 250]));
+  return performance.now() - t0;
+}
+
 export default function Settings() {
   const t = useTheme();
   const { units, setUnits } = useSettings();
@@ -20,6 +38,7 @@ export default function Settings() {
   const [cloud, setCloud] = useState<boolean | null>(null);
   const [endpointUrl, setEndpointUrl] = useState('');
   const [checking, setChecking] = useState(false);
+  const [bench, setBench] = useState<string | null>(null);
 
   useEffect(() => {
     cloudSyncAvailable().then(setCloud);
@@ -86,6 +105,18 @@ export default function Settings() {
             <Button title="Dev: Homestead Pro" kind="secondary" onPress={() => purchase(PRODUCT_IDS.proAnnual)} />
           </>
         )}
+      </Card>
+
+      <Card title="Diagnostics">
+        <Body muted>Times the sun/shade engine on this phone with a synthetic 100 m backyard (target: under 500 ms to update after moving a structure).</Body>
+        <Button title={bench ?? 'Run shade benchmark'} kind="secondary" disabled={bench === 'Running…'} onPress={() => {
+          setBench('Running…');
+          setTimeout(() => {
+            const r = runShadeBenchmark({ sizeM: 100, cellM: 1 });
+            const native = ShadeNativeModule ? benchNative() : null;
+            setBench(`JS: full day ${r.fullDayMs.toFixed(0)} ms, move-a-structure ${r.incrementalMs.toFixed(0)} ms${native !== null ? ` · native full day ${native.toFixed(0)} ms` : ' · native engine not linked'}`);
+          }, 50);
+        }} />
       </Card>
 
       <Card title="Your data">
