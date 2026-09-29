@@ -1,0 +1,848 @@
+{
+ "source": "USDA Economic Research Service (public domain). Primary: Food Availability (Per Capita) Data System (FADS), non-loss-adjusted 'Food Availability' tables (farm weight). Gaps filled from ERS Vegetables and Pulses Outlook VGS-375 and ERS Charts of Note; a few entries are secondary (The Packer quoting ERS/USDA) and flagged in their note and source.",
+ "url": "https://www.ers.usda.gov/data-products/food-availability-per-capita-data-system/",
+ "dataYear": 2022,
+ "retrieved": "2026-09-29",
+ "notes": [
+  "The basis is NOT loss-adjusted. The LAFA vegetables CSV (https://www.ers.usda.gov/media/5397/vegetables.csv, LAFA latest year 2022) has 16 attributes per commodity, and the fetch tool only returned the first ~2 commodities (artichokes, asparagus). The non-LAFA Food Availability tables were used instead. LAFA 'consumed' amounts are roughly 30-60% lower than these availability figures.",
+  "Farm-weight availability is close to garden harvest weight, which suits a harvest cap, but it is a supply-and-disappearance proxy, not measured intake.",
+  "dataYear 2022 is the FADS vegetable year. Each entry has an extra 'year' key, and some differ: fruit is 2021 (the FADS fruit update of 4/14/2023 ends at 2021); VGS-375 items are 2024; Packer-sourced items are 2023; processed snap beans, sweet corn, green peas and spinach are 2019, because ERS left 2020-2022 blank (NASS processing data suppressed or discontinued).",
+  "Each entry has an extra 'source' array naming the exact table(s) or document(s) its numbers came from.",
+  "Where the fresh and processed figures share a year and source, 'total' is our arithmetic sum of the ERS components. Otherwise 'total' is null rather than mixing years or bases. Where ERS publishes only a fresh series, total = fresh, and the note says so.",
+  "Numbers were read through a WebFetch text extractor from ERS CSVs, because direct download of ers.usda.gov was blocked by this session's egress proxy (403) and the .xlsx/.zip files came back as binary. Every FADS value used was confirmed by at least two independent extractions or cross-checked against another ERS table (e.g., canned and frozen potatoes match the potato table; the potato total of 110.62 matches VGS-370's 110.7). Values are rounded to 2 decimals from the full-precision ERS values.",
+  "Values that come from ERS outlook text (VGS-375: tomato, lettuce, onion, sweet potato, squash, pumpkin) are rounded by ERS to whole or one-decimal pounds.",
+  "Secondary-source values (The Packer) should be treated as provisional: spinach fresh, radish, snap bean fresh (2023, ERS Vegetables and Pulses Yearbook), and strawberry and raspberry (2021, 'USDA', basis unstated)."
+ ],
+ "perCapitaLb": {
+  "tomato": {
+   "fresh": 19,
+   "processed": 48.2,
+   "total": 67.2,
+   "basis": "farm weight (fresh-weight equivalent for processing)",
+   "ersItem": "Tomatoes (fresh market) + Processing tomatoes",
+   "note": "2024 figures from VGS-375 text, rounded by ERS; total is our sum of the two ERS figures. Cross-check: FADS canned tomatoes 2022 = 56.49 lb farm weight (VC).",
+   "year": 2024,
+   "source": [
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf",
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)"
+   ]
+  },
+  "pepper-sweet": {
+   "fresh": 11.06,
+   "processed": null,
+   "total": 11.06,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables (farm weight): Bell peppers",
+   "note": "ERS publishes no processed bell-pepper series, so total = fresh.",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)"
+   ]
+  },
+  "pepper-hot": {
+   "fresh": null,
+   "processed": 7.42,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Vegetables for canning (farm weight): Chile peppers",
+   "note": "Fresh chile pepper series exists in the FADS fresh table but could not be retrieved (see notes). VGS-375 gives processing chile peppers 7.8 lb for 2024. Total left null.",
+   "year": 2022,
+   "source": [
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)",
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf"
+   ]
+  },
+  "eggplant": {
+   "fresh": 1.01,
+   "processed": null,
+   "total": 1.01,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables (farm weight): Eggplant",
+   "note": "No ERS processed series; total = fresh.",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)"
+   ]
+  },
+  "potato": {
+   "fresh": 28.41,
+   "processed": 82.2,
+   "total": 110.62,
+   "basis": "farm weight",
+   "ersItem": "Potatoes: Per capita availability (Fresh-Farm + Processing canned/frozen/chips/dehydrated, farm weight)",
+   "note": "Processed = canned 0.48 + frozen 53.25 + chips 16.86 + dehydrated 11.61 (farm weight). Our total 110.62 matches ERS VGS-370's 2022 potato total of 110.7 lb. Retail-weight processed is much lower (frozen 26.62, chips 4.13, dehydrated 1.63 lb).",
+   "year": 2022,
+   "source": [
+    "ERS FADS 'Vegetables (potatoes)' table, https://www.ers.usda.gov/media/5375/vegetables-potatoes.csv (updated 5/10/2024)"
+   ]
+  },
+  "sweet-potato": {
+   "fresh": 5.6,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Sweet potatoes (fresh market list in VGS-375)",
+   "note": "VGS-375 lists 5.6 lb for 2024 among fresh-market vegetables. The Packer (secondary, ERS yearbook) gives 5.38 lb 'all uses' for 2023. Total left null.",
+   "year": 2024,
+   "source": [
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf",
+    "SECONDARY: The Packer, 'Total fresh vegetable per capita availability down slightly in 2023, USDA says' (T. Karst, 9/3/2024), quoting ERS Vegetables and Pulses Yearbook tables, https://www.thepacker.com/news/retail/total-fresh-vegetable-capita-availability-down-slightly-2022-usda-says"
+   ]
+  },
+  "lettuce": {
+   "fresh": 28,
+   "processed": null,
+   "total": 28,
+   "basis": "farm weight",
+   "ersItem": "Romaine/leaf lettuce (16) + Iceberg/head lettuce (12)",
+   "note": "2024, rounded ERS text figures; sum is ours. The Packer (secondary) gives 2023 romaine/leaf 18.06 + head 13.41 = 31.47. FADS 2022 lettuce rows could not be retrieved.",
+   "year": 2024,
+   "source": [
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf",
+    "SECONDARY: The Packer, 'Total fresh vegetable per capita availability down slightly in 2023, USDA says' (T. Karst, 9/3/2024), quoting ERS Vegetables and Pulses Yearbook tables, https://www.thepacker.com/news/retail/total-fresh-vegetable-capita-availability-down-slightly-2022-usda-says"
+   ]
+  },
+  "spinach": {
+   "fresh": 2.52,
+   "processed": 0.71,
+   "total": null,
+   "basis": "farm weight (fresh: secondary, 2023; processed: FADS 2019)",
+   "ersItem": "Fresh spinach; Vegetables for canning/freezing (farm weight): Spinach",
+   "note": "Fresh 2.52 lb is 2023 via The Packer (secondary). Processed = canned 0.09 + frozen 0.62 (FADS, 2019, the last year ERS published; 2020-2022 are blank). Years differ, so total left null.",
+   "year": "fresh 2023 / processed 2019",
+   "source": [
+    "SECONDARY: The Packer, 'Total fresh vegetable per capita availability down slightly in 2023, USDA says' (T. Karst, 9/3/2024), quoting ERS Vegetables and Pulses Yearbook tables, https://www.thepacker.com/news/retail/total-fresh-vegetable-capita-availability-down-slightly-2022-usda-says",
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (frozen)' table, https://www.ers.usda.gov/media/5373/vegetables-frozen.csv (updated 5/10/2024)"
+   ]
+  },
+  "kale": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "Fresh vegetables (farm weight): Kale",
+   "note": "The ERS series exists but could not be retrieved: the fetched CSV was cut off at the start of the Kale rows. The Packer gives only an aggregate 'Greens' figure of 3.03 lb (2023), which is not kale-specific.",
+   "year": null,
+   "source": []
+  },
+  "collards": {
+   "fresh": 1.32,
+   "processed": null,
+   "total": 1.32,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables (farm weight): Collard greens",
+   "note": "ERS publishes only fresh; any frozen collards are inside the 'Miscellaneous' frozen aggregate. Total = fresh.",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)"
+   ]
+  },
+  "cabbage": {
+   "fresh": 6.17,
+   "processed": 0.97,
+   "total": 7.15,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables: Cabbage + Vegetables for canning: Cabbage for kraut",
+   "note": "Total = fresh + kraut.",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)"
+   ]
+  },
+  "broccoli": {
+   "fresh": 5.24,
+   "processed": 2.58,
+   "total": 7.81,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables: Broccoli + Vegetables for freezing: Broccoli",
+   "note": "Total = fresh + frozen (farm weight).",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (frozen)' table, https://www.ers.usda.gov/media/5373/vegetables-frozen.csv (updated 5/10/2024)"
+   ]
+  },
+  "cauliflower": {
+   "fresh": 2.12,
+   "processed": 0.79,
+   "total": 2.91,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables: Cauliflower + Vegetables for freezing: Cauliflower",
+   "note": "Total = fresh + frozen (farm weight).",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (frozen)' table, https://www.ers.usda.gov/media/5373/vegetables-frozen.csv (updated 5/10/2024)"
+   ]
+  },
+  "brussels-sprouts": {
+   "fresh": 1.06,
+   "processed": null,
+   "total": 1.06,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables (farm weight): Brussels sprouts",
+   "note": "Frozen Brussels sprouts are inside the 'Miscellaneous' frozen aggregate. Total = fresh.",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)"
+   ]
+  },
+  "kohlrabi": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  },
+  "swiss-chard": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  },
+  "beet": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No separate ERS beet series in the retrieved tables. Canned beets fall into canned 'Other' (4.39 lb, 2022, aggregate).",
+   "year": null,
+   "source": []
+  },
+  "carrot": {
+   "fresh": 8.38,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables (farm weight): Carrots",
+   "note": "Processed carrots are blank for 2020-2022. The last published year, 2019, has canned 1.17 and frozen 1.54 lb farm weight. Total left null for 2022.",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (frozen)' table, https://www.ers.usda.gov/media/5373/vegetables-frozen.csv (updated 5/10/2024)"
+   ]
+  },
+  "radish": {
+   "fresh": 1.0,
+   "processed": null,
+   "total": 1.0,
+   "basis": "farm weight",
+   "ersItem": "Radishes (fresh)",
+   "note": "2023 via The Packer (secondary, ERS yearbook). FADS radish rows could not be retrieved. Total = fresh.",
+   "year": 2023,
+   "source": [
+    "SECONDARY: The Packer, 'Total fresh vegetable per capita availability down slightly in 2023, USDA says' (T. Karst, 9/3/2024), quoting ERS Vegetables and Pulses Yearbook tables, https://www.thepacker.com/news/retail/total-fresh-vegetable-capita-availability-down-slightly-2022-usda-says"
+   ]
+  },
+  "turnip": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "(Fresh turnip greens only)",
+   "note": "ERS tracks turnip greens, not turnip roots, and the FADS row could not be retrieved.",
+   "year": null,
+   "source": []
+  },
+  "parsnip": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  },
+  "onion": {
+   "fresh": 21,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Onions (fresh market)",
+   "note": "2024, rounded (VGS-375); The Packer (secondary) gives 21.37 lb for 2023. Dehydrated onion series not retrieved, so total left null.",
+   "year": 2024,
+   "source": [
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf",
+    "SECONDARY: The Packer, 'Total fresh vegetable per capita availability down slightly in 2023, USDA says' (T. Karst, 9/3/2024), quoting ERS Vegetables and Pulses Yearbook tables, https://www.thepacker.com/news/retail/total-fresh-vegetable-capita-availability-down-slightly-2022-usda-says"
+   ]
+  },
+  "garlic": {
+   "fresh": 2.39,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables (farm weight): Garlic",
+   "note": "Only fresh was retrieved. ERS's garlic supply also includes dehydrated garlic, which was not retrieved. Total left null.",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)"
+   ]
+  },
+  "leek": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  },
+  "scallion": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series (green onions are not separated from onions).",
+   "year": null,
+   "source": []
+  },
+  "pea": {
+   "fresh": null,
+   "processed": 1.54,
+   "total": 1.54,
+   "basis": "farm weight",
+   "ersItem": "Vegetables for canning/freezing (farm weight): Green peas",
+   "note": "2019 is the latest year with values (2020-2022 are blank). Processed = canned 0.51 + frozen 1.03. ERS has no fresh green pea series, so total = processed.",
+   "year": 2019,
+   "source": [
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (frozen)' table, https://www.ers.usda.gov/media/5373/vegetables-frozen.csv (updated 5/10/2024)"
+   ]
+  },
+  "bean-bush": {
+   "fresh": 1.37,
+   "processed": 4.11,
+   "total": null,
+   "basis": "farm weight (fresh: secondary, 2023; processed: FADS 2019)",
+   "ersItem": "Snap beans (fresh 'Green beans'; Vegetables for canning/freezing: Snap beans)",
+   "note": "Fresh 1.37 lb is 2023 via The Packer (secondary). Processed = canned 2.44 + frozen 1.68 (FADS 2019, the last year published). VGS-375 gives processing snap beans about 3 lb for 2024. Years differ, so total left null.",
+   "year": "fresh 2023 / processed 2019",
+   "source": [
+    "SECONDARY: The Packer, 'Total fresh vegetable per capita availability down slightly in 2023, USDA says' (T. Karst, 9/3/2024), quoting ERS Vegetables and Pulses Yearbook tables, https://www.thepacker.com/news/retail/total-fresh-vegetable-capita-availability-down-slightly-2022-usda-says",
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (frozen)' table, https://www.ers.usda.gov/media/5373/vegetables-frozen.csv (updated 5/10/2024)",
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf"
+   ]
+  },
+  "bean-pole": {
+   "fresh": 1.37,
+   "processed": 4.11,
+   "total": null,
+   "basis": "farm weight (fresh: secondary, 2023; processed: FADS 2019)",
+   "ersItem": "Snap beans (fresh 'Green beans'; Vegetables for canning/freezing: Snap beans)",
+   "note": "Fresh 1.37 lb is 2023 via The Packer (secondary). Processed = canned 2.44 + frozen 1.68 (FADS 2019, the last year published). VGS-375 gives processing snap beans about 3 lb for 2024. Years differ, so total left null.",
+   "year": "fresh 2023 / processed 2019",
+   "source": [
+    "SECONDARY: The Packer, 'Total fresh vegetable per capita availability down slightly in 2023, USDA says' (T. Karst, 9/3/2024), quoting ERS Vegetables and Pulses Yearbook tables, https://www.thepacker.com/news/retail/total-fresh-vegetable-capita-availability-down-slightly-2022-usda-says",
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (frozen)' table, https://www.ers.usda.gov/media/5373/vegetables-frozen.csv (updated 5/10/2024)",
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf"
+   ]
+  },
+  "bean-dry": {
+   "fresh": null,
+   "processed": null,
+   "total": 6.82,
+   "basis": "farm weight (dry)",
+   "ersItem": "Pulses: Per capita availability — Pulses-Dry edible beans",
+   "note": "All dry edible beans. By type (2022): pinto 2.34, black 1.46, garbanzo 0.95, navy 0.53, red kidney 0.52.",
+   "year": 2022,
+   "source": [
+    "ERS FADS 'Vegetables (pulses)' table, https://www.ers.usda.gov/media/5379/vegetables-pulses.csv (updated 5/10/2024)"
+   ]
+  },
+  "bean-lima": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "Dry edible beans: All lima beans; Vegetables for freezing: Lima beans",
+   "note": "Frozen lima beans are blank for 2020-2022 (2019: 0.24 lb farm weight). Dry lima beans are 0.08 lb (2022, dry). No fresh series exists. Values are left null because the bases are mixed.",
+   "year": null,
+   "source": []
+  },
+  "cucumber": {
+   "fresh": 8.15,
+   "processed": 2.99,
+   "total": 11.14,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables: Cucumbers + Vegetables for canning: Cucumbers for pickles",
+   "note": "Total = fresh + pickles.",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)"
+   ]
+  },
+  "squash-summer": {
+   "fresh": 5,
+   "processed": null,
+   "total": 5,
+   "basis": "farm weight",
+   "ersItem": "Squash (fresh market; ERS series combines summer and winter squash)",
+   "note": "The ERS 'squash' figure covers summer and winter squash combined; do not add the two ids together. 2024, rounded (VGS-375). The Packer (secondary) gives 5.26 lb for 2023.",
+   "year": 2024,
+   "source": [
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf",
+    "SECONDARY: The Packer, 'Total fresh vegetable per capita availability down slightly in 2023, USDA says' (T. Karst, 9/3/2024), quoting ERS Vegetables and Pulses Yearbook tables, https://www.thepacker.com/news/retail/total-fresh-vegetable-capita-availability-down-slightly-2022-usda-says"
+   ]
+  },
+  "squash-winter": {
+   "fresh": 5,
+   "processed": null,
+   "total": 5,
+   "basis": "farm weight",
+   "ersItem": "Squash (fresh market; ERS series combines summer and winter squash)",
+   "note": "The ERS 'squash' figure covers summer and winter squash combined; do not add the two ids together. 2024, rounded (VGS-375). The Packer (secondary) gives 5.26 lb for 2023.",
+   "year": 2024,
+   "source": [
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf",
+    "SECONDARY: The Packer, 'Total fresh vegetable per capita availability down slightly in 2023, USDA says' (T. Karst, 9/3/2024), quoting ERS Vegetables and Pulses Yearbook tables, https://www.thepacker.com/news/retail/total-fresh-vegetable-capita-availability-down-slightly-2022-usda-says"
+   ]
+  },
+  "pumpkin": {
+   "fresh": 5,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Pumpkins (fresh market)",
+   "note": "2024, rounded (VGS-375); The Packer (secondary) gives 5.87 lb for 2023. The fresh series likely includes decorative use. Canned pumpkin was not retrieved.",
+   "year": 2024,
+   "source": [
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf",
+    "SECONDARY: The Packer, 'Total fresh vegetable per capita availability down slightly in 2023, USDA says' (T. Karst, 9/3/2024), quoting ERS Vegetables and Pulses Yearbook tables, https://www.thepacker.com/news/retail/total-fresh-vegetable-capita-availability-down-slightly-2022-usda-says"
+   ]
+  },
+  "watermelon": {
+   "fresh": 14.1,
+   "processed": null,
+   "total": 14.1,
+   "basis": "per capita availability (fresh)",
+   "ersItem": "Watermelon",
+   "note": "2022, from ERS Charts of Note. FTS-384 gives 15.4 lb for 2025.",
+   "year": 2022,
+   "source": [
+    "ERS Charts of Note 'No matter how you slice it, watermelon is the United States' favorite melon' (8/3/2023; 2022 data from Fruit and Tree Nuts Outlook), https://www.ers.usda.gov/data-products/charts-of-note/chart-detail?chartId=107025"
+   ]
+  },
+  "muskmelon": {
+   "fresh": 5.3,
+   "processed": null,
+   "total": 5.3,
+   "basis": "per capita availability (fresh)",
+   "ersItem": "Cantaloupe",
+   "note": "Cantaloupe only (2022). Honeydew is 1.6 lb (2022) if a broader muskmelon cap is wanted.",
+   "year": 2022,
+   "source": [
+    "ERS Charts of Note 'No matter how you slice it, watermelon is the United States' favorite melon' (8/3/2023; 2022 data from Fruit and Tree Nuts Outlook), https://www.ers.usda.gov/data-products/charts-of-note/chart-detail?chartId=107025"
+   ]
+  },
+  "corn": {
+   "fresh": 4.11,
+   "processed": 10.63,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables: Sweet corn; Vegetables for canning/freezing: Sweet corn",
+   "note": "Fresh is 2022. Processed = canned 4.65 + frozen 5.98 (2019, the last year published; blank for 2020-2022). VGS-375 gives processed sweet corn 10.4 lb for 2024. Years differ, so total left null.",
+   "year": "fresh 2022 / processed 2019",
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (frozen)' table, https://www.ers.usda.gov/media/5373/vegetables-frozen.csv (updated 5/10/2024)",
+    "ERS Vegetables and Pulses Outlook, April 2025 (VGS-375), text figures for 2024, rounded, https://www.ers.usda.gov/sites/default/files/_laserfiche/outlooks/111478/VGS-375.pdf"
+   ]
+  },
+  "okra": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "Fresh vegetables (farm weight): Okra",
+   "note": "The ERS series exists but was past the truncation point of the fetched CSV.",
+   "year": null,
+   "source": []
+  },
+  "celery": {
+   "fresh": 4.15,
+   "processed": null,
+   "total": 4.15,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables (farm weight): Celery",
+   "note": "No ERS processed series; total = fresh.",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)"
+   ]
+  },
+  "arugula": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  },
+  "bok-choy": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  },
+  "mustard-greens": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "Fresh vegetables (farm weight): Mustard greens",
+   "note": "The ERS series exists but was past the truncation point of the fetched CSV.",
+   "year": null,
+   "source": []
+  },
+  "asparagus": {
+   "fresh": 1.68,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Fresh vegetables (farm weight): Asparagus",
+   "note": "Processed is blank for 2020-2022. The last published year, 2019, has canned 0.06 and frozen 0.10 lb. Total left null.",
+   "year": 2022,
+   "source": [
+    "ERS Food Availability (Per Capita) Data System, 'Vegetables (fresh)' table, https://www.ers.usda.gov/media/5371/vegetables-fresh.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (canned)' table, https://www.ers.usda.gov/media/5369/vegetables-canned.csv (updated 5/10/2024)",
+    "ERS FADS 'Vegetables (frozen)' table, https://www.ers.usda.gov/media/5373/vegetables-frozen.csv (updated 5/10/2024)"
+   ]
+  },
+  "rhubarb": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  },
+  "basil": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series for culinary herbs. The archived 'Coffee, tea, cocoa, and spices' table covers dried spices in aggregate only.",
+   "year": null,
+   "source": []
+  },
+  "parsley": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series for culinary herbs. The archived 'Coffee, tea, cocoa, and spices' table covers dried spices in aggregate only.",
+   "year": null,
+   "source": []
+  },
+  "cilantro": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series for culinary herbs. The archived 'Coffee, tea, cocoa, and spices' table covers dried spices in aggregate only.",
+   "year": null,
+   "source": []
+  },
+  "dill": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series for culinary herbs. The archived 'Coffee, tea, cocoa, and spices' table covers dried spices in aggregate only.",
+   "year": null,
+   "source": []
+  },
+  "chives": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series for culinary herbs. The archived 'Coffee, tea, cocoa, and spices' table covers dried spices in aggregate only.",
+   "year": null,
+   "source": []
+  },
+  "thyme": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series for culinary herbs. The archived 'Coffee, tea, cocoa, and spices' table covers dried spices in aggregate only.",
+   "year": null,
+   "source": []
+  },
+  "oregano": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series for culinary herbs. The archived 'Coffee, tea, cocoa, and spices' table covers dried spices in aggregate only.",
+   "year": null,
+   "source": []
+  },
+  "rosemary": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series for culinary herbs. The archived 'Coffee, tea, cocoa, and spices' table covers dried spices in aggregate only.",
+   "year": null,
+   "source": []
+  },
+  "sage": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series for culinary herbs. The archived 'Coffee, tea, cocoa, and spices' table covers dried spices in aggregate only.",
+   "year": null,
+   "source": []
+  },
+  "mint": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series for culinary herbs. The archived 'Coffee, tea, cocoa, and spices' table covers dried spices in aggregate only.",
+   "year": null,
+   "source": []
+  },
+  "strawberry": {
+   "fresh": 6.7,
+   "processed": null,
+   "total": null,
+   "basis": "unspecified (secondary)",
+   "ersItem": "Strawberries",
+   "note": "6.7 lb is for 2021, from The Packer quoting 'USDA'. It was not verified against an ERS table, and the basis (fresh vs. all uses) is unstated; treat it as provisional. FADS frozen strawberries for 2021 are 2.13 lb, product weight. The FADS fresh strawberry row was past the truncation point.",
+   "year": 2021,
+   "source": [
+    "SECONDARY: The Packer, 'Berry per capita availability growth shines' (T. Karst, 5/12/2023), quoting USDA (ERS not named), https://www.thepacker.com/news/produce-crops/berry-capita-availability-growth-shines",
+    "ERS FADS 'Fruit (frozen)' table, https://www.ers.usda.gov/media/5347/fruit-frozen.csv (updated 4/14/2023)"
+   ]
+  },
+  "blueberry": {
+   "fresh": 2.54,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Fresh fruit (farm weight): Noncitrus-Blueberries",
+   "note": "Fresh figure is for 2021. Frozen blueberries for 2021 are 0.89 lb, product weight (not fresh-equivalent). Total left null.",
+   "year": 2021,
+   "source": [
+    "ERS FADS 'Fruit (fresh)' table, https://www.ers.usda.gov/media/5345/fruit-fresh.csv (updated 4/14/2023)",
+    "ERS FADS 'Fruit (frozen)' table, https://www.ers.usda.gov/media/5347/fruit-frozen.csv (updated 4/14/2023)"
+   ]
+  },
+  "blueberry-rabbiteye": {
+   "fresh": 2.54,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Fresh fruit (farm weight): Noncitrus-Blueberries",
+   "note": "Same series as blueberry: ERS does not separate highbush from rabbiteye. Fresh figure is for 2021. Frozen blueberries for 2021 are 0.89 lb, product weight (not fresh-equivalent). Total left null.",
+   "year": 2021,
+   "source": [
+    "ERS FADS 'Fruit (fresh)' table, https://www.ers.usda.gov/media/5345/fruit-fresh.csv (updated 4/14/2023)",
+    "ERS FADS 'Fruit (frozen)' table, https://www.ers.usda.gov/media/5347/fruit-frozen.csv (updated 4/14/2023)"
+   ]
+  },
+  "raspberry": {
+   "fresh": 0.8,
+   "processed": null,
+   "total": null,
+   "basis": "unspecified (secondary)",
+   "ersItem": "Raspberries",
+   "note": "0.8 lb is for 2021, from The Packer quoting 'USDA'. It was not verified against an ERS table; treat it as provisional. FADS frozen raspberries for 2021 are 0.39 lb, product weight.",
+   "year": 2021,
+   "source": [
+    "SECONDARY: The Packer, 'Berry per capita availability growth shines' (T. Karst, 5/12/2023), quoting USDA (ERS not named), https://www.thepacker.com/news/produce-crops/berry-capita-availability-growth-shines",
+    "ERS FADS 'Fruit (frozen)' table, https://www.ers.usda.gov/media/5347/fruit-frozen.csv (updated 4/14/2023)"
+   ]
+  },
+  "blackberry": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "Frozen fruit: Berries-Blackberries",
+   "note": "Frozen blackberries are 'NA' (2020-2021). No fresh blackberry series was retrieved.",
+   "year": null,
+   "source": []
+  },
+  "grape": {
+   "fresh": 8.5,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Fresh fruit (farm weight): Noncitrus-Grapes",
+   "note": "Fresh figure is for 2021. Raisins, juice and wine were not retrieved. Total left null.",
+   "year": 2021,
+   "source": [
+    "ERS FADS 'Fruit (fresh)' table, https://www.ers.usda.gov/media/5345/fruit-fresh.csv (updated 4/14/2023)"
+   ]
+  },
+  "apple": {
+   "fresh": 15.81,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Fresh fruit (farm weight): Noncitrus-Apples",
+   "note": "Fresh figure is for 2021. FTS-384 (March 2026) gives total apple availability of 41.3 lb fresh-weight for MY2024/25 (fresh 17, juice 18). The FADS 2021 total was not retrieved.",
+   "year": 2021,
+   "source": [
+    "ERS FADS 'Fruit (fresh)' table, https://www.ers.usda.gov/media/5345/fruit-fresh.csv (updated 4/14/2023)"
+   ]
+  },
+  "pear": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "Fresh fruit (farm weight): Noncitrus-Pears",
+   "note": "The ERS series exists, but the fetched CSV was cut off at 2012 in the pear rows. The last value retrieved is 3.24 lb for 2011, which is too old to use.",
+   "year": null,
+   "source": []
+  },
+  "peach": {
+   "fresh": 2.37,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Fresh fruit (farm weight): Noncitrus-Peaches and nectarines",
+   "note": "Fresh figure is for 2021 and includes nectarines. Canned peaches are 1.70 lb farm weight (2021) and frozen peaches 0.29 lb product weight. Total left null because the bases are mixed.",
+   "year": 2021,
+   "source": [
+    "ERS FADS 'Fruit (fresh)' table, https://www.ers.usda.gov/media/5345/fruit-fresh.csv (updated 4/14/2023)",
+    "ERS FADS 'Fruit (canned)' table, https://www.ers.usda.gov/media/5341/fruit-canned.csv (updated 4/14/2023)",
+    "ERS FADS 'Fruit (frozen)' table, https://www.ers.usda.gov/media/5347/fruit-frozen.csv (updated 4/14/2023)"
+   ]
+  },
+  "plum": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "Fresh fruit: Plums and prunes",
+   "note": "The fresh row was past the truncation point. Frozen plums are 'NA'.",
+   "year": null,
+   "source": []
+  },
+  "cherry-sour": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "Frozen fruit: Other frozen fruit-Cherries",
+   "note": "No separate tart-cherry fresh series. Frozen cherries (mostly tart) are 0.62 lb, product weight (2021). Canned cherries were not retrieved.",
+   "year": null,
+   "source": []
+  },
+  "cherry-sweet": {
+   "fresh": 1.44,
+   "processed": null,
+   "total": null,
+   "basis": "farm weight",
+   "ersItem": "Fresh fruit (farm weight): Noncitrus-Cherries",
+   "note": "Fresh figure is for 2021. ERS 'Cherries' combines sweet and tart; fresh use is mostly sweet cherries.",
+   "year": 2021,
+   "source": [
+    "ERS FADS 'Fruit (fresh)' table, https://www.ers.usda.gov/media/5345/fruit-fresh.csv (updated 4/14/2023)"
+   ]
+  },
+  "fig": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "Dried fruit: Figs (fresh fig row not retrieved)",
+   "note": "Not retrieved: the fetched CSV was truncated before this row.",
+   "year": null,
+   "source": []
+  },
+  "persimmon-american": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  },
+  "pawpaw": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  },
+  "hazelnut": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": "Tree nuts: Hazelnuts (filberts)",
+   "note": "Not retrieved: the fetched CSV was truncated before this row.",
+   "year": null,
+   "source": []
+  },
+  "currant": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  },
+  "elderberry": {
+   "fresh": null,
+   "processed": null,
+   "total": null,
+   "basis": null,
+   "ersItem": null,
+   "note": "No ERS series.",
+   "year": null,
+   "source": []
+  }
+ }
+}

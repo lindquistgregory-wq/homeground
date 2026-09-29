@@ -180,6 +180,33 @@ export const DATA_SOURCES: DataSource[] = [
     hosts: [], license: 'Linked, not copied', commercialUse: true, attribution: '', url: 'https://www.nifa.usda.gov/about-nifa/how-we-work/extension/cooperative-extension-system', reviewed: '2026-09-28',
   },
   {
+    id: 'usda-fdc-sr-legacy', name: 'USDA FoodData Central, SR Legacy (bundled)', provider: 'USDA Agricultural Research Service',
+    use: 'Calories and key nutrients per 100 g and edible portions of each crop and animal product, for food self-sufficiency estimates. Bundled; not downloaded by the app',
+    hosts: [], license: 'Public domain (CC0 1.0)', commercialUse: true, attribution: 'USDA FoodData Central', url: 'https://fdc.nal.usda.gov/', reviewed: '2026-09-29',
+  },
+  {
+    id: 'dietary-reference', name: 'Dietary Guidelines 2020–2025 energy needs; DRI summary tables (bundled)', provider: 'USDA & HHS; National Academies (NCBI Bookshelf NBK545442)',
+    use: 'Household calorie and nutrient needs by age, sex and activity. Values are facts, cited; bundled',
+    hosts: [], license: 'Public domain (DGA); facts cited from the National Academies tables', commercialUse: true, attribution: '', url: 'https://www.dietaryguidelines.gov/', reviewed: '2026-09-29',
+  },
+  {
+    id: 'homestead-kb', name: 'Livestock, enterprise, infrastructure and preservation profiles (bundled)', provider: 'Land-grant extension (Penn State, UMN, UMD, Missouri, Cornell, Virginia Tech, Oregon State, UW, UF…), USDA NASS/ERS/NRCS, SARE/PASA, NCHFP',
+    use: 'Sourced ranges the AI planner quotes: space, feed, labour, startup and annual costs, revenue, regulations, shelf life. Each entry carries its source URL and year; old figures are flagged',
+    hosts: [], license: 'Facts with citations; no text copied', commercialUse: true, attribution: '', url: 'https://www.nifa.usda.gov/about-nifa/how-we-work/extension/cooperative-extension-system', reviewed: '2026-09-29',
+    caveat: 'A few costs come from commercial cost guides (HomeGuide, Angi) and are labelled as such',
+  },
+  {
+    id: 'apple-foundation-models', name: 'Apple Foundation Models framework (on-device)', provider: 'Apple',
+    use: 'AI planner conversation on Apple Intelligence devices (iOS 26+). Runs on the phone: no network, no key. Private Cloud Compute is deliberately not used (quotas, not zero-cost)',
+    hosts: [], license: 'Free with the OS; Apple acceptable-use requirements apply', commercialUse: true, attribution: '', url: 'https://developer.apple.com/documentation/foundationmodels', reviewed: '2026-09-29',
+  },
+  {
+    id: 'mlkit-genai-prompt', name: 'ML Kit GenAI Prompt API (Gemini Nano, on-device; beta)', provider: 'Google',
+    use: 'AI planner conversation on supported Android phones. On-device, no key, no per-call cost',
+    hosts: [], license: 'Free; ML Kit GenAI Additional Terms and the Generative AI Prohibited Use Policy apply', commercialUse: true, attribution: '', url: 'https://developers.google.com/ml-kit/genai/prompt/android', reviewed: '2026-09-29',
+    caveat: 'Beta (no SLA). Terms require users to be 18+ and the app not to target minors; foreground use only',
+  },
+  {
     id: 'static-host', name: 'Plotwright registry (GitHub Pages)', provider: 'This project',
     use: 'Refreshable parcel-endpoint registry (static JSON)', hosts: ['lindquistgregory-wq.github.io'],
     license: 'Project-owned', commercialUse: true, attribution: '', url: 'https://pages.github.com/', reviewed: '2026-09-28',
@@ -196,4 +223,6 @@ export const NON_SERVICE_HOSTS = [
   // Sensor docs and vendor home pages shown as links (the app calls only the API hosts listed above)
   'ambientweather.docs.apiary.io', 'weatherlink.github.io', 'weatherflow.github.io', 'www.nrcs.usda.gov', 'www.ecowitt.net', 'ambientweather.net',
   'www.weatherlink.com', 'bthome.io', 'docs.ruuvi.com',
+  // Knowledge-base citations and on-device AI documentation (links only; the data is bundled)
+  'developer.apple.com', 'developers.google.com', 'fdc.nal.usda.gov', 'www.dietaryguidelines.gov',
 ];
