@@ -10,7 +10,7 @@ import {
 } from '@plotwright/core';
 import { OPENFREEMAP_STYLE_URL, USGS_HILLSHADE, USGS_IMAGERY, solarClimatology } from '@plotwright/providers';
 import { http } from '../../src/services/http';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useEntitlements } from '../../src/billing/entitlements';
@@ -23,6 +23,8 @@ import {
   type ParcelAnalysis, type SunPeriod, type SunResult,
 } from '../../src/services/analysis';
 import { exportDesign, type ExportFormat } from '../../src/services/export';
+import { activePlantings, cropShadeObjects, isPlantable } from '../../src/services/garden';
+import { plantingsForParcel, type Planting } from '../../src/db/plantings';
 import { newId } from '../../src/services/identity';
 import { useSettings } from '../../src/services/settings';
 
@@ -61,6 +63,7 @@ export default function DesignScreen() {
   const [setbackM, setSetbackM] = useState(0);
   const [siting, setSiting] = useState<{ target: SitingTarget; geo: object; factors: string[] } | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [plantings, setPlantings] = useState<Planting[]>([]);
   const pendingChange = useRef<DesignObject[]>([]);
   const sunRef = useRef<SunResult | null>(null);
 
@@ -84,19 +87,29 @@ export default function DesignScreen() {
     })();
   }, [id, ent]);
 
+  // Plantings change in the bed planner; reload them whenever this screen regains focus.
+  useFocusEffect(
+    useCallback(() => {
+      void plantingsForParcel(id).then((ps) => setPlantings(activePlantings(ps, new Date().getFullYear())));
+    }, [id]),
+  );
+
   // ---------- sun (debounced, incremental when possible) ----------
   useEffect(() => {
     if (!analysis || !design) return;
     const handle = setTimeout(() => {
-      const changed = pendingChange.current;
+      // Tall crops this season (corn, pole beans, sunflowers) shade their neighbours like foliage.
+      const crops = cropShadeObjects(design.objects, plantings, analysis.frame);
+      // A moved bed moves its crop too: include the crop shapes at both the old and new position.
+      const changed = pendingChange.current.flatMap((o) => [o, ...cropShadeObjects([o], plantings, analysis.frame)]);
       pendingChange.current = [];
       const prev = sunRef.current;
-      const next = computeSun(analysis, design.objects, period, 15, prev && changed.length ? { prev, changed } : undefined);
+      const next = computeSun(analysis, [...design.objects, ...crops], period, 15, prev && changed.length ? { prev, changed } : undefined);
       sunRef.current = next;
       setSun(next);
     }, 250);
     return () => clearTimeout(handle);
-  }, [analysis, design, period]);
+  }, [analysis, design, period, plantings]);
 
   const frame = analysis?.frame;
   const selected = design?.objects.find((o) => o.id === selectedId) ?? null;
@@ -333,6 +346,8 @@ export default function DesignScreen() {
             onSnapAngle={() => frame && replaceSelected({ rotationDeg: snapRotationToBoundary(selected.rotationDeg, parcel.geometry, frame) })}
             onSnapContour={objectType(selected.kind)?.followsContour && ent.has('layers.advancedTerrain') && analysis?.terrain.status === 'ok' && frame ? () => replaceSelected(snapToContour(selected, analysis.ground, frame)) : undefined}
             onDelete={() => { update(design.objects.filter((o) => o.id !== selected.id), [selected]); setSelectedId(null); }}
+            onPlan={isPlantable(selected) ? () => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } }) : undefined}
+            planted={plantings.filter((p) => p.bedObjectId === selected.id).length}
           />
         ) : <Body muted>Tap an object on the map to edit it.</Body>)}
 
@@ -468,16 +483,17 @@ function Stepper({ label, value, step, min, units, onChange }: { label: string; 
   );
 }
 
-function SelectedPanel({ o, units, areaM2, onPatch, onMove, onSnapAngle, onSnapContour, onDelete }: {
+function SelectedPanel({ o, units, areaM2, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted }: {
   o: DesignObject; units: 'imperial' | 'metric'; areaM2: number; onPatch: (p: Partial<DesignObject>) => void;
-  onMove: () => void; onSnapAngle: () => void; onSnapContour?: () => void; onDelete: () => void;
+  onMove: () => void; onSnapAngle: () => void; onSnapContour?: () => void; onDelete: () => void; onPlan?: () => void; planted: number;
 }) {
   const t = useTheme();
   const type = objectType(o.kind);
   const step = units === 'imperial' ? 0.3048 : 0.25;
   return (
     <Card title={o.label ?? type?.name ?? o.kind}>
-      <Body muted>{formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}</Body>
+      <Body muted>{formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}{planted ? ` · ${planted} planting${planted === 1 ? '' : 's'} this year` : ''}</Body>
+      {onPlan && <Button title="Plan this bed: what grows best here" onPress={onPlan} />}
       {!o.polygon && o.shape === 'rect' && <Stepper label="Length" value={o.length} step={step} min={0.3} units={units} onChange={(v) => onPatch({ length: v })} />}
       {!o.polygon && <Stepper label={o.shape === 'circle' ? 'Diameter' : 'Width'} value={o.width} step={step} min={0.1} units={units} onChange={(v) => onPatch(o.shape === 'circle' ? { width: v, length: v } : { width: v })} />}
       <Stepper label="Height" value={o.height} step={step} min={0} units={units} onChange={(v) => onPatch({ height: v })} />

@@ -4,7 +4,7 @@
  * station → modeled). Every event explains what it was based on.
  */
 import { formatDoy } from '../climate/normals';
-import type { FrostDates, RiskLevel } from '../climate/frost';
+import type { FrostDates } from '../climate/frost';
 import { dayGddReached, firstDayAtLeast, modeledSoilF, type ClimateCurves } from './seasonModel';
 import type { PlantSpec } from './types';
 

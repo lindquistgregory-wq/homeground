@@ -151,6 +151,8 @@ export default function Profile() {
       )}
 
       <Button title="Design your land" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcel.id } })} />
+      <Button title="Planting calendar & alerts" kind="secondary" onPress={() => router.push({ pathname: '/calendar/[id]', params: { id: parcel.id } })} />
+      <Button title="What grows here: plant library" kind="secondary" onPress={() => router.push({ pathname: '/plants', params: { parcelId: parcel.id } })} />
       <Button title="Sun path & sun check" kind="secondary" onPress={() => router.push({ pathname: '/sun/[id]', params: { id: parcel.id } })} />
       <Button title={loading.length ? 'Updating…' : 'Refresh site profile'} onPress={() => compute(parcel, true)} disabled={loading.length > 0} />
       <Button

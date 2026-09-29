@@ -56,6 +56,7 @@ export default function Home() {
             />
             {atLimit && <Body muted>Your plan includes {limits.parcels} propert{limits.parcels === 1 ? 'y' : 'ies'}.</Body>}
             <View style={styles.links}>
+              <Link href="/plants" style={[styles.link, { color: t.accent }]}>Plants</Link>
               <Link href="/settings" style={[styles.link, { color: t.accent }]}>Settings</Link>
               <Link href="/data-sources" style={[styles.link, { color: t.accent }]}>Data sources</Link>
             </View>

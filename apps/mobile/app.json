@@ -14,20 +14,41 @@
         "NSLocationWhenInUseUsageDescription": "Plotwright uses your location to find your property and to trace its boundary as you walk it. Your location stays on your device."
       },
       "entitlements": {
-        "com.apple.developer.icloud-container-identifiers": ["iCloud.app.plotwright.planner"],
-        "com.apple.developer.icloud-services": ["CloudKit"]
+        "com.apple.developer.icloud-container-identifiers": [
+          "iCloud.app.plotwright.planner"
+        ],
+        "com.apple.developer.icloud-services": [
+          "CloudKit"
+        ]
       }
     },
     "android": {
       "package": "app.plotwright.planner",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      ["expo-location", { "locationWhenInUsePermission": "Plotwright uses your location to find your property and to trace its boundary as you walk it. Your location stays on your device." }],
-      "@maplibre/maplibre-react-native"
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Plotwright uses your location to find your property and to trace its boundary as you walk it. Your location stays on your device."
+        }
+      ],
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-notifications",
+        {
+          "color": "#3f6b1f"
+        }
+      ],
+      "expo-background-task"
     ],
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

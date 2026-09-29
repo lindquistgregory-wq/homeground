@@ -3,7 +3,7 @@
  * plant shows how well it fits the property's climate (zone, season length, heat, chill, humidity);
  * bed-level fit (sun, soil) is in the bed planner.
  */
-import { PLANTS, scorePlant, searchPlants, type PlantKind } from '@plotwright/core';
+import { scorePlant, searchPlants, type PlantKind, type PlantSpec, type Suitability } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -23,7 +23,7 @@ export default function PlantLibrary() {
   const [q, setQ] = useState('');
   const [kind, setKind] = useState<PlantKind | 'all'>('all');
 
-  const list = useMemo(() => {
+  const list = useMemo((): Array<{ p: PlantSpec; s: Suitability | null }> => {
     const base = searchPlants(q).filter((p) => kind === 'all' || p.kind === kind || (kind === 'vegetable' && p.kind === 'flower'));
     if (!state) return base.map((p) => ({ p, s: null }));
     return base
