@@ -51,7 +51,7 @@ export interface DraftCheck {
 
 const MAX_COUNT = 50;
 
-export function validateDesignDraft(d: DesignDraft, existing: DesignObject[]): DraftCheck {
+export function validateDesignDraft(d: DesignDraft, existing: Array<Pick<DesignObject, 'id'>>): DraftCheck {
   const problems: string[] = [];
   const ids = new Set(existing.map((o) => o.id));
   const changes: DesignDraft['changes'] = [];

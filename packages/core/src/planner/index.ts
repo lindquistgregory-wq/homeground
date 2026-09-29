@@ -8,3 +8,5 @@ export * from './enterprises';
 export * from './drafts';
 export * from './plan';
 export * from './safety';
+export * from './tools';
+export * from './agent';
