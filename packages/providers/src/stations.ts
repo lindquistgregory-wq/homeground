@@ -268,9 +268,21 @@ type WlRecord = Record<string, number | null | undefined>;
  * soil moisture in centibars). Rain comes as bucket "clicks" locally (× rain_size) and also as _in/_mm
  * in the cloud API. Archive records use _avg/_last/_hi variants.
  */
-export function parseDavisRecord(r: WlRecord, ch: Map<string, StationChannel>): void {
+export interface DavisParts {
+  /** Channel for ISS readings (temperature, humidity, wind, rain, sun), or null to ignore them. */
+  iss: { channel: string; label: string } | null;
+  soil: boolean;
+  bar: boolean;
+}
+
+export function parseDavisRecord(r: WlRecord, ch: Map<string, StationChannel>, parts: DavisParts = { iss: { channel: 'outdoor', label: 'Outdoor' }, soil: true, bar: true }): void {
   const g = (...keys: string[]) => { for (const k of keys) { const v = r[k]; if (typeof v === 'number') return v; } return undefined; };
-  const o = (m: Metric, v: number | undefined) => put(ch, 'outdoor', 'Outdoor', m, v);
+  const bar = g('bar_sea_level', 'bar', 'bar_absolute');
+  if (parts.bar && bar !== undefined) put(ch, 'outdoor', 'Outdoor', 'pressure', bar * INHG);
+  if (parts.soil) parseDavisSoil(r, ch, g);
+  if (!parts.iss) return;
+  const iss = parts.iss;
+  const o = (m: Metric, v: number | undefined) => put(ch, iss.channel, iss.label, m, v);
   const tf = g('temp', 'temp_out', 'temp_avg', 'temp_last'); o('temperature', tf === undefined ? undefined : F(tf));
   o('humidity', g('hum', 'hum_out', 'hum_last'));
   const dp = g('dew_point', 'dew_point_last'); o('dewPoint', dp === undefined ? undefined : F(dp));
@@ -279,7 +291,6 @@ export function parseDavisRecord(r: WlRecord, ch: Map<string, StationChannel>): 
   o('windDirection', g('wind_dir_scalar_avg_last_1_min', 'wind_dir_scalar_avg_last_2_min', 'wind_dir_of_prevail', 'wind_dir_last', 'wind_dir'));
   o('solarRadiation', g('solar_rad', 'solar_rad_avg'));
   o('uvIndex', g('uv_index', 'uv_index_avg', 'uv'));
-  const bar = g('bar_sea_level', 'bar', 'bar_absolute'); if (bar !== undefined) o('pressure', bar * INHG);
   // Rain: prefer explicit mm/in fields, else clicks × bucket size.
   const size = r.rain_size;
   const clickMm = size === 1 ? 0.254 : size === 2 ? 0.2 : size === 3 ? 0.1 : size === 4 ? 0.0254 : undefined;
@@ -291,6 +302,9 @@ export function parseDavisRecord(r: WlRecord, ch: Map<string, StationChannel>): 
   o('rainRate', mm('rain_rate_last'));
   o('rainDaily', mm('rainfall_daily'));
   const interval = mm('rainfall'); if (interval !== undefined) o('rain', interval);
+}
+
+function parseDavisSoil(r: WlRecord, ch: Map<string, StationChannel>, g: (...keys: string[]) => number | undefined): void {
   for (let i = 1; i <= 4; i++) {
     const st = g(`temp_${i}`, `temp_last_${i}`), sm = g(`moist_soil_${i}`, `moist_soil_last_${i}`), lw = g(`wet_leaf_${i}`, `wet_leaf_last_${i}`);
     if (st !== undefined) put(ch, `soil${i}`, channelLabel('soil', String(i)), 'soilTemperature', F(st));
@@ -301,17 +315,42 @@ export function parseDavisRecord(r: WlRecord, ch: Map<string, StationChannel>): 
 
 interface WlCurrent { station_id?: number; sensors?: Array<{ lsid: number; sensor_type: number; data_structure_type: number; data: Array<WlRecord & { ts?: number }> }>; generated_at?: number }
 
-/** Health and indoor structure types carry nothing for the garden. */
-const WL_SKIP_TYPES = new Set([15, 21, 22]);
+/**
+ * WeatherLink v2 data structure types. Only ISS records (the outdoor sensor suite) feed temperature,
+ * humidity, wind, rain and sun; leaf/soil stations feed soil channels; health, indoor and AirLink
+ * (air-quality, often indoors) records are ignored so they can't overwrite outdoor readings.
+ */
+const WL_ISS_TYPES = new Set([1, 2, 3, 4, 6, 7, 10, 11, 23, 24]);
+const WL_SOIL_TYPES = new Set([12, 13, 25, 26]);
+const WL_BAR_TYPES = new Set([19, 20]);
+
+/** The first ISS is "Outdoor"; any further transmitter gets its own channel. */
+function issChannels(sensors: NonNullable<WlCurrent['sensors']>): Map<number, { channel: string; label: string }> {
+  const iss = sensors.filter((s) => WL_ISS_TYPES.has(s.data_structure_type));
+  const lsids = [...new Set(iss.map((s) => s.lsid))];
+  return new Map(lsids.map((l, i) => [l, i === 0 ? { channel: 'outdoor', label: 'Outdoor' } : { channel: `iss${i + 1}`, label: `Outdoor sensor ${i + 1}` }]));
+}
+
+function wlParts(s: NonNullable<WlCurrent['sensors']>[number], iss: Map<number, { channel: string; label: string }>): DavisParts | null {
+  const t = s.data_structure_type;
+  if (WL_ISS_TYPES.has(t)) return { iss: iss.get(s.lsid) ?? null, soil: false, bar: false };
+  if (WL_SOIL_TYPES.has(t)) return { iss: null, soil: true, bar: false };
+  if (WL_BAR_TYPES.has(t)) return { iss: null, soil: false, bar: true };
+  // Unknown types: only take a barometer reading, never temperature/humidity.
+  return t === 14 || t === 15 || t === 16 || t === 17 || t === 18 || t === 21 || t === 22 || t === 27 ? null : { iss: null, soil: false, bar: true };
+}
 
 export function parseWeatherLinkCurrent(body: WlCurrent): StationObservation {
   const ch = new Map<string, StationChannel>();
+  const sensors = body.sensors ?? [];
+  const iss = issChannels(sensors);
   let t = 0;
-  for (const s of body.sensors ?? []) {
-    if (WL_SKIP_TYPES.has(s.data_structure_type)) continue;
+  for (const s of sensors) {
+    const parts = wlParts(s, iss);
+    if (!parts) continue;
     for (const rec of s.data ?? []) {
-      parseDavisRecord(rec, ch);
-      t = Math.max(t, (rec.ts ?? 0) * 1000);
+      parseDavisRecord(rec, ch, parts);
+      if (parts.iss) t = Math.max(t, (rec.ts ?? 0) * 1000);
     }
   }
   return { t: t || (body.generated_at ?? 0) * 1000 || Date.now(), channels: [...ch.values()].map(withDewPoint) };
@@ -319,13 +358,16 @@ export function parseWeatherLinkCurrent(body: WlCurrent): StationObservation {
 
 export function parseWeatherLinkHistoric(body: WlCurrent): StationObservation[] {
   const byT = new Map<number, Map<string, StationChannel>>();
-  for (const s of body.sensors ?? []) {
-    if (WL_SKIP_TYPES.has(s.data_structure_type)) continue;
+  const sensors = body.sensors ?? [];
+  const iss = issChannels(sensors);
+  for (const s of sensors) {
+    const parts = wlParts(s, iss);
+    if (!parts) continue;
     for (const rec of s.data ?? []) {
       if (!rec.ts) continue;
       const m = byT.get(rec.ts * 1000) ?? new Map<string, StationChannel>();
       byT.set(rec.ts * 1000, m);
-      parseDavisRecord(rec, m);
+      parseDavisRecord(rec, m, parts);
     }
   }
   return [...byT.entries()].sort((a, b) => a[0] - b[0]).map(([t, m]) => ({ t, channels: [...m.values()].map(withDewPoint) }));
@@ -436,7 +478,16 @@ type WllLocal = { data?: { did?: string; ts?: number; conditions?: Array<WlRecor
 /** WeatherLink Live `/v1/current_conditions`. Local structure types: 1 ISS, 2 leaf/soil, 3 barometer, 4 indoor. */
 export function parseWeatherLinkLive(body: WllLocal): StationObservation {
   const ch = new Map<string, StationChannel>();
-  for (const c of body.data?.conditions ?? []) if (c.data_structure_type !== 4) parseDavisRecord(c, ch);
+  // Local structure types: 1 ISS (one per transmitter id), 2 leaf/soil, 3 barometer, 4 indoor (skipped).
+  const txids = [...new Set((body.data?.conditions ?? []).filter((c) => c.data_structure_type === 1).map((c) => Number(c.txid ?? 0)))];
+  for (const c of body.data?.conditions ?? []) {
+    const k = c.data_structure_type;
+    if (k === 1) {
+      const i = txids.indexOf(Number(c.txid ?? 0));
+      parseDavisRecord(c, ch, { iss: i <= 0 ? { channel: 'outdoor', label: 'Outdoor' } : { channel: `iss${i + 1}`, label: `Outdoor sensor ${i + 1}` }, soil: false, bar: false });
+    } else if (k === 2) parseDavisRecord(c, ch, { iss: null, soil: true, bar: false });
+    else if (k === 3) parseDavisRecord(c, ch, { iss: null, soil: false, bar: true });
+  }
   return { t: (body.data?.ts ?? 0) * 1000 || Date.now(), channels: [...ch.values()].map(withDewPoint) };
 }
 

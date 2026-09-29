@@ -4,6 +4,7 @@
  * header ("Temperature (°F)", "Rain mm", "Wind km/h"), and everything converted to canonical units.
  */
 import type { Metric, Reading } from './types';
+import { offsetAt, type Offset } from './series';
 import { qualityOf } from './types';
 
 export interface CsvColumn {
@@ -25,8 +26,8 @@ export interface CsvImport {
 
 export interface CsvOptions {
   sensorId: string;
-  /** Minutes east of UTC for timestamps without an offset (the station's local time). */
-  offsetMin: number;
+  /** Minutes east of UTC for timestamps without a zone (the station's local time); a function handles daylight saving. */
+  offsetMin: Offset;
   /** Unit system to assume when a header gives none. */
   defaultUnits: 'imperial' | 'metric';
   /** Day-first dates (31/12/2025) instead of month-first (12/31/2025) for slashed dates. */
@@ -62,19 +63,25 @@ export function parseCsv(text: string): string[][] {
 
 type Rule = { re: RegExp; metric: Metric; units: Array<[RegExp, string]>; imperial: string; metricUnit: string };
 
+const F_RE = /°\s*f\b|℉|\(f\)|\bdeg\s*f\b|fahrenheit|degf/i;
+const C_RE = /°\s*c\b|℃|\(c\)|\bdeg\s*c\b|celsius|degc/i;
+
 // Order matters: more specific patterns first (dew point before temperature, soil before air, gust before wind).
 const RULES: Rule[] = [
-  { re: /dew\s*point|dewpoint/i, metric: 'dewPoint', units: [[/°?\s*f\b|fahrenheit|degf/i, 'F'], [/°?\s*c\b|celsius|degc/i, 'C']], imperial: 'F', metricUnit: 'C' },
-  { re: /soil\s*(temp|temperature)/i, metric: 'soilTemperature', units: [[/°?\s*f\b|fahrenheit/i, 'F'], [/°?\s*c\b|celsius/i, 'C']], imperial: 'F', metricUnit: 'C' },
+  { re: /dew\s*point|dewpoint/i, metric: 'dewPoint', units: [[F_RE, 'F'], [C_RE, 'C']], imperial: 'F', metricUnit: 'C' },
+  { re: /soil\s*(temp|temperature)/i, metric: 'soilTemperature', units: [[F_RE, 'F'], [C_RE, 'C']], imperial: 'F', metricUnit: 'C' },
   { re: /soil\s*(moist|moisture|vwc|water)/i, metric: 'soilMoisture', units: [[/%/, '%']], imperial: '%', metricUnit: '%' },
-  { re: /(indoor|inside|in\s*temp)/i, metric: 'temperature', units: [], imperial: 'skip', metricUnit: 'skip' },
-  { re: /feels|heat\s*index|wind\s*chill|thsw|thw/i, metric: 'temperature', units: [], imperial: 'skip', metricUnit: 'skip' },
-  { re: /(outdoor\s*)?temp(erature)?|^out\s*temp/i, metric: 'temperature', units: [[/°?\s*f\b|fahrenheit|degf/i, 'F'], [/°?\s*c\b|celsius|degc/i, 'C']], imperial: 'F', metricUnit: 'C' },
-  { re: /(indoor|inside)\s*hum/i, metric: 'humidity', units: [], imperial: 'skip', metricUnit: 'skip' },
+  { re: /(^|[^a-z])(indoor|inside)([^a-z]|$)|^in\s*(temp|hum)/i, metric: 'temperature', units: [], imperial: 'skip', metricUnit: 'skip' },
+  { re: /feels|heat\s*index|wind\s*chill|thsw|thw|wet\s*bulb/i, metric: 'temperature', units: [], imperial: 'skip', metricUnit: 'skip' },
+  // Period highs and lows ("Hi Temp", "Min Temp") aren't the reading itself.
+  { re: /(^|[^a-z])(hi|high|max|lo|low|min|avg)([^a-z]|$).*temp|temp.*([^a-z])(hi|high|max|lo|low|min)([^a-z]|$)/i, metric: 'temperature', units: [], imperial: 'skip', metricUnit: 'skip' },
+  { re: /(outdoor\s*)?temp(erature)?|^out\s*temp/i, metric: 'temperature', units: [[F_RE, 'F'], [C_RE, 'C']], imperial: 'F', metricUnit: 'C' },
   { re: /hum(idity)?|\brh\b/i, metric: 'humidity', units: [[/%/, '%']], imperial: '%', metricUnit: '%' },
   { re: /rain\s*rate|rate/i, metric: 'rainRate', units: [[/in\/h|in\/hr|in\b/i, 'in/h'], [/mm/i, 'mm/h']], imperial: 'in/h', metricUnit: 'mm/h' },
   { re: /(daily|day|today)\s*rain|rain\s*(daily|day|today)/i, metric: 'rainDaily', units: [[/\bin\b|inch/i, 'in'], [/mm/i, 'mm']], imperial: 'in', metricUnit: 'mm' },
-  { re: /rain|precip/i, metric: 'rainTotal', units: [[/\bin\b|inch/i, 'in'], [/mm/i, 'mm']], imperial: 'in', metricUnit: 'mm' },
+  { re: /(total|accum|year|annual|month|week|event|storm).*(rain|precip)|(rain|precip).*(total|accum|year|annual|month|week|event|storm)/i, metric: 'rainTotal', units: [], imperial: 'skip', metricUnit: 'skip' },
+  // A plain "Rain" column in a logger export is the rain in that interval.
+  { re: /rain|precip/i, metric: 'rain', units: [[/\bin\b|inch/i, 'in'], [/mm/i, 'mm']], imperial: 'in', metricUnit: 'mm' },
   { re: /gust/i, metric: 'windGust', units: [[/mph/i, 'mph'], [/km\/?h|kph/i, 'km/h'], [/m\/s/i, 'm/s'], [/kn|knot/i, 'kn']], imperial: 'mph', metricUnit: 'm/s' },
   { re: /wind\s*(dir|direction)/i, metric: 'windDirection', units: [[/°|deg/i, 'deg']], imperial: 'deg', metricUnit: 'deg' },
   { re: /wind/i, metric: 'windSpeed', units: [[/mph/i, 'mph'], [/km\/?h|kph/i, 'km/h'], [/m\/s/i, 'm/s'], [/kn|knot/i, 'kn']], imperial: 'mph', metricUnit: 'm/s' },
@@ -119,7 +126,7 @@ export function mapColumns(headers: string[], defaultUnits: 'imperial' | 'metric
 }
 
 /** Parse a timestamp from one or two cells. Returns UTC ms or null. */
-export function parseTimestamp(cells: string[], offsetMin: number, dayFirst = false): number | null {
+export function parseTimestamp(cells: string[], offsetMin: Offset, dayFirst = false): number | null {
   const s = cells.map((c) => c.trim()).filter(Boolean).join(' ');
   if (!s) return null;
   if (/^\d{9,10}(\.\d+)?$/.test(s)) return Math.round(Number(s) * 1000);
@@ -148,20 +155,29 @@ export function parseTimestamp(cells: string[], offsetMin: number, dayFirst = fa
     if (ap === 'am' && hh === 12) hh = 0;
   }
   if (mo < 1 || mo > 12 || d < 1 || d > 31 || hh > 23 || mm > 59) return null;
-  return Date.UTC(y, mo - 1, d, hh, mm, ss) - offsetMin * 60_000;
+  const wall = Date.UTC(y, mo - 1, d, hh, mm, ss);
+  // Local wall-clock time → UTC; with a daylight-saving-aware offset, refine once at the guessed instant.
+  const guess = wall - offsetAt(offsetMin, wall) * 60_000;
+  return wall - offsetAt(offsetMin, guess) * 60_000;
 }
 
 /** First number in a cell ("21.5", "21,5", "1,013.2", "21.5 C"); null for blanks and "--". */
 const num = (s: string): number | null => {
   let t = s.trim();
   if (!t || /^-+$/.test(t)) return null;
-  t = t.includes('.') && t.includes(',') ? t.replace(/,/g, '') : t.replace(',', '.');
+  // Both separators: whichever comes last is the decimal point ("1,013.2" / "1.013,2").
+  if (t.includes('.') && t.includes(',')) t = t.lastIndexOf(',') > t.lastIndexOf('.') ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+  else t = t.replace(',', '.');
   const m = /-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/i.exec(t);
   return m ? Number(m[0]) : null;
 };
 
 export function importCsv(text: string, opts: CsvOptions): CsvImport {
-  const rows = parseCsv(text);
+  return importCsvRows(parseCsv(text), opts);
+}
+
+/** Convert already-split rows (lets the app split a big file once and re-convert as options change). */
+export function importCsvRows(rows: string[][], opts: CsvOptions): CsvImport {
   const warnings: string[] = [];
   if (rows.length < 2) return { readings: [], columns: [], timeColumns: [], rows: 0, skipped: 0, warnings: ['The file has no data rows.'] };
   // Some exports put a units row under the header ("°F", "%", …): merge it into the header.

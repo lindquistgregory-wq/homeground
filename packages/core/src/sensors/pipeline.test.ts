@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  blendSoilCurve, calibratedSunHours, checkThresholds, classifyLux, clearSkyGhi, compareSun, counterIncrements, dailyAggregates, dewPointC,
+  blendSoilCurve, calibratedSunHours, fullDay, hoursCovered, mergeDayMetrics, checkThresholds, classifyLux, clearSkyGhi, compareSun, counterIncrements, dailyAggregates, dewPointC,
   et0Hargreaves, et0PenmanMonteith, extraterrestrialRadiation, forecastOffsetC, freshness, gddFromDailyC, importCsv, leafWetHours, localDate,
   mapColumns, parseTimestamp, rollingMean, toReadings, vpdKpa, waterBalance, windAt2m, LUX_PER_WM2, type Reading,
 } from './index';
@@ -80,7 +80,12 @@ test('soil temperature blend: measured days, recent bias carried forward and fad
   assert.equal(f(100), 64);
   near(f(102), model(102) + 4 * (1 - 1 / 30), 1e-9);
   near(f(200), model(200), 1e-9);
-  near(f(50), model(50) + 4, 1e-9);
+  near(f(50), model(50), 1e-9, 'days before the measurements are not biased');
+  // Fall readings read in winter must not shift next spring (the year wraps): the bias only runs forward.
+  const fall = blendSoilCurve(model, [{ doy: 340, meanF: model(340) + 10 }, { doy: 350, meanF: model(350) + 10 }]);
+  near(fall(100), model(100), 1e-9, 'next spring unaffected');
+  near(fall(360), model(360) + 10 * (1 - 10 / 30), 1e-9);
+  near(fall(5), model(5) + 10 * (1 - 20 / 30), 1e-9, 'fades across New Year');
   assert.equal(blendSoilCurve(model, [])(10), model(10));
 });
 
@@ -155,4 +160,32 @@ test('timestamp formats and header mapping edge cases', () => {
   const m = mapColumns(['Date', 'Temp', 'Feels Like', 'Heat Index', 'Soil Temp 1'], 'metric');
   assert.deepEqual(m.columns.map((c) => c.metric), ['temperature', 'soilTemperature']);
   assert.ok(m.warnings.some((w) => /assumed C/.test(w)));
+});
+
+test('hour coverage and merging partial day summaries (two phones hearing one sensor)', () => {
+  const base = Date.UTC(2026, 5, 1, 4, 30); // 00:30 EDT
+  const all = Array.from({ length: 24 }, (_, h) => toReadings('s', base + h * 3_600_000, { temperature: 10 + h })).flat();
+  const full = dailyAggregates(all, -240)[0]!.metrics.temperature!;
+  assert.equal(hoursCovered(full), 24);
+  assert.ok(fullDay(full));
+  const afternoon = dailyAggregates(all.slice(12, 20), -240)[0]!.metrics.temperature!;
+  assert.equal(hoursCovered(afternoon), 8);
+  assert.ok(!fullDay(afternoon), 'afternoon-only readings miss the overnight low');
+  const morning = dailyAggregates(all.slice(0, 12), -240)[0]!.metrics;
+  const merged = mergeDayMetrics([morning, { temperature: afternoon }]).temperature!;
+  assert.equal(merged.min, 10); assert.equal(merged.max, 29); assert.equal(merged.n, 20); assert.equal(hoursCovered(merged), 20);
+  // A daylight-saving-aware offset function is accepted everywhere a fixed offset is.
+  assert.equal(localDate(Date.UTC(2026, 0, 1, 4, 30), (t) => (new Date(t).getUTCMonth() < 2 ? -300 : -240)).date, '2025-12-31');
+});
+
+test('CSV: period highs/lows and indoor columns skipped, ℃ recognised, plain Rain is per-interval, European numbers', () => {
+  const m = mapColumns(['Date', 'Min Temp', 'Max Temp', 'Temp Out (℃)', 'In Temp', 'Rain (mm)', 'Rain Total (mm)'], 'imperial');
+  assert.deepEqual(m.columns.map((c) => [c.header, c.metric, c.unit]), [['Temp Out (℃)', 'temperature', 'C'], ['Rain (mm)', 'rain', 'mm']]);
+  const r = importCsv('Date;Temp °C;Pressure hPa\n2026-05-01 06:00;21,5;1.013,2\n', { sensorId: 'x', offsetMin: 0, defaultUnits: 'metric' });
+  near(r.readings.find((x) => x.metric === 'temperature')!.value, 21.5, 1e-9);
+  near(r.readings.find((x) => x.metric === 'pressure')!.value, 1013.2, 1e-9);
+  // Wall-clock times across a daylight-saving change use the offset in force at that time.
+  const nyc = (t: number) => (t >= Date.UTC(2026, 2, 8, 7) ? -240 : -300);
+  assert.equal(parseTimestamp(['2026-03-07 12:00'], nyc), Date.UTC(2026, 2, 7, 17));
+  assert.equal(parseTimestamp(['2026-03-09 12:00'], nyc), Date.UTC(2026, 2, 9, 16));
 });

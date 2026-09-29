@@ -170,3 +170,15 @@ test('SCAN: nearest station, hourly → daily means in station time, regional at
   // The real 4-hour sample is too short to call a daily mean.
   assert.deepEqual(parseScanHourly(fx('scan-hourly.live.json')), []);
 });
+
+test('WeatherLink: an indoor AirLink or a second ISS never overwrites the outdoor channel', () => {
+  const o = parseWeatherLinkCurrent({ sensors: [
+    { lsid: 1, sensor_type: 45, data_structure_type: 10, data: [{ ts: 100, temp: 50, hum: 80 }] },
+    { lsid: 2, sensor_type: 323, data_structure_type: 16, data: [{ ts: 100, temp: 72, hum: 35 }] }, // AirLink indoors
+    { lsid: 3, sensor_type: 45, data_structure_type: 10, data: [{ ts: 100, temp: 40, hum: 90 }] }, // second ISS
+    { lsid: 4, sensor_type: 242, data_structure_type: 19, data: [{ ts: 100, bar_sea_level: 30 }] },
+  ] });
+  near(chan(o, 'outdoor').temperature, 10); near(chan(o, 'outdoor').humidity, 80); near(chan(o, 'outdoor').pressure, 30 * 33.8639);
+  near(chan(o, 'iss2').temperature, 4.44);
+  assert.equal(o.channels.length, 2);
+});

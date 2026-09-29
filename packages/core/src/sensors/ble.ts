@@ -68,6 +68,10 @@ const concat = (...parts: Uint8Array[]) => {
   return out;
 };
 const macDisplay = (onAir: Uint8Array) => [...onAir].reverse().map((x) => x.toString(16).padStart(2, '0').toUpperCase()).join(':');
+const MAC_RE = /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/i;
+/** A usable MAC string, or undefined (bad input must never throw inside a scan callback). */
+const validMac = (m: string | undefined) => (m && MAC_RE.test(m.trim()) ? m.trim() : undefined);
+const key16 = (k: Uint8Array | undefined) => (k && k.length === 16 ? k : undefined);
 const macBytes = (display: string) => hexToBytes(display);
 const macBytesOnAir = (display: string) => macBytes(display).reverse();
 
@@ -152,7 +156,7 @@ export function decodeBthomeV2(sd: Uint8Array, opts: DecodeOptions = {}): Decode
   if (info >> 5 !== 2) return null;
   const encrypted = !!(info & 0x01);
   let start = 1;
-  let mac = opts.mac;
+  let mac = validMac(opts.mac);
   let payloadMac: string | undefined;
   if (info & 0x02) {
     // Legacy "MAC included" bit: 6 bytes, little-endian.
@@ -166,9 +170,10 @@ export function decodeBthomeV2(sd: Uint8Array, opts: DecodeOptions = {}): Decode
   if (encrypted) {
     if (sd.length < start + 8) return null;
     counter = u32le(sd, sd.length - 8);
-    if (!opts.key || !mac) return { ...base, values: {}, counter, needsKey: true };
+    const key = key16(opts.key);
+    if (!key || !mac) return { ...base, values: {}, counter, needsKey: true };
     const nonce = concat(macBytes(mac), new Uint8Array([0xd2, 0xfc, info]), sd.subarray(sd.length - 8, sd.length - 4));
-    const plain = ccmDecrypt(opts.key, nonce, sd.subarray(start, sd.length - 8), sd.subarray(sd.length - 4));
+    const plain = ccmDecrypt(key, nonce, sd.subarray(start, sd.length - 8), sd.subarray(sd.length - 4));
     if (!plain) return { ...base, values: {}, counter, needsKey: true };
     payload = plain;
   }
@@ -184,9 +189,10 @@ export function decodeBthomeV1(sd: Uint8Array, encrypted: boolean, opts: DecodeO
   if (encrypted) {
     if (sd.length < 9) return null;
     counter = u32le(sd, sd.length - 8);
-    if (!opts.key || !opts.mac) return { ...base, values: {}, counter, needsKey: true };
-    const nonce = concat(macBytes(opts.mac), new Uint8Array([0x1e, 0x18]), sd.subarray(sd.length - 8, sd.length - 4));
-    const plain = ccmDecrypt(opts.key, nonce, sd.subarray(0, sd.length - 8), sd.subarray(sd.length - 4), new Uint8Array([0x11]));
+    const key = key16(opts.key), mac = validMac(opts.mac);
+    if (!key || !mac) return { ...base, values: {}, counter, needsKey: true };
+    const nonce = concat(macBytes(mac), new Uint8Array([0x1e, 0x18]), sd.subarray(sd.length - 8, sd.length - 4));
+    const plain = ccmDecrypt(key, nonce, sd.subarray(0, sd.length - 8), sd.subarray(sd.length - 4), new Uint8Array([0x11]));
     if (!plain) return { ...base, values: {}, counter, needsKey: true };
     p = plain;
   }
@@ -365,14 +371,16 @@ export function decodeMiBeacon(sd: Uint8Array, opts: DecodeOptions = {}): Decode
   const base = { protocol: 'xiaomi' as const, vendor: 'Xiaomi', model, encrypted, mac, counter: frame };
   if (!(fc & 0x40)) return { ...base, values: {} };
   let payload = sd.subarray(i);
-  const useMac = mac ?? opts.mac;
+  const useMac = mac ?? validMac(opts.mac);
   if (encrypted) {
     if (!opts.key || !useMac) return { ...base, values: {}, needsKey: true };
     if (version >= 4) {
       if (sd.length < i + 7) return null;
+      const key = key16(opts.key);
+      if (!key) return { ...base, values: {}, needsKey: true };
       const ext = sd.subarray(sd.length - 7, sd.length - 4);
       const nonce = concat(macBytesOnAir(useMac), sd.subarray(2, 5), ext);
-      const plain = ccmDecrypt(opts.key, nonce, sd.subarray(i, sd.length - 7), sd.subarray(sd.length - 4), new Uint8Array([0x11]));
+      const plain = ccmDecrypt(key, nonce, sd.subarray(i, sd.length - 7), sd.subarray(sd.length - 4), new Uint8Array([0x11]));
       if (!plain) return { ...base, values: {}, needsKey: true };
       payload = plain;
       base.counter = (u24le(ext, 0) * 256 + frame) >>> 0;
@@ -405,10 +413,11 @@ export function decodeAtc(sd: Uint8Array, opts: DecodeOptions = {}): DecodedAdve
   }
   if (sd.length === 8 || sd.length === 11) {
     const counter = sd[0]!;
-    if (!opts.key || !opts.mac) return { ...base, encrypted: true, values: {}, counter, needsKey: true };
+    const key = key16(opts.key), mac = validMac(opts.mac);
+    if (!key || !mac) return { ...base, encrypted: true, values: {}, counter, needsKey: true };
     // The nonce includes the raw AD header (length, type 0x16, UUID), rebuilt from the service data.
-    const nonce = concat(macBytesOnAir(opts.mac), new Uint8Array([sd.length + 3, 0x16, 0x1a, 0x18, counter]));
-    const plain = ccmDecrypt(opts.key, nonce, sd.subarray(1, sd.length - 4), sd.subarray(sd.length - 4), new Uint8Array([0x11]));
+    const nonce = concat(macBytesOnAir(mac), new Uint8Array([sd.length + 3, 0x16, 0x1a, 0x18, counter]));
+    const plain = ccmDecrypt(key, nonce, sd.subarray(1, sd.length - 4), sd.subarray(sd.length - 4), new Uint8Array([0x11]));
     if (!plain) return { ...base, encrypted: true, values: {}, counter, needsKey: true };
     const values: MetricValues = plain.length === 3
       ? { temperature: plain[0]! / 2 - 40, humidity: plain[1]! / 2, battery: plain[2]! & 0x7f }
@@ -494,12 +503,13 @@ export function decodeAdvertisement(adv: Advertisement, opts: DecodeOptions = {}
   if ((sd = service(adv, '181a'))) return decodeAtc(sd, opts);
   if ((sd = service(adv, 'fdcd'))) return decodeQingping(sd);
   const md = adv.manufacturerData ?? undefined;
+  // Inkbird's first two bytes are the temperature, which can look like any company id: check its name first.
+  if (md && md.length >= 2 && /^(sps|tps|ith-|ibs-p02b)/i.test(name)) return decodeInkbird(md, name);
   const company = md && md.length >= 2 ? u16le(md, 0) : -1;
   const sb = service(adv, 'fd3d') ?? service(adv, '0d00');
   if (sb || company === 0x0969) return decodeSwitchbot(sb, company === 0x0969 ? md!.subarray(2) : undefined, opts);
   if (!md || md.length < 2) return null;
   if (company === 0x0499) return decodeRuuvi(md.subarray(2));
-  if (/^(sps|tps|ith-|ibs-p02b)/i.test(name)) return decodeInkbird(md, name);
   if (company === 0xec88 || company === 0x8801 || company === 0x0001) return decodeGovee(company, md.subarray(2), name);
   return null;
 }

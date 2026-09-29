@@ -5,40 +5,88 @@
  */
 import type { Metric, Reading } from './types';
 
+export interface MetricDay {
+  min: number;
+  max: number;
+  mean: number;
+  n: number;
+  last: number;
+  /** Bitmask of local hours (bit h = hour h) with at least one reading: how much of the day is covered. */
+  hm?: number;
+}
+
 export interface DayAggregate {
   /** Local calendar date, YYYY-MM-DD. */
   date: string;
   /** Day of year in local time (1–366). */
   doy: number;
-  metrics: Partial<Record<Metric, { min: number; max: number; mean: number; n: number; last: number }>>;
+  metrics: Partial<Record<Metric, MetricDay>>;
+}
+
+/** Minutes east of UTC: a fixed number, or a function of the UTC time (for daylight saving). */
+export type Offset = number | ((utcMs: number) => number);
+export const offsetAt = (o: Offset, t: number): number => (typeof o === 'number' ? o : o(t));
+
+/** Number of distinct local hours covered. */
+export function hoursCovered(m: MetricDay | undefined): number {
+  let x = m?.hm ?? 0, n = 0;
+  while (x) (n += x & 1), (x >>>= 1);
+  return n;
+}
+
+/**
+ * A day summary good enough to use as that day's min/max: ≥ 18 local hours with readings, including
+ * the small hours (2–7 am) when the minimum usually happens.
+ */
+export function fullDay(m: MetricDay | undefined): boolean {
+  return !!m && hoursCovered(m) >= 18 && ((m.hm ?? 0) & 0b11111100) !== 0;
+}
+
+/** Combine partial summaries of the same day (e.g. from two phones that each heard a sensor). */
+export function mergeMetricDays(parts: MetricDay[]): MetricDay | undefined {
+  if (!parts.length) return undefined;
+  const n = parts.reduce((s, p) => s + p.n, 0);
+  return {
+    min: Math.min(...parts.map((p) => p.min)), max: Math.max(...parts.map((p) => p.max)),
+    mean: n ? parts.reduce((s, p) => s + p.mean * p.n, 0) / n : parts[0]!.mean, n,
+    last: parts[parts.length - 1]!.last, hm: parts.reduce((s, p) => s | (p.hm ?? 0), 0),
+  };
+}
+
+export function mergeDayMetrics(parts: Array<DayAggregate['metrics']>): DayAggregate['metrics'] {
+  const out: DayAggregate['metrics'] = {};
+  const keys = new Set(parts.flatMap((p) => Object.keys(p))) as Set<Metric>;
+  for (const k of keys) out[k] = mergeMetricDays(parts.map((p) => p[k]).filter((x): x is MetricDay => !!x));
+  return out;
 }
 
 const DAY = 86_400_000;
 
-/** Local date parts for a UTC time and a fixed offset (minutes east of UTC, e.g. −240 for EDT). */
-export function localDate(t: number, offsetMin: number): { date: string; doy: number; hour: number } {
-  const d = new Date(t + offsetMin * 60_000);
+/** Local date parts for a UTC time and an offset (minutes east of UTC, e.g. −240 for EDT). */
+export function localDate(t: number, offset: Offset): { date: string; doy: number; hour: number } {
+  const d = new Date(t + offsetAt(offset, t) * 60_000);
   const y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate();
   const doy = Math.floor((Date.UTC(y, m, day) - Date.UTC(y, 0, 0)) / DAY);
   return { date: `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`, doy, hour: d.getUTCHours() };
 }
 
-/** Daily min/max/mean per metric. Suspect readings are left out. */
-export function dailyAggregates(readings: Reading[], offsetMin: number): DayAggregate[] {
+/** Daily min/max/mean per metric, with hour coverage. Suspect readings are left out. */
+export function dailyAggregates(readings: Reading[], offset: Offset): DayAggregate[] {
   const days = new Map<string, DayAggregate>();
   const sorted = [...readings].sort((a, b) => a.t - b.t);
   for (const r of sorted) {
     if (r.quality === 'suspect') continue;
-    const { date, doy } = localDate(r.t, offsetMin);
+    const { date, doy, hour } = localDate(r.t, offset);
     const agg = days.get(date) ?? { date, doy, metrics: {} };
     days.set(date, agg);
     const m = agg.metrics[r.metric];
-    if (!m) agg.metrics[r.metric] = { min: r.value, max: r.value, mean: r.value, n: 1, last: r.value };
+    if (!m) agg.metrics[r.metric] = { min: r.value, max: r.value, mean: r.value, n: 1, last: r.value, hm: 1 << hour };
     else {
       m.min = Math.min(m.min, r.value);
       m.max = Math.max(m.max, r.value);
       m.mean += (r.value - m.mean) / ++m.n;
       m.last = r.value;
+      m.hm = (m.hm ?? 0) | (1 << hour);
     }
   }
   return [...days.values()].sort((a, b) => a.date.localeCompare(b.date));
@@ -96,21 +144,22 @@ export function freshness(lastT: number | undefined, now: number, expectedMs: nu
 // ---------------- Soil temperature: measured → regional → modeled ----------------
 
 /**
- * Soil temperature function (°F by day of year) for the calendar: measured daily means where they
- * exist; elsewhere the model shifted by the recent measured-minus-model bias, fading back to the
- * model over `fadeDays` after the last measurement.
+ * Soil temperature function (°F by day of year) for the calendar: measured daily means on measured
+ * days; for the days just after the last measurement, the model shifted by the recent measured-minus-
+ * model bias, fading back to the model over `fadeDays`; the model everywhere else. `measured` must be
+ * in chronological order (it may wrap past New Year); only the recent window should be passed.
  */
 export function blendSoilCurve(modelF: (doy: number) => number, measured: Array<{ doy: number; meanF: number }>, fadeDays = 30): (doy: number) => number {
   if (!measured.length) return modelF;
   const byDoy = new Map(measured.map((m) => [m.doy, m.meanF]));
-  const last = Math.max(...measured.map((m) => m.doy));
-  const recent = measured.filter((m) => m.doy > last - 14);
+  const last = measured[measured.length - 1]!.doy;
+  const recent = measured.slice(-14);
   const bias = recent.reduce((s, m) => s + (m.meanF - modelF(m.doy)), 0) / recent.length;
   return (doy: number) => {
     const m = byDoy.get(doy);
     if (m !== undefined) return m;
-    const w = doy > last ? Math.max(0, 1 - (doy - last) / fadeDays) : 1;
-    return modelF(doy) + bias * w;
+    const ahead = (doy - last + 365) % 365; // days after the last measurement, around the year
+    return modelF(doy) + bias * Math.max(0, 1 - ahead / fadeDays);
   };
 }
 

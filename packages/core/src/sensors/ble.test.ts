@@ -212,3 +212,19 @@ test('dispatcher ignores unrelated advertisements', () => {
   assert.equal(decodeAdvertisement({ id: 'x' }), null);
   assert.equal(shortUuid('0000FE95-0000-1000-8000-00805F9B34FB'), 'fe95');
 });
+
+test('bad keys or MACs never throw (a scan callback must not crash)', () => {
+  const sd = h('41a47266c95f730011223378237214');
+  // A 24-hex (12-byte) legacy Xiaomi key used on a BTHome device, and a junk MAC.
+  assert.equal(decodeBthomeV2(sd, { key: h('00'.repeat(12)), mac: '54:48:E6:8F:80:A5' })!.needsKey, true);
+  assert.equal(decodeBthomeV2(sd, { key: h('00'.repeat(16)), mac: 'hello' })!.needsKey, true);
+  assert.equal(decodeMiBeacon(h('4859b5553a8699bda053448f1200005b046d6a'), { key: h('00'.repeat(12)), mac: 'A4:C1:38:80:15:07' })!.needsKey, true);
+  assert.equal(decodeAtc(h('bd86c53ffab900c1515859'), { key: h('aa'.repeat(16)), mac: 'nope' })!.needsKey, true);
+  assert.equal(decodeBthomeV1(h('fba435e4d3c312fb0011223357d90a99'), true, { key: h('11'.repeat(12)), mac: '54:48:E6:8F:80:A5' })!.needsKey, true);
+});
+
+test('an Inkbird whose temperature bytes look like a SwitchBot or Ruuvi company id still decodes as Inkbird', () => {
+  // 0x0969 = 24.09 °C and 0x0499 = 11.77 °C, little-endian in the first two bytes.
+  vals(decodeAdvertisement({ id: 'x', name: 'sps', manufacturerData: h('6909d01300ce906406') }), { temperature: 24.09, humidity: 50.72 });
+  vals(decodeAdvertisement({ id: 'x', name: 'sps', manufacturerData: h('9904d01300ce906406') }), { temperature: 11.77 });
+});
