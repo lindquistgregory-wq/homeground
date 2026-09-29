@@ -86,4 +86,15 @@ Any station software's CSV export can be imported.
 
 ## Sync and storage
 
-Raw readings stay on the device. Sensor definitions and **daily summaries** (min, max and mean per metric, per local day) sync through your own iCloud, so every device has the history the calendar needs without uploading every 5-minute reading. Deleting a sensor removes its readings and its keychain entry.
+Raw readings stay on the phone that collected them. Sensor definitions and **daily summaries** sync through your own iCloud: min, max and mean per metric per local day, plus which hours of the day had readings. Every device then has the history the calendar needs, without uploading every 5-minute reading.
+
+- **One summary per phone.** Each phone syncs its own part of each day. Parts are combined when read:
+  - **Bluetooth sensors:** parts are merged. Each phone heard the sensor at different times.
+  - **Stations and imports:** the most complete part wins. Two phones downloading the same station get the same readings, and merging would count rain twice.
+- **Whole days only.** Degree days, water use and frost offsets only use days with readings in at least 18 hours, including the small hours when the low happens. A few snapshots taken when the app opened don't count as a day.
+- **Station history catch-up.** A station's history is downloaded when you connect it (up to a year). After that, each refresh fills the gap since the last complete download, up to two weeks in the foreground or one day in the ~30-second background window. The "complete through" point only moves when a download finishes, so an interrupted one leaves no hole.
+- **Local days.** Local days follow the phone's time zone, including daylight-saving changes.
+- **Another phone.**
+  - iOS gives each phone its own Bluetooth id for a sensor. On the second phone, "Find Bluetooth sensors" offers **This is "…"** to link a sensor to the synced one, keeping a single history. That phone's id is stored locally only.
+  - Station keys and bindkeys never sync. A synced station shows **Keys on this phone** so its keys can be entered once.
+- **Deleting a sensor** removes its readings, its pending summaries and its keychain entry.
