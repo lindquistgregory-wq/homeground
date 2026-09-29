@@ -30,6 +30,7 @@ export interface ParcelAnalysis {
   maskGrid: Grid;
   horizon?: HorizonProfile;
   slope?: Grid;
+  aspect?: Grid;
   pooling?: Grid;
   frost?: { lastSpringDoy?: number | null; firstFallDoy?: number | null };
 }
@@ -101,16 +102,16 @@ export async function loadAnalysis(
     let canopy: Layer<Grid> | undefined;
     if (opts.canopy) canopy = await parcelCanopy(client, like(ground, 0), inflate);
 
-    let horizon: HorizonProfile | undefined, slope: Grid | undefined, pooling: Grid | undefined;
+    let horizon: HorizonProfile | undefined, slope: Grid | undefined, aspect: Grid | undefined, pooling: Grid | undefined;
     if (terrain.status === 'ok') {
       const cx = (box.xmin + box.xmax) / 2, cy = (box.ymin + box.ymax) / 2;
       // Start the far horizon where the near grid ends so no terrain band is skipped.
       const nearEdge = Math.min(cx - ext[0], ext[2] - cx, cy - ext[1], ext[3] - cy);
       horizon = horizonProfile(terrain.value.far, cx, cy, { minDistM: Math.max(30, nearEdge - 2 * cell) });
-      slope = slopeAspect(ground).slope;
+      ({ slope, aspect } = slopeAspect(ground));
       pooling = coldAirPoolingIndex(ground);
     }
-    return { parcelId, frame, boundary, terrain, canopy, ground, mask, maskGrid, horizon, slope, pooling, frost: opts.frost };
+    return { parcelId, frame, boundary, terrain, canopy, ground, mask, maskGrid, horizon, slope, aspect, pooling, frost: opts.frost };
   })();
   cache.set(key, p);
   p.catch(() => cache.delete(key));

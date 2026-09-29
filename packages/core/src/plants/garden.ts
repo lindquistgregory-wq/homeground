@@ -139,7 +139,7 @@ export function weatherAlerts(periods: ForecastPeriod[], crops: PlantedCrop[]): 
         alerts.push({
           kind: hard ? 'freeze' : 'frost',
           at: p.start,
-          title: `${hard ? 'Freeze' : 'Frost'} risk tonight: low ${Math.round(p.temperatureF)} °F`,
+          title: `${hard ? 'Freeze' : 'Frost'} risk ${dayLabel(p.start)} night: low ${Math.round(p.temperatureF)} °F`,
           body: `Protect ${names.slice(0, 4).join(', ')}${names.length > 4 ? ` and ${names.length - 4} more` : ''}: cover with row cover or sheets before dusk, water dry soil, and bring in containers.`,
           plantingIds: hit.map((c) => c.plantingId),
         });
@@ -149,7 +149,7 @@ export function weatherAlerts(periods: ForecastPeriod[], crops: PlantedCrop[]): 
         const hit = crops.filter((c) => c.plant.season === 'cool' || c.plant.heat === 'low' || c.plant.id === 'tomato' || c.plant.id.startsWith('pepper'));
         if (hit.length)
           alerts.push({
-            kind: 'heat', at: p.start, title: `Heat: high ${Math.round(p.temperatureF)} °F`,
+            kind: 'heat', at: p.start, title: `Heat ${dayLabel(p.start)}: high ${Math.round(p.temperatureF)} °F`,
             body: `Water deeply in the morning and shade ${unique(hit.map((c) => c.plant.commonName)).slice(0, 4).join(', ')}. Tomatoes and peppers drop blossoms above ~90 °F.`,
             plantingIds: hit.map((c) => c.plantingId),
           });
@@ -158,10 +158,20 @@ export function weatherAlerts(periods: ForecastPeriod[], crops: PlantedCrop[]): 
     if ((p.windMph ?? 0) >= 30) {
       const tall = crops.filter((c) => c.plant.heightIn >= 48);
       if (tall.length)
-        alerts.push({ kind: 'wind', at: p.start, title: `Wind gusts to ${Math.round(p.windMph!)} mph`, body: `Check stakes and trellises for ${unique(tall.map((c) => c.plant.commonName)).slice(0, 4).join(', ')}.`, plantingIds: tall.map((c) => c.plantingId) });
+        alerts.push({ kind: 'wind', at: p.start, title: `Wind to ${Math.round(p.windMph!)} mph ${dayLabel(p.start)}`, body: `Check stakes and trellises for ${unique(tall.map((c) => c.plant.commonName)).slice(0, 4).join(', ')}.`, plantingIds: tall.map((c) => c.plantingId) });
     }
   }
   return alerts;
+}
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** "Fri Oct 2" from the local date in an NWS ISO timestamp (the offset is the forecast office's). */
+function dayLabel(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return '';
+  const d = new Date(Date.UTC(+m[1]!, +m[2]! - 1, +m[3]!));
+  return `${DAYS[d.getUTCDay()]} ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 
 const unique = <T>(xs: T[]) => [...new Set(xs)];

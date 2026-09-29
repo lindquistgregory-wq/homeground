@@ -79,6 +79,27 @@ const MIGRATIONS: string[] = [
     modeled_sun INTEGER                -- what the shade model predicted for that moment
   );
   `,
+  // 3 — Phase 3 planting guide
+  `
+  CREATE TABLE IF NOT EXISTS plantings (
+    id TEXT PRIMARY KEY,
+    parcel_id TEXT NOT NULL,
+    design_id TEXT NOT NULL,
+    bed_object_id TEXT NOT NULL,       -- DesignObject id of the bed / row / tree spot
+    plant_id TEXT NOT NULL,
+    variety TEXT,
+    year INTEGER NOT NULL,
+    share REAL NOT NULL DEFAULT 1,     -- fraction of the bed's length used
+    status TEXT NOT NULL,              -- 'planned' | 'planted' | 'harvested' | 'removed'
+    planted_on TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL,
+    updated_hlc TEXT NOT NULL,
+    deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS plantings_bed ON plantings(design_id, bed_object_id);
+  CREATE INDEX IF NOT EXISTS plantings_parcel ON plantings(parcel_id);
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -134,7 +155,7 @@ export class SqliteHttpCache implements KeyValueCache {
 export async function maxStoredHlc(): Promise<string | undefined> {
   const db = await getDb();
   const r = await db.getFirstAsync<{ m: string | null }>(
-    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs)',
+    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs UNION ALL SELECT MAX(updated_hlc) FROM plantings)',
   );
   return r?.m ?? undefined;
 }
@@ -143,6 +164,6 @@ export async function maxStoredHlc(): Promise<string | undefined> {
 export async function deleteAllLocalData(): Promise<void> {
   const db = await getDb();
   await db.execAsync(
-    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks;',
+    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings;',
   );
 }
