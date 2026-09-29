@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   ambientDevices, ecowittDate, ecowittHistory, ecowittLocal, ecowittRealtime, isLocalAddress, parseEcowittLocal, parseTempestUdp,
-  parseWeatherLinkCurrent, parseWeatherLinkLive, toCanonical, valUnit, weatherLinkCurrent, type StationObservation,
+  parseWeatherLinkCurrent, parseWeatherLinkLive, transmitterChannels, toCanonical, valUnit, weatherLinkCurrent, type StationObservation,
 } from './stations';
 import { nearestScan, parseScanHourly, regionalSoil, scanStations } from './scan';
 import { testClient } from './testing';
@@ -181,4 +181,18 @@ test('WeatherLink: an indoor AirLink or a second ISS never overwrites the outdoo
   near(chan(o, 'outdoor').temperature, 10); near(chan(o, 'outdoor').humidity, 80); near(chan(o, 'outdoor').pressure, 30 * 33.8639);
   near(chan(o, 'iss2').temperature, 4.44);
   assert.equal(o.channels.length, 2);
+});
+
+test('WeatherLink: outdoor channel is stable whatever the listing order; all-in-one records keep pressure and soil', () => {
+  const a = transmitterChannels([{ id: 9, temp: false }, { id: 5, temp: true }, { id: 3, temp: true }]);
+  const b = transmitterChannels([{ id: 3, temp: true }, { id: 9, temp: false }, { id: 5, temp: true }]);
+  assert.equal(a.get(3)?.channel, 'outdoor');
+  assert.deepEqual([...a.entries()].sort(), [...b.entries()].sort());
+  // A standalone anemometer (no temperature) never becomes "Outdoor", even with the lowest id.
+  assert.notEqual(transmitterChannels([{ id: 1, temp: false }, { id: 2, temp: true }]).get(1)?.channel, 'outdoor');
+  // WeatherLink IP (type 1): one record with temperature, pressure and soil moisture.
+  const o = parseWeatherLinkCurrent({ sensors: [{ lsid: 7, sensor_type: 1, data_structure_type: 1, data: [{ ts: 100, temp_out: 50, bar: 30, moist_soil_1: 20 }] }] });
+  near(chan(o, 'outdoor').temperature, 10);
+  near(chan(o, 'outdoor').pressure, 30 * 33.8639);
+  assert.ok(o.channels.some((c) => c.channel === 'soil1'));
 });

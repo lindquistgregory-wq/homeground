@@ -38,7 +38,7 @@ TaskManager.defineTask(ALERT_TASK, async () => {
     await getDb();
     // A headless run starts without the app's startup: set up the device id and clock first.
     await initIdentity();
-    await checkAlerts();
+    await checkAlerts({ background: true });
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch {
     return BackgroundTask.BackgroundTaskResult.Failed;
@@ -158,16 +158,21 @@ export function checkThresholdsNow(): Promise<void> {
 let inFlight: Promise<void> | null = null;
 
 /** Check every parcel with planted crops and post a notification for each new alert (one check at a time). */
-export function checkAlerts(): Promise<void> {
-  inFlight ??= runCheck().finally(() => { inFlight = null; });
+export function checkAlerts(opts: { background?: boolean } = {}): Promise<void> {
+  inFlight ??= runCheck(opts).finally(() => { inFlight = null; });
   return inFlight;
 }
 
-async function runCheck(): Promise<void> {
+async function runCheck(opts: { background?: boolean }): Promise<void> {
+  // Don't race a threshold check that's already writing the sent-list. Captured before any await: a
+  // threshold check that starts after this one waits for it instead, so the two can't wait on each other.
+  const earlier = thresholdsInFlight;
   if (!(await alertsEnabled())) return;
+  if (earlier) await earlier.catch(() => undefined);
   const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);
   // Station accounts can be read from anywhere; fetch fresh readings before checking thresholds.
-  await refreshAllStations(localOffsetMin(), false).catch(() => undefined);
+  // In the background (about 30 s allowed) only a short gap of missed history is pulled.
+  await refreshAllStations(localOffsetMin(), false, opts.background ? 1 : 14).catch(() => undefined);
   await checkSensorThresholds(sent);
   await kvSet(SENT_KEY, JSON.stringify([...sent]));
   for (const parcel of await listParcels()) {

@@ -81,11 +81,16 @@ export async function measuredGdd(parcelId: string, fromDate: string, baseF = 50
   return null;
 }
 
-/** Rain on a day: the station's daily counter at its highest, else the sum of per-reading rain. */
+/**
+ * Rain on a day: the larger of the station's daily counter (at its highest) and the sum of per-interval
+ * rain. A day can have both (live snapshots plus archive records); the snapshots can stop before the
+ * day's last rain, so neither alone is safe.
+ */
 function rainMm(d: DayAggregate): number | undefined {
-  if (d.metrics.rainDaily) return d.metrics.rainDaily.max;
-  if (d.metrics.rain) return d.metrics.rain.mean * d.metrics.rain.n;
-  return undefined;
+  const daily = d.metrics.rainDaily?.max;
+  const summed = d.metrics.rain ? d.metrics.rain.mean * d.metrics.rain.n : undefined;
+  if (daily === undefined && summed === undefined) return undefined;
+  return Math.max(daily ?? 0, summed ?? 0);
 }
 
 export interface WaterAdvice extends WaterBalance {

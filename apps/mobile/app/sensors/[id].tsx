@@ -24,7 +24,7 @@ import { deleteSecret, deleteSecrets, getSecret, setSecret } from '../../src/ser
 import { localOffsetMin } from '../../src/services/sensorInsights';
 import { useSettings } from '../../src/services/settings';
 import { calibrateLightSensor, getCalibration, type StoredCalibration } from '../../src/services/sunCalibration';
-import { listenTempest, refreshStation } from '../../src/services/stations';
+import { backfillStation, clearStationHistoryFlags, listenTempest, refreshStation } from '../../src/services/stations';
 import type { DesignObject } from '@plotwright/core';
 
 const EXPOSURES: Exposure[] = ['open-air', 'shaded-air', 'greenhouse', 'soil', 'indoor'];
@@ -295,12 +295,15 @@ function StationKeysCard({ s }: { s: SensorRecord }) {
     const secret = Object.fromEntries(fields.map(([k]) => [k, (f[k] ?? '').trim()]));
     if (Object.values(secret).some((v) => !v)) return Alert.alert('Keys', 'Enter both keys.');
     await setSecret(s.id, secret);
+    await clearStationHistoryFlags(s.id);
     const r = await refreshStation(s, localOffsetMin()).catch((e: Error) => ({ status: 'unavailable' as const, reason: e.message }));
     if (!r || r.status !== 'ok') {
       await deleteSecret(s.id);
       return Alert.alert('Couldn’t connect', r && 'reason' in r ? r.reason : 'Check the keys and try again.');
     }
     setHas(true);
+    // The other phone's daily summaries already synced; fetch the last month so this phone has the detail too.
+    void backfillStation(s, localOffsetMin(), () => undefined, 30).catch(() => undefined);
   };
   return (
     <Card title="Keys on this phone">

@@ -36,8 +36,14 @@ export default function ImportCsv() {
     let cancelled = false;
     setWorking('Reading the columns…');
     const h = setTimeout(() => {
-      const p = importCsvRows(file.rows, { sensorId, offsetMin: localOffsetMin(), defaultUnits: assumed, dayFirst });
-      if (!cancelled) { setPreview(p); setWorking(null); }
+      try {
+        const p = importCsvRows(file.rows, { sensorId, offsetMin: localOffsetMin(), defaultUnits: assumed, dayFirst });
+        if (!cancelled) setPreview(p);
+      } catch (e) {
+        if (!cancelled) Alert.alert('Couldn’t read the file', (e as Error).message);
+      } finally {
+        if (!cancelled) setWorking(null);
+      }
     }, 50);
     return () => { cancelled = true; clearTimeout(h); };
   }, [file, sensorId, assumed, dayFirst]);
@@ -57,7 +63,14 @@ export default function ImportCsv() {
     setPreview(null);
     setWorking('Opening the file…');
     // Split into rows once; unit and date choices then only re-convert.
-    setTimeout(() => setFile({ name, rows: parseCsv(text) }), 50);
+    setTimeout(() => {
+      try {
+        setFile({ name, rows: parseCsv(text) });
+      } catch (e) {
+        setWorking(null);
+        Alert.alert('Couldn’t read the file', (e as Error).message);
+      }
+    }, 50);
   };
 
   const save = async () => {

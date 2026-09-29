@@ -4,7 +4,7 @@
  * the calendar, GDD and water balance need without shipping every 5-minute reading to iCloud.
  */
 import {
-  dailyAggregates, localDate, mergeDayMetrics, type DayAggregate, type Exposure, type Metric, type Offset, type Reading, type SensorKind, type Thresholds,
+  dailyAggregates, hoursCovered, localDate, mergeDayMetrics, type DayAggregate, type Exposure, type Metric, type Offset, type Reading, type SensorKind, type Thresholds,
 } from '@plotwright/core';
 import { getDb } from './database';
 import { clock, getDeviceId, newId } from '../services/identity';
@@ -209,9 +209,21 @@ export async function latestValues(sensorId: string): Promise<Partial<Record<Met
   return out;
 }
 
-/** Daily summaries for a sensor, merging the parts collected by each phone. */
+/**
+ * Daily summaries for a sensor, combining the parts collected by each phone. Bluetooth parts are
+ * different readings (each phone heard the sensor at different times), so they're merged. Station and
+ * import parts are the same readings downloaded twice, so the most complete part wins; merging them
+ * would count per-interval rain twice.
+ */
 export async function sensorDays(sensorId: string, fromDate?: string): Promise<DayAggregate[]> {
   const db = await getDb();
+  const kind = (await db.getFirstAsync<{ kind: SensorKind }>('SELECT kind FROM sensors WHERE id = ?', sensorId))?.kind;
+  const combine = (parts: Array<DayAggregate['metrics']>): DayAggregate['metrics'] => {
+    if (parts.length === 1) return parts[0]!;
+    if (kind === 'ble') return mergeDayMetrics(parts);
+    const coverage = (p: DayAggregate['metrics']) => Math.max(0, ...Object.values(p).map((m) => hoursCovered(m) * 10_000 + (m?.n ?? 0)));
+    return parts.reduce((best, p) => (coverage(p) > coverage(best) ? p : best));
+  };
   const rows = await db.getAllAsync<{ date: string; doy: number; metrics: string }>(
     'SELECT date, doy, metrics FROM sensor_days WHERE sensor_id = ? AND date >= ? ORDER BY date', sensorId, fromDate ?? '0000');
   const byDate = new Map<string, { doy: number; parts: Array<DayAggregate['metrics']> }>();
@@ -220,7 +232,7 @@ export async function sensorDays(sensorId: string, fromDate?: string): Promise<D
     e.parts.push(JSON.parse(r.metrics) as DayAggregate['metrics']);
     byDate.set(r.date, e);
   }
-  return [...byDate.entries()].map(([date, e]) => ({ date, doy: e.doy, metrics: e.parts.length === 1 ? e.parts[0]! : mergeDayMetrics(e.parts) }));
+  return [...byDate.entries()].map(([date, e]) => ({ date, doy: e.doy, metrics: combine(e.parts) }));
 }
 
 /** Most recent reading time for a sensor, for backfill (null = none yet). */

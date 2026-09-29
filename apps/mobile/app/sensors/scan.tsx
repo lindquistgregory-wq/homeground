@@ -76,12 +76,15 @@ export default function Scan() {
           <Text style={{ color: d.known ? t.accent : t.accent, fontWeight: '600' }}>{d.known ? 'Added' : 'Add'}</Text>
         </Pressable>
       ))}
-      {adding && <AddForm d={adding} parcelId={parcelId} onDone={() => { setAdding(null); router.back(); }} onCancel={() => setAdding(null)} />}
+      {adding && (
+        <AddForm d={adding} parcelId={parcelId} heardIds={new Set(list.map((x) => x.known?.id).filter((x): x is string => !!x))}
+          onDone={() => { setAdding(null); router.back(); }} onCancel={() => setAdding(null)} />
+      )}
     </ScrollView>
   );
 }
 
-function AddForm({ d, parcelId, onDone, onCancel }: { d: SeenDevice; parcelId: string; onDone: () => void; onCancel: () => void }) {
+function AddForm({ d, parcelId, heardIds, onDone, onCancel }: { d: SeenDevice; parcelId: string; heardIds: Set<string>; onDone: () => void; onCancel: () => void }) {
   const t = useTheme();
   const plant = d.values.soilMoisture !== undefined || d.values.conductivity !== undefined;
   const [name, setName] = useState(`${d.decoded.vendor} ${d.decoded.model}`);
@@ -92,22 +95,43 @@ function AddForm({ d, parcelId, onDone, onCancel }: { d: SeenDevice; parcelId: s
   // Sensors added on another phone arrive by sync, but iOS gives each phone its own Bluetooth ids.
   const [existing, setExisting] = useState<SensorRecord[]>([]);
   useEffect(() => {
-    void listSensors(parcelId).then((all) => setExisting(all.filter((x) => x.kind === 'ble' && !x.parentId && x.protocol === d.decoded.protocol && x.deviceKey !== d.key)));
-  }, [parcelId, d]);
+    // Sensors this phone is already hearing under their own id are other devices: don't offer them.
+    void listSensors(parcelId).then((all) => setExisting(all.filter((x) => x.kind === 'ble' && !x.parentId && x.protocol === d.decoded.protocol && x.deviceKey !== d.key && !heardIds.has(x.id))));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parcelId, d.key, d.decoded.protocol, [...heardIds].sort().join(',')]);
+
+  /** The key and MAC typed in the form, validated; null (after telling the user) when they're needed but wrong. */
+  const credentials = (): { key?: string; mac?: string } | null => {
+    const key = bindkey.replace(/[\s:-]/g, '');
+    // Only older Xiaomi (MiBeacon v2/v3) keys are 24 characters; everything else is AES-128 (32).
+    const keyOk = /^[0-9a-f]{32}$/i.test(key) || (d.decoded.protocol === 'xiaomi' && /^[0-9a-f]{24}$/i.test(key));
+    if (needsKey && !keyOk) {
+      Alert.alert('Bindkey', d.decoded.protocol === 'xiaomi' ? 'Enter the 32-character hex bindkey (24 characters for older Xiaomi firmware).' : 'Enter the 32-character hex bindkey.');
+      return null;
+    }
+    const m = normalizeMac(mac);
+    if (needsKey && !m) {
+      Alert.alert('MAC address', 'Enter the sensor’s MAC address as AA:BB:CC:DD:EE:FF (printed on the device or shown in its app).');
+      return null;
+    }
+    return { key: needsKey ? key.toLowerCase() : undefined, mac: m ?? undefined };
+  };
 
   const link = async (s: SensorRecord) => {
+    // An encrypted sensor needs its key on this phone too (keys never leave the phone they're entered on).
+    const c = credentials();
+    if (!c) return;
     await setBleAlias(d.key, s.id);
+    if (c.key) await setSecret(s.id, { bindkey: c.key });
+    if (c.mac && !s.mac) await saveSensor({ ...s, mac: c.mac });
     knownSensorsChanged();
     onDone();
   };
 
   const save = async () => {
-    const key = bindkey.replace(/[\s:-]/g, '');
-    // Only older Xiaomi (MiBeacon v2/v3) keys are 24 characters; everything else is AES-128 (32).
-    const keyOk = /^[0-9a-f]{32}$/i.test(key) || (d.decoded.protocol === 'xiaomi' && /^[0-9a-f]{24}$/i.test(key));
-    if (needsKey && !keyOk) return Alert.alert('Bindkey', d.decoded.protocol === 'xiaomi' ? 'Enter the 32-character hex bindkey (24 characters for older Xiaomi firmware).' : 'Enter the 32-character hex bindkey.');
-    const m = normalizeMac(mac);
-    if (needsKey && !m) return Alert.alert('MAC address', 'Enter the sensor’s MAC address as AA:BB:CC:DD:EE:FF (printed on the device or shown in its app).');
+    const c = credentials();
+    if (!c) return;
+    const m = c.mac;
     const s = await saveSensor({
       parcelId, kind: 'ble', protocol: d.decoded.protocol, vendor: d.decoded.vendor, model: d.decoded.model, name: name.trim() || d.decoded.model,
       deviceKey: d.key, exposure, mac: m ?? undefined, modelHint: d.decoded.protocol === 'switchbot' ? d.decoded.model : undefined,
@@ -115,7 +139,7 @@ function AddForm({ d, parcelId, onDone, onCancel }: { d: SeenDevice; parcelId: s
     for (const ch of Object.keys(d.decoded.channels ?? {})) {
       await saveSensor({ parcelId, kind: 'ble', protocol: s.protocol, vendor: s.vendor, model: s.model, name: `${s.name} (${ch === 'remote' ? 'remote probe' : `probe ${ch}`})`, deviceKey: d.key, channel: ch, parentId: s.id, exposure });
     }
-    if (needsKey) await setSecret(s.id, { bindkey: key.toLowerCase() });
+    if (c.key) await setSecret(s.id, { bindkey: c.key });
     else await ingestSeen({ ...d, known: s }, localOffsetMin());
     knownSensorsChanged();
     onDone();
@@ -125,7 +149,7 @@ function AddForm({ d, parcelId, onDone, onCancel }: { d: SeenDevice; parcelId: s
     <Card title="Add sensor">
       {existing.length > 0 && (
         <View style={{ marginBottom: 8 }}>
-          <Body>Already added this sensor on another phone? Link it to keep one history:</Body>
+          <Body>Already added this sensor on another phone? Link it to keep one history{needsKey ? ' (enter its key below first)' : ''}:</Body>
           {existing.map((x) => <Button key={x.id} title={`This is “${x.name}”`} kind="secondary" onPress={() => void link(x)} />)}
         </View>
       )}

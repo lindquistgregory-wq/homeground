@@ -8,7 +8,7 @@ import {
   ambientDevices, ambientHistory, ecowittHistory, ecowittLocal, ecowittRealtime, parseTempestUdp, weatherLinkCurrent, weatherLinkHistoric, weatherLinkLive,
   type StationChannel, type StationObservation,
 } from '@plotwright/providers';
-import { findSensor, insertReadings, lastReadingTime, listSensors, saveSensor, touchSensor, type SensorRecord } from '../db/sensors';
+import { findSensor, insertReadings, listSensors, saveSensor, touchSensor, type SensorRecord } from '../db/sensors';
 import { kvGet, kvSet } from '../db/database';
 import { http } from './http';
 import { getSecret } from './secrets';
@@ -53,10 +53,21 @@ export async function ingestObservations(station: SensorRecord, obs: StationObse
 
 const CLOUD: StationProtocol[] = ['ecowitt', 'ambient', 'weatherlink'];
 
-/** Newest stored reading across a station's channels (0 if none). */
-async function newestReading(station: SensorRecord): Promise<number> {
-  const children = (await listSensors(station.parcelId)).filter((s) => s.parentId === station.id);
-  return Math.max(0, ...(await Promise.all(children.map((c) => lastReadingTime(c.id)))).map((t) => t ?? 0));
+/**
+ * "History complete through" time for a station on this phone. It only moves forward when a download
+ * finishes, so an interrupted one (network, app closed, background time limit) is simply redone from
+ * the same point next time instead of leaving a hole. Readings are de-duplicated on insert.
+ */
+const markKey = (stationId: string) => `backfilled.${stationId}`;
+async function backfilledThrough(stationId: string): Promise<number | null> {
+  const v = Number(await kvGet(markKey(stationId)));
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
+/** WeatherLink history is a paid plan feature; after a refusal, wait a week before asking again. */
+const noHistoryKey = (stationId: string) => `wl.noHistory.${stationId}`;
+export async function clearStationHistoryFlags(stationId: string): Promise<void> {
+  await kvSet(noHistoryKey(stationId), '');
 }
 
 /**
@@ -64,13 +75,14 @@ async function newestReading(station: SensorRecord): Promise<number> {
  * since the last reading we have is pulled first (the services keep 5-minute data), so daily min/max,
  * heat units and water use come from whole days rather than a few snapshots taken when the app opened.
  */
-export async function refreshStation(station: SensorRecord, offsetMin: Offset): Promise<Layer<StationObservation> | null> {
+export async function refreshStation(station: SensorRecord, offsetMin: Offset, opts: { gapDays?: number } = {}): Promise<Layer<StationObservation> | null> {
   const sec = await getSecret(station.id);
-  if (CLOUD.includes(station.protocol as StationProtocol) && sec) {
-    const newest = await newestReading(station);
-    // Only when there's a real gap (> 20 min), and at most two weeks at a time.
-    if (newest && Date.now() - newest > 20 * 60_000) {
-      await backfillStation(station, offsetMin, () => undefined, 14, 15 * 60_000).catch(() => undefined);
+  const gapDays = opts.gapDays ?? 14;
+  if (gapDays > 0 && CLOUD.includes(station.protocol as StationProtocol) && sec) {
+    const mark = await backfilledThrough(station.id);
+    // Only after the first full download (connect does that), and only when there's a real gap.
+    if (mark && Date.now() - mark > 20 * 60_000) {
+      await backfillStation(station, offsetMin, () => undefined, gapDays).catch(() => undefined);
     }
   }
   let layer: Layer<StationObservation> | null = null;
@@ -119,13 +131,15 @@ const DAY = 86_400_000;
  * records going back (kept 1 year). WeatherLink: 24-hour windows, only on a WeatherLink Pro plan.
  */
 export async function backfillStation(
-  station: SensorRecord, offsetMin: Offset, onProgress: (p: BackfillProgress) => void, maxDays = 365, overlapMs = DAY,
+  station: SensorRecord, offsetMin: Offset, onProgress: (p: BackfillProgress) => void, maxDays = 365,
 ): Promise<BackfillProgress> {
   const sec = await getSecret(station.id);
   const now = Date.now();
-  const newest = await newestReading(station);
-  const from = Math.max(now - maxDays * DAY, newest ? newest - overlapMs : 0);
+  const mark = await backfilledThrough(station.id);
+  // From where complete history ends (with 15 minutes of overlap), or `maxDays` back on first download.
+  const from = Math.max(now - maxDays * DAY, mark ? mark - 15 * 60_000 : 0);
   const p: BackfillProgress = { done: 0, total: 0, readings: 0 };
+  let complete = false;
   try {
     if (station.protocol === 'ecowitt' && sec?.applicationKey && sec.apiKey) {
       const keys = { applicationKey: sec.applicationKey, apiKey: sec.apiKey, mac: station.deviceKey! };
@@ -143,59 +157,70 @@ export async function backfillStation(
         p.done++;
         onProgress({ ...p });
       }
+      complete = true;
     } else if (station.protocol === 'ambient' && sec?.applicationKey && sec.apiKey) {
       const keys = { applicationKey: sec.applicationKey, apiKey: sec.apiKey };
       let end = now;
       p.total = Math.ceil((now - from) / DAY); // approximate: 1 page ≈ 1 day of 5-minute data
-      for (let page = 0; page < 200 && end > from; page++) {
+      let page = 0;
+      for (; page < 400 && end > from; page++) {
         const obs = await ambientHistory(http, keys, station.deviceKey!, end);
-        if (!obs.length) break;
+        if (!obs.length) break; // nothing older on the account
         p.readings += await ingestObservations(station, obs.filter((o) => o.t >= from), offsetMin);
         end = obs[0]!.t - 1;
         p.done = Math.min(p.total, Math.ceil((now - end) / DAY));
         onProgress({ ...p });
       }
+      complete = page < 400;
     } else if (station.protocol === 'weatherlink' && sec?.apiKey && sec.apiSecret) {
       const keys = { apiKey: sec.apiKey, apiSecret: sec.apiSecret, stationId: station.deviceKey! };
-      // History is a paid WeatherLink Pro feature: once refused, don't ask again on every refresh.
-      const noHistoryKey = `wl.noHistory.${station.id}`;
-      if (await kvGet(noHistoryKey)) {
+      // History is a paid WeatherLink Pro feature: after a refusal, don't ask on every refresh (retry weekly).
+      const refusedAt = Number(await kvGet(noHistoryKey(station.id)));
+      if (refusedAt && now - refusedAt < 7 * DAY) {
         p.note = 'History needs a WeatherLink Pro plan on this station; new readings build up from now.';
         onProgress({ ...p });
         return p;
       }
       const days = Math.min(Math.ceil((now - from) / DAY), 30);
       p.total = days;
-      for (let i = 0; i < days; i++) {
+      let refused = false;
+      // Oldest day first, so a stop part-way leaves no hole behind what's stored.
+      for (let i = days - 1; i >= 0; i--) {
         const e = now - i * DAY;
         try {
           p.readings += await ingestObservations(station, await weatherLinkHistoric(http, keys, e - DAY, e), offsetMin);
         } catch (err) {
-          const refused = /40[13]/.test(String((err as Error).message));
-          if (refused) await kvSet(noHistoryKey, '1');
+          refused = /40[13]/.test(String((err as Error).message));
+          if (refused) await kvSet(noHistoryKey(station.id), String(now));
           p.note = refused ? 'History needs a WeatherLink Pro plan on this station; new readings will build up from now.' : (err as Error).message;
           break;
         }
         p.done++;
         onProgress({ ...p });
       }
+      complete = p.done === days || refused;
     } else {
       p.note = 'This connection has no history to download; readings build up from now.';
+      complete = true;
     }
   } catch (e) {
-    p.note = `Stopped early: ${(e as Error).message}`;
+    p.note = `Stopped early: ${(e as Error).message}. The rest downloads next time.`;
   }
+  if (complete) await kvSet(markKey(station.id), String(now));
   onProgress({ ...p });
   return p;
 }
 
-/** Refresh every station on the device (foreground open and the background task). */
-export async function refreshAllStations(offsetMin: Offset, includeLocal: boolean): Promise<void> {
+/**
+ * Refresh every station on the device (foreground open and the background task). `gapDays` caps how
+ * much missed history is pulled per station (keep it small in the background's ~30 s window).
+ */
+export async function refreshAllStations(offsetMin: Offset, includeLocal: boolean, gapDays = 14): Promise<void> {
   for (const s of await listSensors()) {
     if (s.parentId || (s.kind !== 'cloud' && s.kind !== 'local') || s.protocol === 'tempest-udp') continue;
     if (s.kind === 'local' && !includeLocal) continue;
     try {
-      await refreshStation(s, offsetMin);
+      await refreshStation(s, offsetMin, { gapDays });
     } catch {
       // One unreachable station shouldn't stop the others.
     }

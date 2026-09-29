@@ -321,19 +321,32 @@ interface WlCurrent { station_id?: number; sensors?: Array<{ lsid: number; senso
  * (air-quality, often indoors) records are ignored so they can't overwrite outdoor readings.
  */
 const WL_ISS_TYPES = new Set([1, 2, 3, 4, 6, 7, 10, 11, 23, 24]);
+/** WeatherLink IP / Vantage Connect: one all-in-one record that also carries pressure, soil and leaf. */
+const WL_ALL_IN_ONE = new Set([1, 2, 3, 4, 6, 7]);
 const WL_SOIL_TYPES = new Set([12, 13, 25, 26]);
 const WL_BAR_TYPES = new Set([19, 20]);
 
-/** The first ISS is "Outdoor"; any further transmitter gets its own channel. */
+const hasTemp = (recs: WlRecord[] | undefined) => (recs ?? []).some((r) => ['temp', 'temp_out', 'temp_avg', 'temp_last'].some((k) => typeof r[k] === 'number'));
+
+/**
+ * Stable channel names for transmitters, whatever order the API lists them in: the lowest-id
+ * transmitter that reports temperature is "Outdoor"; the rest (a second ISS, a standalone anemometer)
+ * get their own channels in id order.
+ */
+export function transmitterChannels<K extends number>(ids: Array<{ id: K; temp: boolean }>): Map<K, { channel: string; label: string }> {
+  const uniq = new Map<K, boolean>();
+  for (const x of ids) uniq.set(x.id, (uniq.get(x.id) ?? false) || x.temp);
+  const sorted = [...uniq.entries()].sort((a, b) => Number(b[1]) - Number(a[1]) || a[0] - b[0]).map(([id]) => id);
+  return new Map(sorted.map((id, i) => [id, i === 0 ? { channel: 'outdoor', label: 'Outdoor' } : { channel: `iss${i + 1}`, label: `Outdoor sensor ${i + 1}` }]));
+}
+
 function issChannels(sensors: NonNullable<WlCurrent['sensors']>): Map<number, { channel: string; label: string }> {
-  const iss = sensors.filter((s) => WL_ISS_TYPES.has(s.data_structure_type));
-  const lsids = [...new Set(iss.map((s) => s.lsid))];
-  return new Map(lsids.map((l, i) => [l, i === 0 ? { channel: 'outdoor', label: 'Outdoor' } : { channel: `iss${i + 1}`, label: `Outdoor sensor ${i + 1}` }]));
+  return transmitterChannels(sensors.filter((s) => WL_ISS_TYPES.has(s.data_structure_type)).map((s) => ({ id: s.lsid, temp: hasTemp(s.data) })));
 }
 
 function wlParts(s: NonNullable<WlCurrent['sensors']>[number], iss: Map<number, { channel: string; label: string }>): DavisParts | null {
   const t = s.data_structure_type;
-  if (WL_ISS_TYPES.has(t)) return { iss: iss.get(s.lsid) ?? null, soil: false, bar: false };
+  if (WL_ISS_TYPES.has(t)) return { iss: iss.get(s.lsid) ?? null, soil: WL_ALL_IN_ONE.has(t), bar: WL_ALL_IN_ONE.has(t) };
   if (WL_SOIL_TYPES.has(t)) return { iss: null, soil: true, bar: false };
   if (WL_BAR_TYPES.has(t)) return { iss: null, soil: false, bar: true };
   // Unknown types: only take a barometer reading, never temperature/humidity.
@@ -479,12 +492,11 @@ type WllLocal = { data?: { did?: string; ts?: number; conditions?: Array<WlRecor
 export function parseWeatherLinkLive(body: WllLocal): StationObservation {
   const ch = new Map<string, StationChannel>();
   // Local structure types: 1 ISS (one per transmitter id), 2 leaf/soil, 3 barometer, 4 indoor (skipped).
-  const txids = [...new Set((body.data?.conditions ?? []).filter((c) => c.data_structure_type === 1).map((c) => Number(c.txid ?? 0)))];
+  const tx = transmitterChannels((body.data?.conditions ?? []).filter((c) => c.data_structure_type === 1).map((c) => ({ id: Number(c.txid ?? 0), temp: hasTemp([c]) })));
   for (const c of body.data?.conditions ?? []) {
     const k = c.data_structure_type;
     if (k === 1) {
-      const i = txids.indexOf(Number(c.txid ?? 0));
-      parseDavisRecord(c, ch, { iss: i <= 0 ? { channel: 'outdoor', label: 'Outdoor' } : { channel: `iss${i + 1}`, label: `Outdoor sensor ${i + 1}` }, soil: false, bar: false });
+      parseDavisRecord(c, ch, { iss: tx.get(Number(c.txid ?? 0)) ?? null, soil: false, bar: false });
     } else if (k === 2) parseDavisRecord(c, ch, { iss: null, soil: true, bar: false });
     else if (k === 3) parseDavisRecord(c, ch, { iss: null, soil: false, bar: true });
   }

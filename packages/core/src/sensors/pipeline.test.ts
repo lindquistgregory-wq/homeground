@@ -189,3 +189,13 @@ test('CSV: period highs/lows and indoor columns skipped, ℃ recognised, plain R
   assert.equal(parseTimestamp(['2026-03-07 12:00'], nyc), Date.UTC(2026, 2, 7, 17));
   assert.equal(parseTimestamp(['2026-03-09 12:00'], nyc), Date.UTC(2026, 2, 9, 16));
 });
+
+test('CSV: rolling rain windows are never summed, and "Temp F" headers mean Fahrenheit', () => {
+  const m = mapColumns(['Date', 'tempf', 'Temp F', 'Hourly Rain (in/hr)', '24h Rain (mm)', 'Rain (in)'], 'metric');
+  const by = (h: string) => m.columns.find((c) => c.header === h);
+  assert.equal(by('tempf')?.unit, 'F');
+  assert.equal(mapColumns(['Date', 'Temp F'], 'metric').columns[0]?.unit, 'F');
+  assert.equal(by('Hourly Rain (in/hr)'), undefined);
+  assert.equal(by('24h Rain (mm)'), undefined);
+  assert.equal(by('Rain (in)')?.metric, 'rain');
+});

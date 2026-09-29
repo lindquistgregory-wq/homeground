@@ -74,8 +74,23 @@ function startNativeScan() {
   if (scanning) return;
   scanning = true;
   // Active scanning, because Govee and SwitchBot put their data in scan responses.
+  try {
+    startScan();
+  } catch {
+    scanning = false;
+  }
+}
+
+function startScan() {
   ble().startDeviceScan(null, { allowDuplicates: true }, (error, device) => {
-    if (error || !device) return;
+    if (error) {
+      // The native scan has stopped (Bluetooth turned off, Android scan throttling): try again shortly
+      // for whoever is still listening.
+      scanning = false;
+      setTimeout(() => { if (listeners.size) startNativeScan(); }, 5000);
+      return;
+    }
+    if (!device) return;
     let adv: Advertisement;
     try {
       adv = toAdvertisement(device);

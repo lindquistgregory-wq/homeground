@@ -63,7 +63,7 @@ export function parseCsv(text: string): string[][] {
 
 type Rule = { re: RegExp; metric: Metric; units: Array<[RegExp, string]>; imperial: string; metricUnit: string };
 
-const F_RE = /°\s*f\b|℉|\(f\)|\bdeg\s*f\b|fahrenheit|degf/i;
+const F_RE = /°\s*f\b|℉|\(f\)|\bdeg\s*f\b|fahrenheit|degf|\btemp\s*_?f\b|tempf\b/i;
 const C_RE = /°\s*c\b|℃|\(c\)|\bdeg\s*c\b|celsius|degc/i;
 
 // Order matters: more specific patterns first (dew point before temperature, soil before air, gust before wind).
@@ -80,6 +80,8 @@ const RULES: Rule[] = [
   { re: /rain\s*rate|rate/i, metric: 'rainRate', units: [[/in\/h|in\/hr|in\b/i, 'in/h'], [/mm/i, 'mm/h']], imperial: 'in/h', metricUnit: 'mm/h' },
   { re: /(daily|day|today)\s*rain|rain\s*(daily|day|today)/i, metric: 'rainDaily', units: [[/\bin\b|inch/i, 'in'], [/mm/i, 'mm']], imperial: 'in', metricUnit: 'mm' },
   { re: /(total|accum|year|annual|month|week|event|storm).*(rain|precip)|(rain|precip).*(total|accum|year|annual|month|week|event|storm)/i, metric: 'rainTotal', units: [], imperial: 'skip', metricUnit: 'skip' },
+  // Rolling windows ("Hourly Rain", "24h Rain", "Last 1 h") repeat the same rain in every row: summing them would multiply it.
+  { re: /(hourly|\b1\s*h|\b24\s*h|last|past|rolling).*(rain|precip)|(rain|precip).*(hourly|\b1\s*h\b|\b24\s*h\b|last|past)/i, metric: 'rainTotal', units: [], imperial: 'skip', metricUnit: 'skip' },
   // A plain "Rain" column in a logger export is the rain in that interval.
   { re: /rain|precip/i, metric: 'rain', units: [[/\bin\b|inch/i, 'in'], [/mm/i, 'mm']], imperial: 'in', metricUnit: 'mm' },
   { re: /gust/i, metric: 'windGust', units: [[/mph/i, 'mph'], [/km\/?h|kph/i, 'km/h'], [/m\/s/i, 'm/s'], [/kn|knot/i, 'kn']], imperial: 'mph', metricUnit: 'm/s' },
