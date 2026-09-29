@@ -5,6 +5,8 @@ import { getDb } from './database';
 import { clock, newId } from '../services/identity';
 import { deleteDesignsForParcel } from './designs';
 import { deletePlantingsForParcel } from './plantings';
+import { deleteSensorsForParcel } from './sensors';
+import { deleteSecrets } from '../services/secrets';
 
 export type BoundarySource = 'county' | 'drawn' | 'walked' | 'imported';
 
@@ -103,6 +105,7 @@ export async function deleteParcel(id: string): Promise<void> {
   await markPending('parcels', id, hlc);
   await deleteDesignsForParcel(id);
   await deletePlantingsForParcel(id);
+  await deleteSecrets(await deleteSensorsForParcel(id));
 }
 
 export async function getSiteProfile(parcelId: string): Promise<SiteProfile | undefined> {

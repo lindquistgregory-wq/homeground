@@ -13,6 +13,11 @@ import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { alertsEnabled, alertsForParcel, type ParcelAlerts } from '../../src/services/alerts';
 import { activePlantings, bedName, calendarFor } from '../../src/services/garden';
 import { useGarden } from '../../src/services/useGarden';
+import { dominantSoil } from '../../src/services/garden';
+import { frostOffset, measuredGdd, waterAdvice, type FrostOffset, type WaterAdvice } from '../../src/services/sensorInsights';
+import { latestValues, listSensors } from '../../src/db/sensors';
+import type { SiteProfile } from '@plotwright/providers';
+import { useSettings } from '../../src/services/settings';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const monthOf = (doy: number) => new Date(Date.UTC(2023, 0, doy)).getUTCMonth();
@@ -45,7 +50,7 @@ export default function CalendarScreen() {
     const out: Array<PlantCalendar & { beds: string[] }> = [];
     for (const [plantId, beds] of byPlant) {
       const plant = plantById(plantId);
-      const cal = plant && calendarFor(plant, state.site, { risk, dynamicGdd: dynamic && ent.has('planting.dynamicScheduling') });
+      const cal = plant && calendarFor(plant, state.site, { risk, dynamicGdd: dynamic && ent.has('planting.dynamicScheduling'), soilF: state.soil.soilF, soilLabel: state.soil.basisLabel });
       if (cal) out.push({ ...cal, beds });
     }
     return out;
@@ -91,6 +96,8 @@ export default function CalendarScreen() {
         {notifyOn === false && <Button title="Turn on alert notifications" kind="secondary" onPress={() => router.push('/settings')} />}
       </Card>
 
+      <SensorCard parcelId={state.parcel.id} profile={state.profile} year={year} />
+
       <Card title="Timing">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
           <Chip label="Cautious" active={risk === 'cautious'} onPress={() => setRisk('cautious')} />
@@ -103,6 +110,7 @@ export default function CalendarScreen() {
           {frost?.firstFall[32][50] != null && `, first frost ${formatDoy(frost.firstFall[32][50]!)}.`}
         </Body>
         {climate?.status === 'ok' && <Text style={{ color: t.muted, fontSize: 12 }}>{climate.attribution.source}, adjusted to the parcel’s elevation.</Text>}
+        <Text style={{ color: t.muted, fontSize: 12 }}>Soil temperature: {state.soil.label}.</Text>
       </Card>
 
       {cals.length === 0 ? (
@@ -143,5 +151,63 @@ export default function CalendarScreen() {
         </>
       )}
     </ScrollView>
+  );
+}
+
+function SensorCard({ parcelId, profile, year }: { parcelId: string; profile?: SiteProfile; year: number }) {
+  const t = useTheme();
+  const ent = useEntitlements((st) => st.entitlements);
+  const imperial = useSettings((st) => st.units) === 'imperial';
+  const [info, setInfo] = useState<{ any: boolean; gdd: Awaited<ReturnType<typeof measuredGdd>>; water: WaterAdvice | null; low: FrostOffset | null } | null>(null);
+  useEffect(() => {
+    void (async () => {
+      const sensors = await listSensors(parcelId);
+      if (!sensors.length) return setInfo({ any: false, gdd: null, water: null, low: null });
+      // A soil-moisture probe overrides the estimate.
+      let vwc: number | undefined;
+      for (const s of sensors.filter((x) => x.exposure === 'soil')) {
+        const v = (await latestValues(s.id)).soilMoisture;
+        if (v && Date.now() - v.t < 6 * 3_600_000) { vwc = v.value; break; }
+      }
+      const tex = dominantSoil(profile)?.texture?.toLowerCase();
+      const texture = tex ? (/sand/.test(tex) ? 'sandy' : /clay/.test(tex) ? 'clayey' : 'loamy') : undefined;
+      const [gdd, water, low] = await Promise.all([
+        measuredGdd(parcelId, `${year}-01-01`), waterAdvice(parcelId, profile, { vwcPct: vwc, texture }), frostOffset(parcelId),
+      ]);
+      setInfo({ any: true, gdd, water, low });
+    })();
+  }, [parcelId, profile, year]);
+  if (!info) return null;
+  const mm = (v: number) => (imperial ? `${(v / 25.4).toFixed(2)} in` : `${Math.round(v)} mm`);
+  return (
+    <Card title="From your sensors">
+      {!info.any ? (
+        <View>
+          <Body muted>Add a thermometer, soil sensor or weather station to fine-tune planting dates, watering and frost alerts with your own readings.</Body>
+          <Button title="Add sensors" kind="secondary" onPress={() => router.push({ pathname: '/sensors', params: { parcelId } })} />
+        </View>
+      ) : (
+        <View>
+          {info.water ? (
+            <View style={{ marginBottom: 8 }}>
+              <Text style={{ color: t.text, fontWeight: '600' }}>Watering, last 7 days</Text>
+              <Body>{info.water.needMm > 0 && !/refill point/.test(info.water.message) ? `Water about ${mm(info.water.needMm)} this week. ` : ''}{info.water.message}</Body>
+              <Text style={{ color: t.muted, fontSize: 12 }}>{info.water.basis}{info.water.estimated.length ? `; estimated: ${info.water.estimated.join(', ')}` : ''}. Assumes full-grown vegetables (crop coefficient 1.0).</Text>
+            </View>
+          ) : <Body muted>Watering suggestions need a few days of outdoor temperature readings.</Body>}
+          {info.gdd && (ent.has('planting.dynamicScheduling')
+            ? <Body>Heat units since Jan 1: {Math.round(info.gdd.gdd)} GDD (base 50 °F), measured by “{info.gdd.sensor}” over {info.gdd.days} days.</Body>
+            : <Body muted>Homestead Pro tracks measured heat units against each crop’s needs.</Body>)}
+          {info.low && (
+            <Body>
+              {info.low.offsetF <= -1
+                ? `Low spot: “${info.low.sensor}” runs about ${Math.round(-info.low.offsetF)} °F colder than the forecast (${info.low.nights} nights). Frost alerts allow for it.`
+                : `“${info.low.sensor}” tracks the forecast lows within about ${Math.max(1, Math.round(Math.abs(info.low.offsetF)))} °F (${info.low.nights} nights).`}
+            </Body>
+          )}
+          <Button title="Sensors" kind="secondary" onPress={() => router.push({ pathname: '/sensors', params: { parcelId } })} />
+        </View>
+      )}
+    </Card>
   );
 }

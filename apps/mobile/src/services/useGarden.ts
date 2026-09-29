@@ -6,6 +6,7 @@ import { getOrCreateDesign } from '../db/designs';
 import { getParcel, getSiteProfile, type ParcelRecord } from '../db/parcels';
 import { plantingsForParcel, type Planting } from '../db/plantings';
 import { siteConditions } from './garden';
+import { soilSourceFor, type SoilSource } from './sensorInsights';
 import { http } from './http';
 
 export interface GardenState {
@@ -18,6 +19,8 @@ export interface GardenState {
   humiditySource?: string;
   /** Profile was built by an older version and lacks what the planting guide needs (e.g. climate curves). */
   profileStale: boolean;
+  /** Soil temperature for sowing dates: your sensor → regional SCAN station → model. */
+  soil: SoilSource;
 }
 
 export function useGarden(parcelId: string | undefined): { state: GardenState | null; error: string | null; reload: () => Promise<void> } {
@@ -35,7 +38,9 @@ export function useGarden(parcelId: string | undefined): { state: GardenState | 
         const h = await humidityClimatology(http, profile.centroid);
         if (h.status === 'ok') (rh = h.value.summer), (humiditySource = h.attribution.source);
       }
-      setState({ parcel, profile, design, plantings, site: siteConditions(profile, rh), humiditySource, profileStale: !profile || profile.version < SITE_PROFILE_VERSION });
+      const site = siteConditions(profile, rh);
+      const soil = await soilSourceFor(parcelId, profile, site).catch((): SoilSource => ({ kind: 'none', label: 'soil temperature unavailable' }));
+      setState({ parcel, profile, design, plantings, site, humiditySource, profileStale: !profile || profile.version < SITE_PROFILE_VERSION, soil });
     } catch (e) {
       setError((e as Error).message);
     }

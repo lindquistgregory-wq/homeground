@@ -35,6 +35,18 @@ const store: LocalStore = {
       if (!r) return undefined;
       return { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r };
     }
+    if (collection === 'sensors') {
+      const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM sensors WHERE id = ?', id);
+      if (!r) return undefined;
+      // Last-seen bookkeeping is per device; it doesn't travel.
+      const { last_seen: _ls, last_counter: _lc, ...data } = r;
+      return { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data };
+    }
+    if (collection === 'sensorReadings') {
+      const [sensorId, date] = id.split('|');
+      const r = await db.getFirstAsync<{ doy: number; metrics: string; updated_hlc: string }>('SELECT doy, metrics, updated_hlc FROM sensor_days WHERE sensor_id = ? AND date = ?', sensorId ?? '', date ?? '');
+      return r ? { collection, id, hlc: r.updated_hlc, deleted: false, data: { sensor_id: sensorId, date, doy: r.doy, metrics: r.metrics } } : undefined;
+    }
     if (collection === 'plantings') {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM plantings WHERE id = ?', id);
       return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
@@ -74,6 +86,34 @@ const store: LocalStore = {
            updated_hlc = excluded.updated_hlc, deleted = 0`,
         rec.id, String(d.name), String(d.geometry), String(d.boundary_source), (d.boundary_meta as string | null) ?? null,
         (d.county_fips as string | null) ?? null, (d.zip as string | null) ?? null, Number(d.area_m2), String(d.created_at), rec.hlc,
+      );
+    } else if (rec.collection === 'sensors') {
+      const d = (rec.data ?? {}) as Record<string, unknown>;
+      const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
+      const num = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number(v));
+      await db.runAsync(
+        `INSERT INTO sensors (id, parcel_id, kind, protocol, vendor, model, name, device_key, channel, parent_id, lon, lat, height_m, exposure, bed_object_id,
+           thresholds, mac, model_hint, created_at, updated_hlc, deleted)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET name = excluded.name, vendor = excluded.vendor, model = excluded.model, lon = excluded.lon, lat = excluded.lat,
+           height_m = excluded.height_m, exposure = excluded.exposure, bed_object_id = excluded.bed_object_id, thresholds = excluded.thresholds,
+           mac = excluded.mac, model_hint = excluded.model_hint, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
+        rec.id, String(d.parcel_id ?? ''), String(d.kind ?? 'ble'), String(d.protocol ?? ''), str(d.vendor), str(d.model), String(d.name ?? 'Sensor'),
+        str(d.device_key), str(d.channel), str(d.parent_id), num(d.lon), num(d.lat), num(d.height_m), String(d.exposure ?? 'open-air'), str(d.bed_object_id),
+        str(d.thresholds), str(d.mac), str(d.model_hint), String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
+      );
+      if (rec.deleted) {
+        await db.runAsync('DELETE FROM readings WHERE sensor_id = ?', rec.id);
+        await db.runAsync('DELETE FROM sensor_days WHERE sensor_id = ?', rec.id);
+      }
+    } else if (rec.collection === 'sensorReadings' && rec.data) {
+      const d = rec.data as { sensor_id: string; date: string; doy: number; metrics: string };
+      const parent = await db.getFirstAsync<{ deleted: number }>('SELECT deleted FROM sensors WHERE id = ?', d.sensor_id);
+      if (parent?.deleted === 1) return;
+      await db.runAsync(
+        `INSERT INTO sensor_days (sensor_id, date, doy, metrics, updated_hlc) VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(sensor_id, date) DO UPDATE SET doy = excluded.doy, metrics = excluded.metrics, updated_hlc = excluded.updated_hlc`,
+        d.sensor_id, d.date, Number(d.doy), String(d.metrics), rec.hlc,
       );
     } else if (rec.collection === 'plantings') {
       const d = (rec.data ?? {}) as Record<string, unknown>;

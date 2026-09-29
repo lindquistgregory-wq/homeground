@@ -11,7 +11,12 @@
       "bundleIdentifier": "app.plotwright.planner",
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Plotwright uses your location to find your property and to trace its boundary as you walk it. Your location stays on your device."
+        "NSLocationWhenInUseUsageDescription": "Plotwright uses your location to find your property and to trace its boundary as you walk it. Your location stays on your device.",
+        "NSBluetoothAlwaysUsageDescription": "Plotwright listens for readings broadcast by your garden and weather sensors. It doesn't connect to other devices or track your location.",
+        "NSLocalNetworkUsageDescription": "Plotwright reads your weather station directly over your home Wi-Fi when you choose local mode.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
       },
       "entitlements": {
         "com.apple.developer.icloud-container-identifiers": [
@@ -45,7 +50,25 @@
           "color": "#3f6b1f"
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "modes": [],
+          "bluetoothAlwaysPermission": "Plotwright listens for readings broadcast by your garden and weather sensors. It doesn't connect to other devices or track your location.",
+          "neverForLocation": true
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
