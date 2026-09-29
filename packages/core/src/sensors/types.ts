@@ -7,7 +7,7 @@ export type Metric =
   | 'temperature' // °C, air
   | 'humidity' // % RH
   | 'dewPoint' // °C
-  | 'pressure' // hPa (station/absolute as reported)
+  | 'pressure' // hPa, sea-level adjusted where the station provides it
   | 'illuminance' // lx
   | 'solarRadiation' // W/m²
   | 'uvIndex'
@@ -22,6 +22,7 @@ export type Metric =
   | 'rainRate' // mm/h
   | 'rainDaily' // mm since local midnight (station-reported)
   | 'rainTotal' // mm, cumulative counter (resets are detected downstream)
+  | 'rain' // mm fallen since the previous reading (per-interval)
   | 'co2' // ppm
   | 'pm25' // µg/m³
   | 'battery' // %
@@ -30,21 +31,21 @@ export type Metric =
 export const METRIC_UNIT: Record<Metric, string> = {
   temperature: '°C', humidity: '%', dewPoint: '°C', pressure: 'hPa', illuminance: 'lx', solarRadiation: 'W/m²', uvIndex: '',
   soilMoisture: '%', soilTension: 'kPa', soilTemperature: '°C', conductivity: 'µS/cm', leafWetness: '', windSpeed: 'm/s', windGust: 'm/s',
-  windDirection: '°', rainRate: 'mm/h', rainDaily: 'mm', rainTotal: 'mm', co2: 'ppm', pm25: 'µg/m³', battery: '%', voltage: 'V',
+  windDirection: '°', rainRate: 'mm/h', rainDaily: 'mm', rainTotal: 'mm', rain: 'mm', co2: 'ppm', pm25: 'µg/m³', battery: '%', voltage: 'V',
 };
 
 export const METRIC_LABEL: Record<Metric, string> = {
   temperature: 'Temperature', humidity: 'Humidity', dewPoint: 'Dew point', pressure: 'Pressure', illuminance: 'Light', solarRadiation: 'Solar radiation',
   uvIndex: 'UV index', soilMoisture: 'Soil moisture', soilTension: 'Soil tension', soilTemperature: 'Soil temperature', conductivity: 'Soil conductivity',
   leafWetness: 'Leaf wetness', windSpeed: 'Wind', windGust: 'Wind gust', windDirection: 'Wind direction', rainRate: 'Rain rate', rainDaily: 'Rain today',
-  rainTotal: 'Rain (total)', co2: 'CO₂', pm25: 'PM2.5', battery: 'Battery', voltage: 'Battery voltage',
+  rainTotal: 'Rain (total)', rain: 'Rain', co2: 'CO₂', pm25: 'PM2.5', battery: 'Battery', voltage: 'Battery voltage',
 };
 
 /** Physically plausible ranges; values outside are stored but flagged 'suspect'. */
 export const METRIC_RANGE: Record<Metric, [number, number]> = {
   temperature: [-60, 70], humidity: [0, 100], dewPoint: [-70, 40], pressure: [500, 1100], illuminance: [0, 200_000], solarRadiation: [0, 1500],
   uvIndex: [0, 20], soilMoisture: [0, 100], soilTension: [0, 300], soilTemperature: [-40, 60], conductivity: [0, 20_000], leafWetness: [0, 100],
-  windSpeed: [0, 90], windGust: [0, 120], windDirection: [0, 360], rainRate: [0, 500], rainDaily: [0, 1000], rainTotal: [0, 1e7], co2: [0, 10_000],
+  windSpeed: [0, 90], windGust: [0, 120], windDirection: [0, 360], rainRate: [0, 500], rainDaily: [0, 1000], rainTotal: [0, 1e7], rain: [0, 500], co2: [0, 10_000],
   pm25: [0, 2000], battery: [0, 100], voltage: [0, 20],
 };
 

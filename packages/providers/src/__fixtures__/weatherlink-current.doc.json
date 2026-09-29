@@ -1,0 +1,90 @@
+{
+ "station_id": 374964,
+ "sensors": [
+  {
+   "lsid": 5271270,
+   "sensor_type": 504,
+   "data_structure_type": 15,
+   "data": [
+    {
+     "battery_voltage": 70,
+     "wifi_rssi": -70,
+     "uptime": 5376092,
+     "input_voltage": 4686,
+     "ts": 1565656200
+    }
+   ]
+  },
+  {
+   "lsid": 5271273,
+   "sensor_type": 45,
+   "data_structure_type": 10,
+   "data": [
+    {
+     "ts": 1558741927,
+     "tx_id": 1,
+     "temp": 73.3,
+     "hum": 42.7,
+     "dew_point": 49.3,
+     "wet_bulb": 55.8,
+     "heat_index": 72.2,
+     "wind_chill": 73.3,
+     "thw_index": 72.2,
+     "thsw_index": 72.6,
+     "wind_speed_last": 4,
+     "wind_dir_last": 195,
+     "wind_speed_avg_last_1_min": 3.37,
+     "wind_dir_scalar_avg_last_1_min": 214,
+     "wind_speed_avg_last_2_min": 3.18,
+     "wind_dir_scalar_avg_last_2_min": 222,
+     "wind_speed_hi_last_2_min": 5,
+     "wind_dir_at_hi_speed_last_2_min": 225,
+     "wind_speed_avg_last_10_min": 3.56,
+     "wind_dir_scalar_avg_last_10_min": 221,
+     "wind_speed_hi_last_10_min": 6,
+     "wind_dir_at_hi_speed_last_10_min": 260,
+     "rain_size": 1,
+     "rain_rate_last_clicks": 0,
+     "rain_rate_last_in": 0,
+     "rain_rate_last_mm": 0,
+     "rain_rate_hi_clicks": 0,
+     "rain_rate_hi_in": 0,
+     "rain_rate_hi_mm": 0,
+     "rain_rate_hi_last_15_min_clicks": 0,
+     "rain_rate_hi_last_15_min_in": 0,
+     "rain_rate_hi_last_15_min_mm": 0,
+     "rainfall_last_15_min_clicks": 0,
+     "rainfall_last_15_min_in": 0,
+     "rainfall_last_15_min_mm": 0,
+     "rainfall_last_60_min_clicks": 0,
+     "rainfall_last_60_min_in": 0,
+     "rainfall_last_60_min_mm": 0,
+     "rainfall_last_24_hr_clicks": 0,
+     "rainfall_last_24_hr_in": 0,
+     "rainfall_last_24_hr_mm": 0,
+     "rainfall_daily_clicks": 0,
+     "rainfall_daily_in": 0,
+     "rainfall_daily_mm": 0,
+     "rainfall_monthly_clicks": 117,
+     "rainfall_monthly_in": 1.17,
+     "rainfall_monthly_mm": 29.718,
+     "rainfall_year_clicks": 117,
+     "rainfall_year_in": 1.17,
+     "rainfall_year_mm": 29.718,
+     "rain_storm_clicks": 0,
+     "rain_storm_in": 0,
+     "rain_storm_mm": 0,
+     "rain_storm_start_time": null,
+     "rain_storm_last_clicks": 22,
+     "rain_storm_last_in": 0.22,
+     "rain_storm_last_mm": 5.588,
+     "rain_storm_last_start_at": 1558428061,
+     "rain_storm_last_end_at": 1558576860,
+     "solar_rad": 598,
+     "uv_index": 2.3
+    }
+   ]
+  }
+ ],
+ "generated_at": 1558741957
+}

@@ -111,3 +111,31 @@ export async function humidityClimatology(http: HttpClient, p: LatLon): Promise<
     return unavailable(POWER_RH_SOURCE, `NASA POWER unreachable (${(e as Error).message}).`, true);
   }
 }
+
+// ---------------- Daily clearness (which days were sunny) ----------------
+
+export const POWER_DAILY_SOURCE = 'NASA POWER (daily all-sky and clear-sky sunlight)';
+
+/**
+ * Daily clearness index (all-sky ÷ clear-sky surface sunlight) for a date range, keyed YYYYMMDD. NASA
+ * POWER's near-real-time data lags a few days, so the latest days may be missing. ≥ 0.8 is a clear day.
+ */
+export async function dailyClearness(http: HttpClient, p: LatLon, startYmd: string, endYmd: string): Promise<Layer<Record<string, number>>> {
+  const lat = Math.round(p.lat * 2) / 2, lon = Math.round(p.lon * 2) / 2;
+  const url = `https://power.larc.nasa.gov/api/temporal/daily/point?${qs({ parameters: 'ALLSKY_SFC_SW_DWN,CLRSKY_SFC_SW_DWN', community: 'RE', latitude: lat, longitude: lon, start: startYmd, end: endYmd, format: 'JSON' })}`;
+  try {
+    const { data } = await http.json<PowerResponse>(url, { ttlMs: DAY });
+    const all = data.properties?.parameter?.ALLSKY_SFC_SW_DWN ?? {}, clr = data.properties?.parameter?.CLRSKY_SFC_SW_DWN ?? {};
+    const out: Record<string, number> = {};
+    for (const [d, a] of Object.entries(all)) {
+      const c = clr[d];
+      if (a >= 0 && c !== undefined && c > 0) out[d] = Math.min(1.2, a / c);
+    }
+    return sourced(out, {
+      source: POWER_DAILY_SOURCE, license: 'NASA open data; acknowledge "NASA Langley Research Center POWER Project"', resolution: '0.5° grid, daily',
+      confidence: 'medium', basis: 'modeled', url: 'https://power.larc.nasa.gov/',
+    });
+  } catch (e) {
+    return unavailable(POWER_DAILY_SOURCE, `NASA POWER unreachable (${(e as Error).message}).`, true);
+  }
+}

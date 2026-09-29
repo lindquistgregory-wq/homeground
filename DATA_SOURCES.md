@@ -28,6 +28,20 @@ The machine-readable version of this file, used by the app and by CI, is [`packa
 | Parcel endpoints from the remote registry | Parcel boundary lookup | Recorded per entry in `packages/data/registry/parcel-endpoints.json` | No | Hosts vary by county; each entry must carry its licence and attribution before it is merged |
 | User-added county ArcGIS layers | Parcel boundary lookup | User-supplied; terms not reviewed | No | Stored on that device only; same field allowlist |
 | GitHub Pages (this repo) | Refreshable parcel registry | Project-owned | No | Free only for public repos (see `docs/STATIC_HOSTING.md`) |
+| NRCS SCAN (AWDB REST API) | Regional soil temperature/moisture from the nearest SCAN station (≤ 100 km) | Public domain | No | Station list cached 30 days, hourly data 6 h; labelled "regional" |
+| NASA POWER daily | Which recent days were clear (for light-sensor sun calibration) | NASA open data; acknowledged | No | One request per 0.5° cell, cached 1 day |
+
+## Your own weather station (Phase 4, your keys, called from your phone)
+
+| Service | Used for | Keys (created by you, free) | Cost to you | Policy the code enforces | Terms status |
+|---|---|---|---|---|---|
+| Ecowitt Cloud API v3 | Current readings + history backfill | Application key + API key, from your ecowitt.net account | Free | Keys in the phone keychain; requests never cached; ≤ 1 req/s | ⚠️ Terms not retrievable automatically (doc site blocks crawlers). Re-check before release |
+| Ambient Weather Network | Current readings + up to 1 year of history | Application key **and** API key, both from your AmbientWeather.net account | Free | Never ship a shared application key; ≤ 1 req/s; never cached | ⚠️ Terms page not retrievable; no commercial clause found. Re-check before release |
+| Davis WeatherLink v2 | Current conditions; history | API key + secret ("Generate v2 Key" on weatherlink.com) | Current: free. **History needs your WeatherLink Pro/Pro+ plan** | Secret only in the `X-Api-Secret` header; never cached | ⚠️ No API-specific terms found. Re-check before release |
+| Tempest / WeatherFlow **cloud** | *Not used* | — | — | — | ❌ WeatherFlow's Remote Data Access Policy requires a WeatherFlowONE subscription or written agreement for commercial use, and forbids storing downloads in a database. **Awaiting the owner's decision** |
+| Ecowitt gateway (local HTTP), WeatherLink Live (local HTTP), Tempest hub (local UDP 50222) | Live readings over your home Wi-Fi | None | Free | Only private LAN addresses accepted; iOS asks for Local Network permission; Tempest UDP on iOS needs Apple's free multicast entitlement | ✅ Local access; vendor remote-data terms don't apply |
+
+Bluetooth sensors (Govee, SwitchBot, Xiaomi/Qingping, Inkbird, RuuviTag, BTHome) are read from their broadcasts on the phone. No service is involved.
 
 ## Platform services (no developer cost)
 
@@ -44,4 +58,4 @@ Regrid and other commercial parcel APIs · Open-Meteo (free tier is non-commerci
 
 ## Coming in later phases (verify terms when they're added)
 
-NASA POWER daily history · NRCS SCAN/SNOTEL · NOAA CPC outlooks · NLCD · USDA PLANTS · manufacturer weather APIs using the user's own keys · AdMob + UMP (Phase 6, consent-gated).
+NOAA CPC outlooks · NLCD · USDA PLANTS · AdMob + UMP (Phase 6, consent-gated).
