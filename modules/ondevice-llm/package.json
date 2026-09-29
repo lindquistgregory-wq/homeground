@@ -1,0 +1,10 @@
+{
+  "name": "@plotwright/ondevice-llm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Free on-device language models for the AI planner: Apple Foundation Models (iOS 26+, tool calling bridged to JS) and ML Kit GenAI Prompt API / Gemini Nano (Android, beta). No network, no keys.",
+  "main": "index.ts",
+  "types": "index.ts",
+  "dependencies": { "@plotwright/core": "workspace:*" },
+  "peerDependencies": { "expo": "*", "expo-modules-core": "*" }
+}
