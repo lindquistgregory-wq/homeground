@@ -186,6 +186,14 @@ function runEngine(s: SurfaceModel, samples: PreparedSample[], leafOn: boolean, 
   return 'js';
 }
 
+/** Objects that only cast shade part of the year, such as tall crops between midsummer and frost. */
+export interface SeasonalObjects {
+  objects: DesignObject[];
+  /** Inclusive day-of-year range when they stand at full height. */
+  fromDoy: number;
+  toDoy: number;
+}
+
 /**
  * Direct-sun hours per parcel cell for a design and period (averaged over the period's dates).
  * Pass `prev` and the objects that changed to recompute only the cells their shadows can reach
@@ -194,9 +202,12 @@ function runEngine(s: SurfaceModel, samples: PreparedSample[], leafOn: boolean, 
 export function computeSun(
   a: ParcelAnalysis, objects: DesignObject[], period: SunPeriod, stepMin = 15,
   incremental?: { prev: SunResult; changed: DesignObject[] },
+  seasonal?: SeasonalObjects,
 ): SunResult {
   const t0 = Date.now();
-  const s = surfaceFor(a, objects);
+  const base = surfaceFor(a, objects);
+  const withSeasonal = seasonal?.objects.length ? surfaceFor(a, [...objects, ...seasonal.objects]) : base;
+  const surfaceOn = (date: Date) => (seasonal && doyOf(date) >= seasonal.fromDoy && doyOf(date) <= seasonal.toDoy ? withSeasonal : base);
   const c = a.frame.origin;
   const dates = periodDates(period, new Date().getUTCFullYear(), c.lon);
   if (incremental && incremental.prev.period === period && dates.length === 1 && incremental.changed.length && incremental.prev.hours.data.length === a.ground.data.length) {
@@ -214,7 +225,7 @@ export function computeSun(
     const out = like(a.ground, 0);
     out.data.set(incremental.prev.hours.data);
     const leafOn = isLeafOn(doyOf(date), a.frost?.lastSpringDoy, a.frost?.firstFallDoy);
-    const engine = runEngine(s, samples, leafOn, m, out);
+    const engine = runEngine(surfaceOn(date), samples, leafOn, m, out);
     return { hours: out, period, engine, ms: Date.now() - t0, possibleHours: incremental.prev.possibleHours };
   }
   const acc = like(a.ground, 0);
@@ -225,7 +236,7 @@ export function computeSun(
     const samples = prepareSamples(daySunSamples(date, c.lat, c.lon, stepMin), { horizon: a.horizon, sampleHours: stepMin / 60 });
     possible += samples.length * (stepMin / 60);
     const leafOn = isLeafOn(doyOf(date), a.frost?.lastSpringDoy, a.frost?.firstFallDoy);
-    engine = runEngine(s, samples, leafOn, a.mask, tmp);
+    engine = runEngine(surfaceOn(date), samples, leafOn, a.mask, tmp);
     for (let k = 0; k < acc.data.length; k++) if (a.mask[k]) acc.data[k] = acc.data[k]! + tmp.data[k]! / dates.length;
   }
   for (let k = 0; k < acc.data.length; k++) if (!a.mask[k]) acc.data[k] = NaN;

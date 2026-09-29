@@ -1,6 +1,6 @@
 /** Loads everything the planting screens share for one parcel: profile, design, plantings, site conditions. */
 import type { Design, SiteConditions } from '@plotwright/core';
-import { humidityClimatology, type SiteProfile } from '@plotwright/providers';
+import { SITE_PROFILE_VERSION, humidityClimatology, type SiteProfile } from '@plotwright/providers';
 import { useCallback, useEffect, useState } from 'react';
 import { getOrCreateDesign } from '../db/designs';
 import { getParcel, getSiteProfile, type ParcelRecord } from '../db/parcels';
@@ -16,6 +16,8 @@ export interface GardenState {
   site: SiteConditions;
   /** Source line for the summer humidity used in disease-pressure scoring. */
   humiditySource?: string;
+  /** Profile was built by an older version and lacks what the planting guide needs (e.g. climate curves). */
+  profileStale: boolean;
 }
 
 export function useGarden(parcelId: string | undefined): { state: GardenState | null; error: string | null; reload: () => Promise<void> } {
@@ -33,7 +35,7 @@ export function useGarden(parcelId: string | undefined): { state: GardenState | 
         const h = await humidityClimatology(http, profile.centroid);
         if (h.status === 'ok') (rh = h.value.summer), (humiditySource = h.attribution.source);
       }
-      setState({ parcel, profile, design, plantings, site: siteConditions(profile, rh), humiditySource });
+      setState({ parcel, profile, design, plantings, site: siteConditions(profile, rh), humiditySource, profileStale: !profile || profile.version < SITE_PROFILE_VERSION });
     } catch (e) {
       setError((e as Error).message);
     }

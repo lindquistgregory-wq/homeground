@@ -50,9 +50,10 @@ test('plant database integrity', () => {
 });
 
 test('annual temperature curve reproduces Albany seasonal normals', () => {
-  // Seasonal means are averages over each 3-month season, so a sinusoid through the centres is close but not exact.
-  assert.ok(Math.abs(evalHarmonic(CURVES.tmax, 196) - 81.8) < 3, 'midsummer max');
-  assert.ok(Math.abs(evalHarmonic(CURVES.tmin, 15) - 18.7) < 3, 'midwinter min');
+  // Seasonal means are 3-month averages; the fit undoes that averaging so the daily curve reaches the
+  // monthly extremes (Albany 1991–2020: July mean max ≈ 84 °F, January mean min ≈ 14 °F).
+  assert.ok(Math.abs(evalHarmonic(CURVES.tmax, 196) - 84) < 2.5, `midsummer max ${evalHarmonic(CURVES.tmax, 196)}`);
+  assert.ok(Math.abs(evalHarmonic(CURVES.tmin, 15) - 14) < 3.5, `midwinter min ${evalHarmonic(CURVES.tmin, 15)}`);
   const h = fitHarmonic([[0, 10], [91.25, 20], [182.5, 10], [273.75, 0]]);
   assert.ok(Math.abs(h.mean - 10) < 1e-9 && Math.abs(h.b - 10) < 1e-6);
   assert.ok(dailyMean(CURVES, 196) > dailyMean(CURVES, 15) + 40);
@@ -64,7 +65,7 @@ test('GDD is calibrated to the station and soil warms in late spring', () => {
   assert.ok(soil60 > mmddToDoy('05/10')! && soil60 < mmddToDoy('06/10')!, `soil 60 °F on ${formatDoy(soil60)}`);
   const corn = dayGddReached(CURVES, mmddToDoy('05/20')!, 1500)!;
   assert.ok(corn > mmddToDoy('07/25')! && corn < mmddToDoy('08/31')!, `corn 1500 GDD on ${formatDoy(corn)}`);
-  assert.ok(peakSummerMax(CURVES) > 78 && peakSummerMax(CURVES) < 86);
+  assert.ok(peakSummerMax(CURVES) > 82 && peakSummerMax(CURVES) < 88);
 });
 
 test('diurnal cycle and chill hours', () => {
@@ -218,4 +219,42 @@ test('transplanted seed-counted crops get credit for their indoor weeks; typical
   assert.match(h.basis, /already indoors/);
   const typical = plantCalendar(p('tomato'), { frost: FROST, risk: 'typical' });
   assert.equal(typical.events.find((e) => e.kind === 'transplant')!.start, FROST.lastSpring[32][50]! + 7);
+});
+
+test('every plant gets a planting window, and no window runs backwards', () => {
+  const planting = new Set(['transplant', 'direct-sow', 'plant', 'fall-sow', 'fall-transplant']);
+  const ff = FROST.firstFall[32][50]!;
+  for (const p of PLANTS) {
+    for (const risk of ['cautious', 'typical'] as const) {
+      const c = plantCalendar(p, { frost: FROST, curves: CURVES, risk });
+      assert.ok(c.events.some((e) => planting.has(e.kind)), `${p.id} has no planting event`);
+      for (const e of c.events) assert.ok(e.start <= e.end, `${p.id} ${e.kind} runs ${formatDoy(e.start)}–${formatDoy(e.end)}`);
+      if (p.frost === 'tender' && p.lifecycle !== 'perennial')
+        for (const e of c.events.filter((x) => x.kind === 'harvest' || x.kind === 'fall-harvest')) assert.ok(e.end <= ff, `${p.id} ${e.kind} runs past frost`);
+    }
+  }
+});
+
+test('warm-soil crops in a cool climate are flagged, not given early dates', () => {
+  // A cool maritime site: soil never reaches 70 °F.
+  const cool = climateCurves({ ...ALBANY, tminF: { DJF: 34, MAM: 40, JJA: 50, SON: 44 }, tmaxF: { DJF: 46, MAM: 55, JJA: 66, SON: 58 }, gddBase50F: undefined }, 85.6)!;
+  const melon = plantCalendar(plantById('watermelon')!, { frost: FROST, curves: cool });
+  assert.equal(melon.fits, false);
+  assert.ok(melon.warnings.some((w) => /rarely reaches/.test(w)), melon.warnings.join(' / '));
+  // Heat-unit mode: not enough heat means no harvest date and a warning, never a wrapped date.
+  const corn = plantCalendar(plantById('corn')!, { frost: FROST, curves: cool, dynamicGdd: true });
+  assert.equal(corn.fits, false);
+  assert.ok(!corn.events.some((e) => e.kind === 'harvest'));
+});
+
+test('frost-free climates get one clear message', () => {
+  const rare = { ...FROST, freezeRare: true };
+  const c = plantCalendar(plantById('tomato')!, { frost: rare, curves: CURVES });
+  assert.equal(c.warnings.length, 1);
+  assert.match(c.warnings[0]!, /Frost is rare/);
+});
+
+test('garlic still follows onion-family rotation', () => {
+  const r = rotationAdvice(plantById('garlic')!, [{ plantId: 'onion', family: 'Amaryllidaceae', year: 2025 }], 2026);
+  assert.equal(r.ok, false);
 });

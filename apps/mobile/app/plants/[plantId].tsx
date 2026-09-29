@@ -8,7 +8,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useEntitlements } from '../../src/billing/entitlements';
-import { CalendarList, Chip, ExternalLink, FactorList, VerdictBadge } from '../../src/components/plants';
+import { CalendarList, Chip, ExternalLink, FactorList, StaleProfileNotice, VerdictBadge } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { calendarFor } from '../../src/services/garden';
 import { useGarden } from '../../src/services/useGarden';
@@ -52,6 +52,7 @@ export default function PlantDetail() {
         {plant.germination && <Body>Germination: soil {plant.germination.minSoilF} °F minimum, {plant.germination.optimalF[0]}–{plant.germination.optimalF[1]} °F best</Body>}
       </Card>
 
+      {state?.profileStale && <StaleProfileNotice parcelId={state.parcel.id} />}
       {state && (
         <Card title={`Planting calendar · ${state.parcel.name}`}>
           {plant.frost === 'tender' && (
@@ -63,7 +64,7 @@ export default function PlantDetail() {
           {cal ? <CalendarList cal={cal} /> : <Body muted>Frost dates for this property aren’t available yet, so the calendar can’t be personalised. Refresh the site profile to try again.</Body>}
           {climate?.status === 'ok' && (
             <Text style={{ color: t.muted, fontSize: 12, marginTop: 6 }}>
-              Frost dates: {climate.attribution.source}, adjusted to the parcel’s elevation. Soil temperature is modeled from air-temperature normals; a soil thermometer beats the model.
+              Frost dates: {climate.attribution.source}, adjusted to the parcel’s elevation.{state?.site.curves ? ' Soil temperature is modeled from air-temperature normals; a soil thermometer beats the model.' : ''}
             </Text>
           )}
         </Card>

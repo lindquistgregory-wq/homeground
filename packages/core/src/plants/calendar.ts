@@ -5,7 +5,7 @@
  */
 import { formatDoy } from '../climate/normals';
 import type { FrostDates } from '../climate/frost';
-import { dayGddReached, firstDayAtLeast, modeledSoilF, type ClimateCurves } from './seasonModel';
+import { daysToGdd, firstDayAtLeast, modeledSoilF, type ClimateCurves } from './seasonModel';
 import type { PlantSpec } from './types';
 
 export type EventKind = 'start-indoors' | 'harden-off' | 'transplant' | 'direct-sow' | 'plant' | 'succession' | 'fall-sow' | 'fall-transplant' | 'harvest' | 'fall-harvest';
@@ -68,17 +68,24 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
   const sow = plant.sowing;
   const soil = ctx.soilF ?? (ctx.curves ? (d: number) => modeledSoilF(ctx.curves!, d) : undefined);
 
-  if (ctx.frost.freezeRare) {
-    warnings.push('Frost is rare here: plant cool-season crops in fall and winter, warm-season crops in spring.');
-  }
   const lf = lastFrost(ctx);
   const ff = firstFrost(ctx, plant);
-  if (!lf || !ff) {
-    return { plantId: plant.id, events, fits: true, warnings: [...warnings, 'No frost dates for this parcel, so timing can’t be personalised yet.'] };
+  if (ctx.frost.freezeRare || !lf || !ff) {
+    // Frost-free climates plan around heat and rain, not frost: no frost-anchored dates to give.
+    return {
+      plantId: plant.id, events, fits: true,
+      warnings: [ctx.frost.freezeRare
+        ? 'Frost is rare here, so frost-based dates don’t apply: grow cool-season crops through fall and winter and warm-season crops from late winter to early summer. Your state extension service publishes a local planting calendar.'
+        : 'No frost dates for this parcel, so timing can’t be personalised yet.'],
+    };
   }
 
   // Soil-temperature gate: the first day soil stays at or above the crop's minimum.
   const soilReady = sow.minSoilF !== undefined && soil ? firstDayAtLeast(soil, sow.minSoilF, 1, 250) : null;
+  // Soil that never gets warm enough is a real limit, not a reason to drop the check.
+  const soilNeverWarm = sow.minSoilF !== undefined && !!soil && soilReady === null;
+  if (soilNeverWarm)
+    warnings.push(`Soil here rarely reaches the ${sow.minSoilF} °F this crop needs${ctx.soilF ? '' : ' (modeled)'}. Warm it with black plastic mulch or a low tunnel before planting, and check with a soil thermometer.`);
   const soilNote = soilReady !== null ? ` and soil ${sow.minSoilF} °F+ (≈${formatDoy(soilReady)}${ctx.soilF ? '' : ', modeled'})` : '';
   const cautious = tender && ctx.risk !== 'typical' && lf.late !== null;
   const cautionNote = cautious ? `, not before the 1-in-10-years late frost (${formatDoy(lf.late!)})` : '';
@@ -106,15 +113,18 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
     establish = start;
     establishFromTransplant = true;
   }
-  if (sow.directSowDays && (sow.method === 'direct' || sow.method === 'either' || sow.method === 'plant')) {
-    const [a, b] = win(lf.doy + sow.directSowDays[0], lf.doy + sow.directSowDays[1]);
+  // Nursery plants (crowns, potted herbs, trees) may carry their window in either field.
+  const plantDays = sow.directSowDays ?? (sow.method === 'plant' ? sow.transplantDays : undefined);
+  if (plantDays && (sow.method === 'direct' || sow.method === 'either' || sow.method === 'plant')) {
+    const [a, b] = win(lf.doy + plantDays[0], lf.doy + plantDays[1]);
     const start = clampDoy(gate(a)), end = clampDoy(Math.max(b, start + Math.min(14, b - a)));
-    events.push({ kind: sow.method === 'plant' ? 'plant' : 'direct-sow', start, end, label: sow.method === 'plant' ? 'Plant out' : 'Sow outdoors', basis: `${describeOffset(sow.directSowDays)} the ${lf.label}${cautionNote}${soilNote}` });
+    events.push({ kind: sow.method === 'plant' ? 'plant' : 'direct-sow', start, end, label: sow.method === 'plant' ? 'Plant out' : 'Sow outdoors', basis: `${describeOffset(plantDays)} the ${lf.label}${cautionNote}${soilNote}` });
     if (establish === null) establish = start;
   }
 
   // Maturity / harvest.
   const dtm = plant.daysToMaturity;
+  let fits = !soilNeverWarm;
   if (establish !== null && dtm) {
     let harvestStart: number | null = null;
     let basis: string;
@@ -126,19 +136,26 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
       : plant.maturityFrom === 'seed' && establishFromTransplant ? -seedlingDays : 0;
     const fromLabel = extra > 0 ? 'seeding (+ ~2 weeks vs. transplants)' : extra < 0 ? `seeding (≈${Math.round(-extra / 7)} weeks of that already indoors)` : plant.maturityFrom ?? 'planting';
     if (ctx.dynamicGdd && plant.gddToMaturity && ctx.curves) {
-      harvestStart = dayGddReached(ctx.curves, establish, plant.gddToMaturity, plant.gddBaseF ?? 50);
+      const days = daysToGdd(ctx.curves, establish, plant.gddToMaturity, plant.gddBaseF ?? 50);
+      harvestStart = days === null ? null : establish + Math.max(14, days);
       basis = `${plant.gddToMaturity} heat units (base ${plant.gddBaseF ?? 50} °F) after ${formatDoy(establish)}`;
+      if (days === null) {
+        fits = false;
+        warnings.push(`This climate doesn’t build up the ${plant.gddToMaturity} heat units it needs to mature. Choose a much faster variety or grow it under cover.`);
+      }
     } else {
       // Even a well-grown transplant needs a couple of weeks in the ground before the first harvest.
       harvestStart = establish + Math.max(14, dtm[0] + extra);
       basis = `${dtm[0]}–${dtm[1]} days from ${fromLabel}`;
     }
-    if (harvestStart !== null && harvestStart <= 365 + 60) {
-      const end = Math.min(harvestStart + (dtm[1] - dtm[0]) + (plant.harvestWindowDays ?? 14), plant.lifecycle === 'annual' && tender ? ff.doy : 400);
-      events.push({ kind: 'harvest', start: clampDoy(harvestStart), end: clampDoy(end), label: 'Harvest', basis });
-      if (plant.lifecycle !== 'perennial' && harvestStart > ff.doy && tender) {
-        warnings.push(`Needs until about ${formatDoy(harvestStart)} to mature, after the ${ff.label}. Choose a faster variety, start earlier indoors, or use row cover.`);
-      }
+    const tenderAnnual = plant.lifecycle !== 'perennial' && tender;
+    if (harvestStart !== null && tenderAnnual && harvestStart > ff.doy) {
+      // It won't mature before frost kills it: no harvest window to show.
+      fits = false;
+      warnings.push(`Needs until about ${formatDoy(harvestStart)} to mature, after the ${ff.label}. Choose a faster variety, start earlier indoors, or use row cover.`);
+    } else if (harvestStart !== null && harvestStart <= 365 + 60) {
+      const end = Math.min(harvestStart + (dtm[1] - dtm[0]) + (plant.harvestWindowDays ?? 14), tenderAnnual ? ff.doy : 400);
+      events.push({ kind: 'harvest', start: clampDoy(harvestStart), end: clampDoy(Math.max(harvestStart, end)), label: 'Harvest', basis });
     }
     if (sow.successionDays && harvestStart !== null) {
       // Successions are direct-sown: count from seed (transplant-counted crops take ~2 weeks longer).
@@ -158,12 +175,18 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
     const label = plant.id === 'garlic' ? 'Plant cloves' : kind === 'fall-transplant' ? 'Set out fall transplants' : plant.kind === 'cover-crop' ? 'Sow cover crop' : 'Sow for fall harvest';
     events.push({ kind, start: clampDoy(a), end: clampDoy(b), label, basis: `${describeFall(sow.fallDaysBeforeFirstFrost)} the ${f32Label}` });
     if (dtm && plant.id !== 'garlic' && plant.kind !== 'cover-crop') {
-      events.push({ kind: 'fall-harvest', start: clampDoy(a + dtm[0]), end: clampDoy(Math.max(a + dtm[0], ff.doy + (plant.frost === 'very-hardy' ? 45 : 21))), label: 'Fall harvest', basis: `${dtm[0]}+ days after sowing; frost-hardy crops keep past the first frost` });
+      const ready = a + dtm[0];
+      if (tender && ready > ff.doy) {
+        warnings.push(`A fall sowing wouldn’t mature (about ${formatDoy(ready)}) before the ${ff.label}.`);
+      } else {
+        // Tender crops stop at the frost; hardy ones keep going for weeks after it.
+        const end = tender ? ff.doy : Math.max(ready, ff.doy + (plant.frost === 'very-hardy' ? 45 : plant.frost === 'hardy' ? 21 : 7));
+        events.push({ kind: 'fall-harvest', start: clampDoy(ready), end: clampDoy(Math.max(ready, end)), label: 'Fall harvest', basis: tender ? `${dtm[0]}+ days after sowing, until the ${ff.label}` : `${dtm[0]}+ days after sowing; ${plant.frost} crops keep past the first frost` });
+      }
     }
   }
 
   // Season length check for tender annuals.
-  let fits = true;
   if (tender && plant.lifecycle !== 'perennial' && dtm && ctx.frost.freezeFreeDays !== null) {
     const needed = dtm[0] + (plant.maturityFrom === 'transplant' && !establishFromTransplant ? 14 : 0) - (plant.maturityFrom === 'seed' && establishFromTransplant && sow.indoorStartWeeks ? Math.round(((sow.indoorStartWeeks[0] + sow.indoorStartWeeks[1]) / 2) * 7) : 0);
     const available = ff.doy - (establish ?? lf.doy);

@@ -72,7 +72,9 @@ export function climateCurves(
   const lapse = opts.lapseRateCPerKm ?? DEFAULT_LAPSE_RATE_C_PER_KM;
   const dz = Number.isFinite(station.elevationM) ? parcelElevationM - station.elevationM : 0;
   const off = deltaCToF((-lapse * dz) / 1000);
-  const tmin = fitHarmonic(minPts), tmax = fitHarmonic(maxPts);
+  // Seasonal normals are 3-month averages; averaging a sinusoid over ±45 days shrinks its swing by
+  // sin(π/4)/(π/4) ≈ 0.900. Undo that so daily curves reach the real midsummer and midwinter normals.
+  const tmin = unshrink(fitHarmonic(minPts)), tmax = unshrink(fitHarmonic(maxPts));
   tmin.mean += off;
   tmax.mean += off;
   const curves: ClimateCurves = {
@@ -92,20 +94,30 @@ export function climateCurves(
   return curves;
 }
 
+const SEASON_AVERAGING = Math.sin(Math.PI / 4) / (Math.PI / 4);
+function unshrink(h: Harmonic): Harmonic {
+  return { mean: h.mean, a: h.a / SEASON_AVERAGING, b: h.b / SEASON_AVERAGING };
+}
+
 export const dailyMin = (c: ClimateCurves, doy: number) => evalHarmonic(c.tmin, doy);
 export const dailyMax = (c: ClimateCurves, doy: number) => evalHarmonic(c.tmax, doy);
 export const dailyMean = (c: ClimateCurves, doy: number) => (dailyMin(c, doy) + dailyMax(c, doy)) / 2;
 
 /**
- * Modeled soil temperature at ~2 in depth: daily mean air temperature lagged ~7 days with the annual
- * swing damped ~10 %, which is typical for bare, moist garden soil. Mulch and shade run cooler.
+ * Modeled soil temperature at ~2 in depth in bare, sunny garden soil: daily mean air temperature lagged
+ * ~5 days, plus a warm offset that is largest in late spring and summer (sun on bare soil) and near
+ * zero in winter. Bare soil's annual mean runs ~2–4 °F above air in most of the US. Mulch and shade
+ * run cooler; black plastic runs several degrees warmer. A soil thermometer beats this model.
  */
+export const SOIL_SUN_OFFSET_F = 4;
 export function modeledSoilF(c: ClimateCurves, doy: number): number {
-  const lag = 7, damp = 0.9;
+  const lag = 5;
   const mean = (c.tmin.mean + c.tmax.mean) / 2;
   const a = (c.tmin.a + c.tmax.a) / 2, b = (c.tmin.b + c.tmax.b) / 2;
   const d = doy - lag;
-  return mean + damp * (a * Math.cos(W * d) + b * Math.sin(W * d));
+  // Solar gain follows day length: peaks near the June solstice (day 172), ~0 at the December solstice.
+  const sun = SOIL_SUN_OFFSET_F * (0.5 + 0.5 * Math.cos(W * (doy - 172)));
+  return mean + a * Math.cos(W * d) + b * Math.sin(W * d) + sun;
 }
 
 /** First day in [from, to] when `f(doy)` reaches `threshold` and stays there for 5 days. */
@@ -142,7 +154,17 @@ export function gddBetween(c: ClimateCurves, from: number, to: number, baseF = 5
   return s;
 }
 
-/** Day by which `gdd` heat units have accumulated after `from`, or null within a year. */
+/** Days after `from` until `gdd` heat units have accumulated (1 = the same day), or null if not within a year. */
+export function daysToGdd(c: ClimateCurves, from: number, gdd: number, baseF = 50, capF = 86): number | null {
+  let s = 0;
+  for (let k = 0; k < 365; k++) {
+    s += dailyGdd(c, ((from - 1 + k) % 365) + 1, baseF, capF);
+    if (s >= gdd) return k + 1;
+  }
+  return null;
+}
+
+/** Day of year by which `gdd` heat units have accumulated after `from` (may wrap into next year), or null. */
 export function dayGddReached(c: ClimateCurves, from: number, gdd: number, baseF = 50, capF = 86): number | null {
   let s = 0;
   for (let k = 0; k < 365; k++) {

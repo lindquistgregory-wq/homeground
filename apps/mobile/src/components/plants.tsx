@@ -1,6 +1,7 @@
 /** Shared pieces for the planting screens: verdict badges, factor lists, calendars, bed layouts. */
 import { formatDoy, type BedLayout, type CalendarEvent, type Factor, type PlantCalendar, type Suitability } from '@plotwright/core';
 import type { ExtensionLink } from '@plotwright/data';
+import { router } from 'expo-router';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Rect } from 'react-native-svg';
 import { Body, useTheme } from './ui';
@@ -89,6 +90,18 @@ export function LayoutSvg({ layout, widthM, lengthM, share = 1, spreadM }: { lay
   );
 }
 
+/** Shown when the site profile predates the planting guide's climate layers. */
+export function StaleProfileNotice({ parcelId }: { parcelId: string }) {
+  const t = useTheme();
+  return (
+    <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: parcelId } })}
+      style={[styles.notice, { borderColor: t.warn }]}>
+      <Text style={{ color: t.warn, fontWeight: '600' }}>Update the site profile for soil-temperature and heat timing</Text>
+      <Text style={{ color: t.muted, fontSize: 13 }}>Opening it rebuilds the profile with the climate data this guide uses. Tap to open.</Text>
+    </Pressable>
+  );
+}
+
 export function Chip({ label, active, onPress, disabled }: { label: string; active: boolean; onPress: () => void; disabled?: boolean }) {
   const t = useTheme();
   return (
@@ -104,5 +117,6 @@ const styles = StyleSheet.create({
   factor: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   mark: { width: 16, fontWeight: '700', fontSize: 15 },
   event: { marginBottom: 10 },
-  chip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, minHeight: 36, justifyContent: 'center', marginRight: 6, marginBottom: 6 },
+  notice: { borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 12 },
+  chip: { borderWidth: 1, borderRadius: 22, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center', marginRight: 6, marginBottom: 6 },
 });

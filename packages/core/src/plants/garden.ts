@@ -24,7 +24,8 @@ export interface RotationAdvice {
 }
 
 export function rotationAdvice(plant: PlantSpec, history: PlantingRecord[], year: number): RotationAdvice {
-  if (plant.lifecycle === 'perennial' || plant.kind === 'cover-crop') return { ok: true, message: 'Rotation does not apply.' };
+  // Garlic and bunching onions are grown like annuals and carry onion white rot, so they still rotate.
+  if ((plant.lifecycle === 'perennial' && plant.family !== 'Amaryllidaceae') || plant.kind === 'cover-crop') return { ok: true, message: 'Rotation does not apply.' };
   const gap = ROTATION_YEARS[plant.family] ?? 2;
   const recent = history.filter((h) => h.family === plant.family && year - h.year > 0 && year - h.year < gap).sort((a, b) => b.year - a.year)[0];
   if (recent) {
@@ -72,7 +73,8 @@ export function layoutBed(plant: PlantSpec, widthM: number, lengthM: number, sha
           const u = k % a, v = Math.floor(k / a);
           positions.push([ci * sqFt + ((u + 0.5) * sqFt) / a, rj * sqFt + ((v + 0.5) * sqFt) / b]);
         }
-    return { plantCount: cols * rowsSq * n, rows: rowsSq * b, perRow: cols * a, positions, method: 'square-foot', rowLengthM: len * rowsSq * b };
+    // For yield, count the row a plant occupies at its normal in-row spacing (dense squares don't multiply row yields).
+    return { plantCount: cols * rowsSq * n, rows: rowsSq * b, perRow: cols * a, positions, method: 'square-foot', rowLengthM: cols * rowsSq * n * plant.spacingIn.inRow * IN };
   }
   const inRow = plant.spacingIn.inRow * IN;
   // In beds, crops can be planted closer than field row spacing: use the larger of in-row and 60 % of row spacing.

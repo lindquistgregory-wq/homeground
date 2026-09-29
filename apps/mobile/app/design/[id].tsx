@@ -24,7 +24,7 @@ import {
 } from '../../src/services/analysis';
 import { exportDesign, type ExportFormat } from '../../src/services/export';
 import { activePlantings, cropShadeObjects, isPlantable } from '../../src/services/garden';
-import { plantingsForParcel, type Planting } from '../../src/db/plantings';
+import { deletePlantingsForBed, plantingsForParcel, type Planting } from '../../src/db/plantings';
 import { newId } from '../../src/services/identity';
 import { useSettings } from '../../src/services/settings';
 
@@ -64,6 +64,7 @@ export default function DesignScreen() {
   const [siting, setSiting] = useState<{ target: SitingTarget; geo: object; factors: string[] } | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [plantings, setPlantings] = useState<Planting[]>([]);
+  const [shadeSeason, setShadeSeason] = useState({ fromDoy: 180, toDoy: 288 });
   const pendingChange = useRef<DesignObject[]>([]);
   const sunRef = useRef<SunResult | null>(null);
 
@@ -79,6 +80,8 @@ export default function DesignScreen() {
       const frost = profile?.climate.status === 'ok'
         ? { lastSpringDoy: profile.climate.value.frost.dates.lastSpring[32][50], firstFallDoy: profile.climate.value.frost.dates.firstFall[32][50] }
         : undefined;
+      // Tall crops shade from ~2 months after the last frost until the first frost.
+      if (frost?.lastSpringDoy != null && frost.firstFallDoy != null) setShadeSeason({ fromDoy: frost.lastSpringDoy + 60, toDoy: frost.firstFallDoy });
       try {
         setAnalysis(await loadAnalysis(p.id, p.geometry, { canopy: ent.has('layers.canopyShade'), frost }));
       } catch (e) {
@@ -104,12 +107,12 @@ export default function DesignScreen() {
       const changed = pendingChange.current.flatMap((o) => [o, ...cropShadeObjects([o], plantings, analysis.frame)]);
       pendingChange.current = [];
       const prev = sunRef.current;
-      const next = computeSun(analysis, [...design.objects, ...crops], period, 15, prev && changed.length ? { prev, changed } : undefined);
+      const next = computeSun(analysis, design.objects, period, 15, prev && changed.length ? { prev, changed } : undefined, { objects: crops, ...shadeSeason });
       sunRef.current = next;
       setSun(next);
     }, 250);
     return () => clearTimeout(handle);
-  }, [analysis, design, period, plantings]);
+  }, [analysis, design, period, plantings, shadeSeason]);
 
   const frame = analysis?.frame;
   const selected = design?.objects.find((o) => o.id === selectedId) ?? null;
@@ -345,7 +348,20 @@ export default function DesignScreen() {
             onMove={() => setMoving(true)}
             onSnapAngle={() => frame && replaceSelected({ rotationDeg: snapRotationToBoundary(selected.rotationDeg, parcel.geometry, frame) })}
             onSnapContour={objectType(selected.kind)?.followsContour && ent.has('layers.advancedTerrain') && analysis?.terrain.status === 'ok' && frame ? () => replaceSelected(snapToContour(selected, analysis.ground, frame)) : undefined}
-            onDelete={() => { update(design.objects.filter((o) => o.id !== selected.id), [selected]); setSelectedId(null); }}
+            onDelete={() => {
+              const planted = plantings.filter((p) => p.bedObjectId === selected.id).length;
+              const remove = async () => {
+                update(design.objects.filter((o) => o.id !== selected.id), [selected]);
+                setSelectedId(null);
+                // Plantings in a deleted bed would keep raising alerts; remove them with it.
+                if (planted) {
+                  await deletePlantingsForBed(design.id, selected.id);
+                  setPlantings((ps) => ps.filter((p) => p.bedObjectId !== selected.id));
+                }
+              };
+              if (planted) Alert.alert('Delete bed?', `This also removes its ${planted} planting${planted === 1 ? '' : 's'} and their history.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => void remove() }]);
+              else void remove();
+            }}
             onPlan={isPlantable(selected) ? () => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } }) : undefined}
             planted={plantings.filter((p) => p.bedObjectId === selected.id).length}
           />

@@ -61,6 +61,13 @@ export async function deletePlanting(id: string): Promise<void> {
   await db.runAsync('INSERT OR REPLACE INTO sync_pending (collection, id, hlc) VALUES (?, ?, ?)', 'plantings', id, hlc);
 }
 
+/** Tombstone the plantings of a bed that was deleted from the design. */
+export async function deletePlantingsForBed(designId: string, bedObjectId: string): Promise<number> {
+  const rows = await plantingsForBed(designId, bedObjectId);
+  for (const r of rows) await deletePlanting(r.id);
+  return rows.length;
+}
+
 /** Tombstone every planting of a deleted parcel so other devices drop them too. */
 export async function deletePlantingsForParcel(parcelId: string): Promise<void> {
   const db = await getDb();

@@ -91,9 +91,14 @@ export default function Settings() {
           title={alerts ? '✓ Alerts on' : 'Turn on alerts'}
           kind={alerts ? 'primary' : 'secondary'}
           onPress={async () => {
-            const on = await setAlertsEnabled(!alerts);
-            setAlerts(on);
-            if (!alerts && !on) Alert.alert('Notifications are off', 'Allow notifications for Plotwright in your phone’s Settings to get frost alerts.');
+            try {
+              const r = await setAlertsEnabled(!alerts);
+              setAlerts(r.on);
+              if (r.denied) Alert.alert('Notifications are off', 'Allow notifications for Plotwright in your phone’s Settings to get frost alerts.');
+              else if (r.on && !r.background) Alert.alert('Alerts on', 'Background refresh is off or restricted on this phone, so Plotwright will check the forecast each time you open it.');
+            } catch (e) {
+              Alert.alert('Couldn’t change alerts', (e as Error).message);
+            }
           }}
         />
       </Card>

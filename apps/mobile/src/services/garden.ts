@@ -118,9 +118,28 @@ export function bedConditions(a: ParcelAnalysis, growingSun: SunResult | null, o
 
 // ---------------- Tall crops as shade ----------------
 
-/** Plantings that are in the ground (or planned) this season. */
+/**
+ * Plantings growing (or planned) this season: this year's, plus perennials from earlier years and
+ * crops planted last fall to overwinter (garlic, fall-planted onions), until harvested or removed.
+ */
 export function activePlantings(plantings: Planting[], year: number): Planting[] {
-  return plantings.filter((p) => p.year === year && (p.status === 'planned' || p.status === 'planted'));
+  return plantings.filter((p) => {
+    if (p.status !== 'planned' && p.status !== 'planted') return false;
+    if (p.year === year) return true;
+    if (p.year > year) return false;
+    const plant = plantById(p.plantId);
+    if (plant?.lifecycle === 'perennial' && plant.family !== 'Amaryllidaceae') return p.status === 'planted';
+    return p.status === 'planted' && p.year === year - 1 && (plant?.frost === 'very-hardy' || plant?.frost === 'hardy');
+  });
+}
+
+/**
+ * When tall crops stand high enough to matter for shade: from about two months after the median last
+ * frost (corn, pole beans and sunflowers are near full height by midsummer) to the first frost.
+ */
+export function cropShadeSeason(site: SiteConditions): { fromDoy: number; toDoy: number } {
+  const lf = site.frost?.lastSpring[32][50], ff = site.frost?.firstFall[32][50];
+  return { fromDoy: (lf ?? 120) + 60, toDoy: ff ?? 288 };
 }
 
 /**

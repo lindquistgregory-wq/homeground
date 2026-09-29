@@ -10,11 +10,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useEntitlements } from '../../src/billing/entitlements';
-import { Chip, FactorList, LayoutSvg, VerdictBadge } from '../../src/components/plants';
+import { Chip, FactorList, LayoutSvg, StaleProfileNotice, VerdictBadge } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { deletePlanting, savePlanting, type Planting, type PlantingStatus } from '../../src/db/plantings';
 import { computeSun, loadAnalysis, type ParcelAnalysis, type SunResult } from '../../src/services/analysis';
-import { activePlantings, bedConditions, bedHistory, bedName, cropShadeObjects, plantsForSpot, type BedReport } from '../../src/services/garden';
+import { activePlantings, bedConditions, bedHistory, bedName, cropShadeObjects, cropShadeSeason, plantsForSpot, type BedReport } from '../../src/services/garden';
 import { useGarden } from '../../src/services/useGarden';
 import { useSettings } from '../../src/services/settings';
 
@@ -56,7 +56,7 @@ export default function BedPlanner() {
         // Let the spinner render before the (synchronous) shade run.
         await new Promise((r) => setTimeout(r, 30));
         const crops = cropShadeObjects(state.design.objects, activePlantings(state.plantings, year), a.frame, bedId);
-        const s = computeSun(a, [...state.design.objects, ...crops], 'growing', 20);
+        const s = computeSun(a, state.design.objects, 'growing', 20, undefined, { objects: crops, ...cropShadeSeason(state.site) });
         if (!cancelled) setSun(s);
       } catch (e) {
         if (!cancelled) setSunError((e as Error).message);
@@ -109,6 +109,7 @@ export default function BedPlanner() {
       <Text style={{ color: t.text, fontSize: 22, fontWeight: '700' }} accessibilityRole="header">{name}</Text>
       <Body muted>{formatArea(areaM2, units)}{cond?.covered ? ' · covered growing space' : ''}</Body>
 
+      {state.profileStale && <StaleProfileNotice parcelId={state.parcel.id} />}
       <Card title="Conditions in this bed">
         {!cond ? (
           sunError ? <Body muted>Sun model unavailable: {sunError}</Body> : <ActivityIndicator accessibilityLabel="Modeling sun for this bed" />
@@ -145,7 +146,10 @@ export default function BedPlanner() {
                 <Body muted>{p.year} · {p.status}{p.plantedOn ? ` ${p.plantedOn}` : ''}{p.share < 1 ? ` · ${Math.round(p.share * 100)}% of the bed` : ''}</Body>
               </View>
               {STATUS_NEXT[p.status] && <Chip label={STATUS_ACTION[p.status]} active={false} onPress={() => advance(p)} />}
-              <Chip label="Remove" active={false} onPress={async () => { await deletePlanting(p.id); await reload(); }} />
+              <Chip label="Remove" active={false} onPress={() => Alert.alert('Remove planting?', `Remove ${plant?.commonName ?? 'this planting'} from ${name}? Its rotation history goes with it; mark it harvested instead to keep the history.`, [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Remove', style: 'destructive', onPress: async () => { await deletePlanting(p.id); await reload(); } },
+              ])} />
             </View>
           );
         })}
@@ -164,7 +168,7 @@ export default function BedPlanner() {
               return (
                 <View key={s.plantId} style={[styles.rank, { borderColor: t.border }]}>
                   <View style={styles.rankHead}>
-                    <Text onPress={() => setOpen(isOpen ? null : s.plantId)} accessibilityRole="button" style={{ color: t.text, fontSize: 16, fontWeight: '600', flex: 1 }}>
+                    <Text onPress={() => setOpen(isOpen ? null : s.plantId)} accessibilityRole="button" accessibilityState={{ expanded: isOpen }} accessibilityHint="Shows reasons, layout and yield" style={{ color: t.text, fontSize: 16, fontWeight: '600', flex: 1 }}>
                       {plant.commonName} {isOpen ? '▾' : '▸'}
                     </Text>
                     <VerdictBadge s={s} />

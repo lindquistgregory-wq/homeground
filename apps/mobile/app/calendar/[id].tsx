@@ -8,7 +8,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useEntitlements } from '../../src/billing/entitlements';
-import { Chip } from '../../src/components/plants';
+import { Chip, StaleProfileNotice } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { alertsEnabled, alertsForParcel, type ParcelAlerts } from '../../src/services/alerts';
 import { activePlantings, bedName, calendarFor } from '../../src/services/garden';
@@ -29,6 +29,7 @@ export default function CalendarScreen() {
   const [risk, setRisk] = useState<'cautious' | 'typical'>('cautious');
   const [dynamic, setDynamic] = useState(false);
   const [alerts, setAlerts] = useState<ParcelAlerts | null>(null);
+  const [alertsError, setAlertsError] = useState<string | null>(null);
   const [notifyOn, setNotifyOn] = useState<boolean | null>(null);
   const year = new Date().getFullYear();
 
@@ -54,7 +55,7 @@ export default function CalendarScreen() {
     if (!state?.profile) return;
     void alertsEnabled().then(setNotifyOn);
     const c = state.profile.centroid;
-    alertsForParcel(state.parcel.id, state.parcel.name, c.lat, c.lon).then(setAlerts).catch(() => setAlerts(null));
+    alertsForParcel(state.parcel.id, state.parcel.name, c.lat, c.lon).then(setAlerts).catch((e: Error) => setAlertsError(e.message));
   }, [state]);
 
   if (error) return <Body>{error}</Body>;
@@ -72,8 +73,10 @@ export default function CalendarScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
+      {state.profileStale && <StaleProfileNotice parcelId={state.parcel.id} />}
       <Card title="Weather alerts">
         {!state.profile ? <Body muted>Build the site profile first.</Body>
+          : alertsError ? <Body muted>Couldn’t check the forecast ({alertsError}).</Body>
           : !alerts ? <ActivityIndicator accessibilityLabel="Checking the forecast" />
             : alerts.alerts.length ? alerts.alerts.map((a, i) => (
               <View key={i} style={{ marginBottom: 8 }}>
@@ -131,7 +134,10 @@ export default function CalendarScreen() {
 
           <Card title="Where it’s planted">
             {cals.map((c) => (
-              <Body key={c.plantId}>{plantById(c.plantId)?.commonName}: {c.beds.join(', ')}{c.fits ? '' : ' (may not mature before frost)'}</Body>
+              <View key={c.plantId} style={{ marginBottom: 6 }}>
+                <Body>{plantById(c.plantId)?.commonName}: {c.beds.join(', ')}</Body>
+                {c.warnings.map((w, i) => <Text key={i} style={{ color: t.warn, fontSize: 13 }}>• {w}</Text>)}
+              </View>
             ))}
           </Card>
         </>
