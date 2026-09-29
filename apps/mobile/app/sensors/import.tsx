@@ -3,12 +3,12 @@
  * matched by their headers and converted to canonical units; the preview shows what was recognised
  * before anything is saved.
  */
-import { importCsv, METRIC_LABEL, type CsvImport, type Exposure } from '@plotwright/core';
+import { importCsvRows, parseCsv, METRIC_LABEL, type CsvImport, type Exposure } from '@plotwright/core';
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import { Chip } from '../../src/components/plants';
 import { EXPOSURE_LABEL } from '../../src/components/sensorFormat';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
@@ -21,14 +21,26 @@ export default function ImportCsv() {
   const { parcelId } = useLocalSearchParams<{ parcelId: string }>();
   const t = useTheme();
   const units = useSettings((s) => s.units);
-  const [file, setFile] = useState<{ name: string; text: string } | null>(null);
+  const [file, setFile] = useState<{ name: string; rows: string[][] } | null>(null);
+  const [preview, setPreview] = useState<CsvImport | null>(null);
+  const [working, setWorking] = useState<string | null>(null);
   const [assumed, setAssumed] = useState<'imperial' | 'metric'>(units);
   const [dayFirst, setDayFirst] = useState(false);
   const [exposure, setExposure] = useState<Exposure>('open-air');
   const [busy, setBusy] = useState(false);
   const sensorId = useState(() => newId())[0];
 
-  const preview: CsvImport | null = useMemo(() => (file ? importCsv(file.text, { sensorId, offsetMin: localOffsetMin(), defaultUnits: assumed, dayFirst }) : null), [file, sensorId, assumed, dayFirst]);
+  // Converting a big file takes a moment on the JS thread: show a spinner first, then convert (not during render).
+  useEffect(() => {
+    if (!file) return;
+    let cancelled = false;
+    setWorking('Reading the columns…');
+    const h = setTimeout(() => {
+      const p = importCsvRows(file.rows, { sensorId, offsetMin: localOffsetMin(), defaultUnits: assumed, dayFirst });
+      if (!cancelled) { setPreview(p); setWorking(null); }
+    }, 50);
+    return () => { cancelled = true; clearTimeout(h); };
+  }, [file, sensorId, assumed, dayFirst]);
   const span = useMemo(() => {
     if (!preview?.readings.length) return null;
     let lo = Infinity, hi = -Infinity;
@@ -41,7 +53,11 @@ export default function ImportCsv() {
     if (r.canceled || !r.assets?.[0]) return;
     const text = await new File(r.assets[0].uri).text();
     if (text.length > 30_000_000) return Alert.alert('File too large', 'Split the export into smaller files (under ~30 MB each).');
-    setFile({ name: r.assets[0].name, text });
+    const name = r.assets[0].name;
+    setPreview(null);
+    setWorking('Opening the file…');
+    // Split into rows once; unit and date choices then only re-convert.
+    setTimeout(() => setFile({ name, rows: parseCsv(text) }), 50);
   };
 
   const save = async () => {
@@ -62,8 +78,9 @@ export default function ImportCsv() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       <Body muted>Export from your station software (Ecowitt, WeatherLink, Cumulus, Weather Display, a spreadsheet…) as CSV with a date/time column. Header names and units like “Temperature (°F)” or “Rain (mm)” are recognised.</Body>
-      <Button title={file ? `Chosen: ${file.name}` : 'Choose a CSV file'} kind={file ? 'secondary' : 'primary'} onPress={pick} />
-      {file && preview && (
+      <Button title={file ? `Chosen: ${file.name}` : 'Choose a CSV file'} kind={file ? 'secondary' : 'primary'} onPress={pick} disabled={!!working} />
+      {working && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><ActivityIndicator /><Body muted>{working}</Body></View>}
+      {file && preview && !working && (
         <Card title="Preview">
           <Text style={{ color: t.text, fontWeight: '600' }}>Units when a header doesn’t say</Text>
           <View style={{ flexDirection: 'row' }}>

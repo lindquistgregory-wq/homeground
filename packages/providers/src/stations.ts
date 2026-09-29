@@ -9,7 +9,7 @@
  * Tempest's cloud API is not used: WeatherFlow's terms require a commercial agreement for commercial
  * apps (see DATA_SOURCES.md). The local broadcast is exempt.
  */
-import { dewPointC, sourced, unavailable, type Layer, type Metric, type MetricValues } from '@plotwright/core';
+import { dewPointC, offsetAt, sourced, unavailable, type Layer, type Metric, type MetricValues, type Offset } from '@plotwright/core';
 import type { HttpClient } from './http';
 import { qs } from './qs';
 
@@ -181,8 +181,8 @@ export async function ecowittRealtime(http: HttpClient, k: EcowittKeys): Promise
 export const ECOWITT_HISTORY_GROUPS = 'outdoor,wind,pressure,rainfall,rainfall_piezo,solar_and_uvi,soil_ch1,soil_ch2,soil_ch3,soil_ch4,soil_ch5,soil_ch6,soil_ch7,soil_ch8,temp_ch1,temp_ch2,temp_ch3,temp_ch4,temp_and_humidity_ch1,temp_and_humidity_ch2,temp_and_humidity_ch3,temp_and_humidity_ch4,leaf_ch1,leaf_ch2';
 
 /** "YYYY-MM-DD HH:mm:ss" in the station's local time, which is how Ecowitt reads start/end dates. */
-export function ecowittDate(utcMs: number, offsetMin: number): string {
-  const d = new Date(utcMs + offsetMin * 60_000);
+export function ecowittDate(utcMs: number, offset: Offset): string {
+  const d = new Date(utcMs + offsetAt(offset, utcMs) * 60_000);
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
 }
@@ -191,7 +191,7 @@ export function ecowittDate(utcMs: number, offsetMin: number): string {
  * History for one window (keep it to ≤ 1 day for 5-minute data). Ecowitt keeps 5-minute data for
  * ~3 months, 30-minute for ~1 year, 4-hour for ~2 years, so the app keeps its own copy.
  */
-export async function ecowittHistory(http: HttpClient, k: EcowittKeys, startUtc: number, endUtc: number, offsetMin: number, cycle: '5min' | '30min' | '4hour' | '1day' = '5min'): Promise<StationObservation[]> {
+export async function ecowittHistory(http: HttpClient, k: EcowittKeys, startUtc: number, endUtc: number, offsetMin: Offset, cycle: '5min' | '30min' | '4hour' | '1day' = '5min'): Promise<StationObservation[]> {
   const url = `${ECOWITT}/device/history?${qs({
     application_key: k.applicationKey, api_key: k.apiKey, mac: k.mac, start_date: ecowittDate(startUtc, offsetMin), end_date: ecowittDate(endUtc, offsetMin),
     cycle_type: cycle, call_back: ECOWITT_HISTORY_GROUPS, ...ECOWITT_UNITS,

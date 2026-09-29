@@ -3,9 +3,11 @@
  * summaries (min/max/mean per metric, in the parcel's local time) sync so every device has the history
  * the calendar, GDD and water balance need without shipping every 5-minute reading to iCloud.
  */
-import { dailyAggregates, type DayAggregate, type Exposure, type Metric, type Reading, type SensorKind, type Thresholds } from '@plotwright/core';
+import {
+  dailyAggregates, localDate, mergeDayMetrics, type DayAggregate, type Exposure, type Metric, type Offset, type Reading, type SensorKind, type Thresholds,
+} from '@plotwright/core';
 import { getDb } from './database';
-import { clock, newId } from '../services/identity';
+import { clock, getDeviceId, newId } from '../services/identity';
 
 export interface SensorRecord {
   id: string;
@@ -108,8 +110,24 @@ export async function deleteSensor(id: string): Promise<string[]> {
     await markPending('sensors', sid, hlc);
     await db.runAsync('DELETE FROM readings WHERE sensor_id = ?', sid);
     await db.runAsync('DELETE FROM sensor_days WHERE sensor_id = ?', sid);
+    // Its unsent day summaries have nothing left to send; the sensor tombstone stops other phones applying old ones.
+    await db.runAsync("DELETE FROM sync_pending WHERE collection = 'sensorReadings' AND id LIKE ?", `${sid}|%`);
+    await db.runAsync('DELETE FROM ble_aliases WHERE sensor_id = ?', sid);
   }
   return ids;
+}
+
+// ---------------- This phone's Bluetooth ids ----------------
+
+/** Map this phone's Bluetooth id for a device to a sensor (local only). */
+export async function setBleAlias(platformKey: string, sensorId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('INSERT OR REPLACE INTO ble_aliases (platform_key, sensor_id) VALUES (?, ?)', platformKey, sensorId);
+}
+
+export async function bleAliases(): Promise<Map<string, string>> {
+  const db = await getDb();
+  return new Map((await db.getAllAsync<{ platform_key: string; sensor_id: string }>('SELECT platform_key, sensor_id FROM ble_aliases')).map((r) => [r.platform_key, r.sensor_id]));
 }
 
 export async function deleteSensorsForParcel(parcelId: string): Promise<string[]> {
@@ -121,10 +139,10 @@ export async function deleteSensorsForParcel(parcelId: string): Promise<string[]
 // ---------------- Readings ----------------
 
 /**
- * Store readings (duplicates by sensor/metric/time are ignored) and refresh the daily summaries they
- * touch. `offsetMin` is the parcel's UTC offset for local days.
+ * Store readings (duplicates by sensor/metric/time are ignored) and refresh this phone's daily
+ * summaries for the days they touch. `offset` gives local days (daylight-saving aware).
  */
-export async function insertReadings(readings: Reading[], offsetMin: number): Promise<number> {
+export async function insertReadings(readings: Reading[], offset: Offset): Promise<number> {
   if (!readings.length) return 0;
   const db = await getDb();
   let n = 0;
@@ -142,28 +160,31 @@ export async function insertReadings(readings: Reading[], offsetMin: number): Pr
   const touched = new Map<string, { sensorId: string; date: string }>();
   const lastSeen = new Map<string, number>();
   for (const r of readings) {
-    const date = new Date(r.t + offsetMin * 60_000).toISOString().slice(0, 10);
+    const { date } = localDate(r.t, offset);
     touched.set(`${r.sensorId}|${date}`, { sensorId: r.sensorId, date });
     lastSeen.set(r.sensorId, Math.max(lastSeen.get(r.sensorId) ?? 0, r.t));
   }
   for (const { sensorId, date } of touched.values()) {
-    const start = Date.parse(`${date}T00:00:00Z`) - offsetMin * 60_000;
-    const day = dailyAggregates(await readingsBetween(sensorId, start, start + 86_400_000 - 1), offsetMin).find((d) => d.date === date);
+    // Local midnight is within ±14 h of UTC midnight: fetch a wide window and keep that date's readings.
+    const utc0 = Date.parse(`${date}T00:00:00Z`);
+    const day = dailyAggregates(await readingsBetween(sensorId, utc0 - 15 * 3_600_000, utc0 + 39 * 3_600_000), offset).find((d) => d.date === date);
     if (day) await saveDay(sensorId, day);
   }
   for (const [sensorId, t] of lastSeen) await touchSensor(sensorId, t);
   return n;
 }
 
+/** Save this phone's part of a day. Sync id: sensor|date|device. */
 async function saveDay(sensorId: string, d: DayAggregate) {
   const db = await getDb();
   const hlc = clock().tick();
+  const device = getDeviceId();
   await db.runAsync(
-    `INSERT INTO sensor_days (sensor_id, date, doy, metrics, updated_hlc) VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(sensor_id, date) DO UPDATE SET doy = excluded.doy, metrics = excluded.metrics, updated_hlc = excluded.updated_hlc`,
-    sensorId, d.date, d.doy, JSON.stringify(d.metrics), hlc,
+    `INSERT INTO sensor_days (sensor_id, date, device_id, doy, metrics, updated_hlc) VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(sensor_id, date, device_id) DO UPDATE SET doy = excluded.doy, metrics = excluded.metrics, updated_hlc = excluded.updated_hlc`,
+    sensorId, d.date, device, d.doy, JSON.stringify(d.metrics), hlc,
   );
-  await markPending('sensorReadings', `${sensorId}|${d.date}`, hlc);
+  await markPending('sensorReadings', `${sensorId}|${d.date}|${device}`, hlc);
 }
 
 export async function readingsBetween(sensorId: string, fromT: number, toT: number, metric?: Metric): Promise<Reading[]> {
@@ -188,11 +209,18 @@ export async function latestValues(sensorId: string): Promise<Partial<Record<Met
   return out;
 }
 
+/** Daily summaries for a sensor, merging the parts collected by each phone. */
 export async function sensorDays(sensorId: string, fromDate?: string): Promise<DayAggregate[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<{ date: string; doy: number; metrics: string }>(
     'SELECT date, doy, metrics FROM sensor_days WHERE sensor_id = ? AND date >= ? ORDER BY date', sensorId, fromDate ?? '0000');
-  return rows.map((r) => ({ date: r.date, doy: r.doy, metrics: JSON.parse(r.metrics) as DayAggregate['metrics'] }));
+  const byDate = new Map<string, { doy: number; parts: Array<DayAggregate['metrics']> }>();
+  for (const r of rows) {
+    const e = byDate.get(r.date) ?? { doy: r.doy, parts: [] };
+    e.parts.push(JSON.parse(r.metrics) as DayAggregate['metrics']);
+    byDate.set(r.date, e);
+  }
+  return [...byDate.entries()].map(([date, e]) => ({ date, doy: e.doy, metrics: e.parts.length === 1 ? e.parts[0]! : mergeDayMetrics(e.parts) }));
 }
 
 /** Most recent reading time for a sensor, for backfill (null = none yet). */

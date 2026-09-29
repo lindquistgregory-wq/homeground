@@ -3,12 +3,13 @@
  * and map each station channel (outdoor, soil probe 1, leaf sensor 2…) to its own sensor row so it can
  * be pinned where it actually sits on the parcel.
  */
-import { toReadings, type Exposure, type Layer, type Reading } from '@plotwright/core';
+import { toReadings, type Exposure, type Layer, type Offset, type Reading } from '@plotwright/core';
 import {
   ambientDevices, ambientHistory, ecowittHistory, ecowittLocal, ecowittRealtime, parseTempestUdp, weatherLinkCurrent, weatherLinkHistoric, weatherLinkLive,
   type StationChannel, type StationObservation,
 } from '@plotwright/providers';
 import { findSensor, insertReadings, lastReadingTime, listSensors, saveSensor, touchSensor, type SensorRecord } from '../db/sensors';
+import { kvGet, kvSet } from '../db/database';
 import { http } from './http';
 import { getSecret } from './secrets';
 
@@ -42,7 +43,7 @@ async function channelReadings(station: SensorRecord, obs: StationObservation): 
   return out;
 }
 
-export async function ingestObservations(station: SensorRecord, obs: StationObservation[], offsetMin: number): Promise<number> {
+export async function ingestObservations(station: SensorRecord, obs: StationObservation[], offsetMin: Offset): Promise<number> {
   const all: Reading[] = [];
   for (const o of obs) all.push(...(await channelReadings(station, o)));
   const n = await insertReadings(all, offsetMin);
@@ -50,9 +51,28 @@ export async function ingestObservations(station: SensorRecord, obs: StationObse
   return n;
 }
 
-/** Current readings from a station (cloud or local HTTP). */
-export async function refreshStation(station: SensorRecord, offsetMin: number): Promise<Layer<StationObservation> | null> {
+const CLOUD: StationProtocol[] = ['ecowitt', 'ambient', 'weatherlink'];
+
+/** Newest stored reading across a station's channels (0 if none). */
+async function newestReading(station: SensorRecord): Promise<number> {
+  const children = (await listSensors(station.parcelId)).filter((s) => s.parentId === station.id);
+  return Math.max(0, ...(await Promise.all(children.map((c) => lastReadingTime(c.id)))).map((t) => t ?? 0));
+}
+
+/**
+ * Current readings from a station (cloud or local HTTP). For cloud accounts, the history recorded
+ * since the last reading we have is pulled first (the services keep 5-minute data), so daily min/max,
+ * heat units and water use come from whole days rather than a few snapshots taken when the app opened.
+ */
+export async function refreshStation(station: SensorRecord, offsetMin: Offset): Promise<Layer<StationObservation> | null> {
   const sec = await getSecret(station.id);
+  if (CLOUD.includes(station.protocol as StationProtocol) && sec) {
+    const newest = await newestReading(station);
+    // Only when there's a real gap (> 20 min), and at most two weeks at a time.
+    if (newest && Date.now() - newest > 20 * 60_000) {
+      await backfillStation(station, offsetMin, () => undefined, 14, 15 * 60_000).catch(() => undefined);
+    }
+  }
   let layer: Layer<StationObservation> | null = null;
   switch (station.protocol as StationProtocol) {
     case 'ecowitt':
@@ -98,12 +118,13 @@ const DAY = 86_400_000;
  * Ecowitt: 5-minute data for the last week, then 30-minute (kept ~1 year). Ambient: pages of 288
  * records going back (kept 1 year). WeatherLink: 24-hour windows, only on a WeatherLink Pro plan.
  */
-export async function backfillStation(station: SensorRecord, offsetMin: number, onProgress: (p: BackfillProgress) => void, maxDays = 365): Promise<BackfillProgress> {
+export async function backfillStation(
+  station: SensorRecord, offsetMin: Offset, onProgress: (p: BackfillProgress) => void, maxDays = 365, overlapMs = DAY,
+): Promise<BackfillProgress> {
   const sec = await getSecret(station.id);
   const now = Date.now();
-  const children = (await listSensors(station.parcelId)).filter((s) => s.parentId === station.id);
-  const newest = Math.max(0, ...(await Promise.all(children.map((c) => lastReadingTime(c.id)))).map((t) => t ?? 0));
-  const from = Math.max(now - maxDays * DAY, newest ? newest - DAY : 0);
+  const newest = await newestReading(station);
+  const from = Math.max(now - maxDays * DAY, newest ? newest - overlapMs : 0);
   const p: BackfillProgress = { done: 0, total: 0, readings: 0 };
   try {
     if (station.protocol === 'ecowitt' && sec?.applicationKey && sec.apiKey) {
@@ -136,6 +157,13 @@ export async function backfillStation(station: SensorRecord, offsetMin: number, 
       }
     } else if (station.protocol === 'weatherlink' && sec?.apiKey && sec.apiSecret) {
       const keys = { apiKey: sec.apiKey, apiSecret: sec.apiSecret, stationId: station.deviceKey! };
+      // History is a paid WeatherLink Pro feature: once refused, don't ask again on every refresh.
+      const noHistoryKey = `wl.noHistory.${station.id}`;
+      if (await kvGet(noHistoryKey)) {
+        p.note = 'History needs a WeatherLink Pro plan on this station; new readings build up from now.';
+        onProgress({ ...p });
+        return p;
+      }
       const days = Math.min(Math.ceil((now - from) / DAY), 30);
       p.total = days;
       for (let i = 0; i < days; i++) {
@@ -143,7 +171,9 @@ export async function backfillStation(station: SensorRecord, offsetMin: number, 
         try {
           p.readings += await ingestObservations(station, await weatherLinkHistoric(http, keys, e - DAY, e), offsetMin);
         } catch (err) {
-          p.note = /40[13]/.test(String((err as Error).message)) ? 'History needs a WeatherLink Pro plan on this station; new readings will build up from now.' : (err as Error).message;
+          const refused = /40[13]/.test(String((err as Error).message));
+          if (refused) await kvSet(noHistoryKey, '1');
+          p.note = refused ? 'History needs a WeatherLink Pro plan on this station; new readings will build up from now.' : (err as Error).message;
           break;
         }
         p.done++;
@@ -160,7 +190,7 @@ export async function backfillStation(station: SensorRecord, offsetMin: number, 
 }
 
 /** Refresh every station on the device (foreground open and the background task). */
-export async function refreshAllStations(offsetMin: number, includeLocal: boolean): Promise<void> {
+export async function refreshAllStations(offsetMin: Offset, includeLocal: boolean): Promise<void> {
   for (const s of await listSensors()) {
     if (s.parentId || (s.kind !== 'cloud' && s.kind !== 'local') || s.protocol === 'tempest-udp') continue;
     if (s.kind === 'local' && !includeLocal) continue;
@@ -212,7 +242,7 @@ export async function discoverTempest(timeoutMs = 70_000): Promise<string | null
 }
 
 /** Store a Tempest station's broadcasts while the app is open (full observations once a minute). */
-export async function listenTempest(station: SensorRecord, offsetMin: number, onObs: (o: StationObservation) => void): Promise<() => void> {
+export async function listenTempest(station: SensorRecord, offsetMin: Offset, onObs: (o: StationObservation) => void): Promise<() => void> {
   let last = 0;
   return openTempestSocket((r) => {
     if (station.deviceKey && r.serial !== station.deviceKey) return;

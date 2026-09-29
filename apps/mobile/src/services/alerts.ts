@@ -20,6 +20,8 @@ import { activePlantings, bedName } from './garden';
 import { frostOffset, localOffsetMin, recordForecastLows } from './sensorInsights';
 import { refreshAllStations } from './stations';
 import { http } from './http';
+import { initIdentity } from './identity';
+import { useEntitlements } from '../billing/entitlements';
 
 export const ALERT_TASK = 'plotwright-weather-alerts';
 const ENABLED_KEY = 'alerts.enabled';
@@ -34,6 +36,8 @@ Notifications.setNotificationHandler({
 TaskManager.defineTask(ALERT_TASK, async () => {
   try {
     await getDb();
+    // A headless run starts without the app's startup: set up the device id and clock first.
+    await initIdentity();
     await checkAlerts();
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch {
@@ -137,6 +141,20 @@ export async function alertsForParcel(parcelId: string, parcelName: string, lat:
   return { parcelId, parcelName, alerts, forecastNote: fc.attribution.notes?.[0], lowSpot };
 }
 
+/** Threshold checks right after readings arrive (the scan screen); cheap, no forecast fetch. */
+let thresholdsInFlight: Promise<void> | null = null;
+export function checkThresholdsNow(): Promise<void> {
+  thresholdsInFlight ??= (async () => {
+    // Share the sent-list with a full check that's already running rather than racing it.
+    if (inFlight) await inFlight;
+    if (!(await alertsEnabled())) return;
+    const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);
+    await checkSensorThresholds(sent);
+    await kvSet(SENT_KEY, JSON.stringify([...sent]));
+  })().finally(() => { thresholdsInFlight = null; });
+  return thresholdsInFlight;
+}
+
 let inFlight: Promise<void> | null = null;
 
 /** Check every parcel with planted crops and post a notification for each new alert (one check at a time). */
@@ -151,6 +169,7 @@ async function runCheck(): Promise<void> {
   // Station accounts can be read from anywhere; fetch fresh readings before checking thresholds.
   await refreshAllStations(localOffsetMin(), false).catch(() => undefined);
   await checkSensorThresholds(sent);
+  await kvSet(SENT_KEY, JSON.stringify([...sent]));
   for (const parcel of await listParcels()) {
     const profile = await getSiteProfile(parcel.id);
     const c = profile?.centroid;
@@ -178,6 +197,13 @@ async function runCheck(): Promise<void> {
  * metric and direction per hour.
  */
 async function checkSensorThresholds(sent: Set<string>): Promise<void> {
+  // A headless run hasn't loaded the plan yet; and thresholds stop when Homestead Pro lapses.
+  try {
+    await useEntitlements.getState().refresh();
+  } catch {
+    // keep the last known plan
+  }
+  if (!useEntitlements.getState().entitlements.has('sensors.greenhouseAlerts')) return;
   const now = Date.now();
   for (const s of await listSensors()) {
     if (!s.thresholds) continue;

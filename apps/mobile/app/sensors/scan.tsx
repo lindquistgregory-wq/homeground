@@ -2,15 +2,17 @@
  * Find Bluetooth sensors nearby (§8.1, §14 "appears within 10 s of foreground scanning"). Shows every
  * advertisement we can decode, live, with its readings; tap one to add it to the property.
  */
-import { METRIC_LABEL, hexToBytes, type Exposure, type Metric } from '@plotwright/core';
+import { METRIC_LABEL, type Exposure, type Metric } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Chip } from '../../src/components/plants';
 import { EXPOSURE_LABEL, formatMetric } from '../../src/components/sensorFormat';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
-import { saveSensor } from '../../src/db/sensors';
-import { ensureBlePermission, ingestSeen, scanSensors, type SeenDevice } from '../../src/services/ble';
+import { listSensors, saveSensor, setBleAlias, type SensorRecord } from '../../src/db/sensors';
+import { checkThresholdsNow } from '../../src/services/alerts';
+import { normalizeMac } from '../../src/components/sensorFormat';
+import { ensureBlePermission, ingestSeen, knownSensorsChanged, scanSensors, type SeenDevice } from '../../src/services/ble';
 import { setSecret } from '../../src/services/secrets';
 import { localOffsetMin } from '../../src/services/sensorInsights';
 import { useSettings } from '../../src/services/settings';
@@ -35,7 +37,7 @@ export default function Scan() {
       setStatus('scanning');
       stop = await scanSensors((d) => {
         pending.current[d.key] = d;
-        if (d.known) void ingestSeen(d, localOffsetMin());
+        if (d.known) void ingestSeen(d, localOffsetMin()).then((stored) => { if (stored) void checkThresholdsNow(); }).catch(() => undefined);
       });
       // Batch UI updates: sensors broadcast several times a second.
       timer = setInterval(() => {
@@ -87,27 +89,46 @@ function AddForm({ d, parcelId, onDone, onCancel }: { d: SeenDevice; parcelId: s
   const [bindkey, setBindkey] = useState('');
   const [mac, setMac] = useState(d.decoded.mac ?? (Platform.OS === 'android' ? d.adv.id : ''));
   const needsKey = !!d.decoded.needsKey;
+  // Sensors added on another phone arrive by sync, but iOS gives each phone its own Bluetooth ids.
+  const [existing, setExisting] = useState<SensorRecord[]>([]);
+  useEffect(() => {
+    void listSensors(parcelId).then((all) => setExisting(all.filter((x) => x.kind === 'ble' && !x.parentId && x.protocol === d.decoded.protocol && x.deviceKey !== d.key)));
+  }, [parcelId, d]);
+
+  const link = async (s: SensorRecord) => {
+    await setBleAlias(d.key, s.id);
+    knownSensorsChanged();
+    onDone();
+  };
 
   const save = async () => {
     const key = bindkey.replace(/[\s:-]/g, '');
-    if (needsKey && !/^[0-9a-f]{24}$|^[0-9a-f]{32}$/i.test(key)) return Alert.alert('Bindkey', 'Enter the 32-character (or 24 for older Xiaomi) hex bindkey.');
-    const m = mac.trim().toUpperCase();
-    if (needsKey && !/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(m)) return Alert.alert('MAC address', 'Enter the sensor’s MAC address as AA:BB:CC:DD:EE:FF (printed on the device or shown in its app).');
-    if (needsKey) hexToBytes(key); // validated above
+    // Only older Xiaomi (MiBeacon v2/v3) keys are 24 characters; everything else is AES-128 (32).
+    const keyOk = /^[0-9a-f]{32}$/i.test(key) || (d.decoded.protocol === 'xiaomi' && /^[0-9a-f]{24}$/i.test(key));
+    if (needsKey && !keyOk) return Alert.alert('Bindkey', d.decoded.protocol === 'xiaomi' ? 'Enter the 32-character hex bindkey (24 characters for older Xiaomi firmware).' : 'Enter the 32-character hex bindkey.');
+    const m = normalizeMac(mac);
+    if (needsKey && !m) return Alert.alert('MAC address', 'Enter the sensor’s MAC address as AA:BB:CC:DD:EE:FF (printed on the device or shown in its app).');
     const s = await saveSensor({
       parcelId, kind: 'ble', protocol: d.decoded.protocol, vendor: d.decoded.vendor, model: d.decoded.model, name: name.trim() || d.decoded.model,
-      deviceKey: d.key, exposure, mac: m || undefined, modelHint: d.decoded.protocol === 'switchbot' ? d.decoded.model : undefined,
+      deviceKey: d.key, exposure, mac: m ?? undefined, modelHint: d.decoded.protocol === 'switchbot' ? d.decoded.model : undefined,
     });
     for (const ch of Object.keys(d.decoded.channels ?? {})) {
       await saveSensor({ parcelId, kind: 'ble', protocol: s.protocol, vendor: s.vendor, model: s.model, name: `${s.name} (${ch === 'remote' ? 'remote probe' : `probe ${ch}`})`, deviceKey: d.key, channel: ch, parentId: s.id, exposure });
     }
     if (needsKey) await setSecret(s.id, { bindkey: key.toLowerCase() });
     else await ingestSeen({ ...d, known: s }, localOffsetMin());
+    knownSensorsChanged();
     onDone();
   };
 
   return (
     <Card title="Add sensor">
+      {existing.length > 0 && (
+        <View style={{ marginBottom: 8 }}>
+          <Body>Already added this sensor on another phone? Link it to keep one history:</Body>
+          {existing.map((x) => <Button key={x.id} title={`This is “${x.name}”`} kind="secondary" onPress={() => void link(x)} />)}
+        </View>
+      )}
       <TextInput value={name} onChangeText={setName} accessibilityLabel="Sensor name" style={[styles.input, { color: t.text, borderColor: t.border }]} placeholder="Name (e.g. Greenhouse)" placeholderTextColor={t.muted} />
       <Text style={{ color: t.text, marginTop: 8, fontWeight: '600' }}>Where is it?</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>

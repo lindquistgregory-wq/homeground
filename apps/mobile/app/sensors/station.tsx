@@ -12,7 +12,8 @@ import { Chip } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { deleteSensor, saveSensor } from '../../src/db/sensors';
 import { http } from '../../src/services/http';
-import { setSecret, type SensorSecret } from '../../src/services/secrets';
+import { deleteSecrets, setSecret, type SensorSecret } from '../../src/services/secrets';
+import { normalizeMac } from '../../src/components/sensorFormat';
 import { localOffsetMin } from '../../src/services/sensorInsights';
 import { STATION_LABEL, backfillStation, discoverTempest, refreshStation, type BackfillProgress, type StationProtocol } from '../../src/services/stations';
 
@@ -58,7 +59,8 @@ export default function ConnectStation() {
       }
       router.back();
     } catch (e) {
-      await deleteSensor(station.id);
+      // Remove the half-made station, its channels, and the keys just saved for it.
+      await deleteSecrets(await deleteSensor(station.id));
       Alert.alert('Couldn’t connect', (e as Error).message);
     } finally {
       setBusy(null);
@@ -69,8 +71,10 @@ export default function ConnectStation() {
     try {
       setBusy('Checking…');
       if (proto === 'ecowitt') {
-        const keys = { applicationKey: v('app'), apiKey: v('api'), mac: v('mac').toUpperCase() };
-        if (!keys.applicationKey || !keys.apiKey || !/^([0-9A-F]{2}[:-]?){5}[0-9A-F]{2}$/.test(keys.mac)) throw new Error('Enter both keys and the gateway MAC (AA:BB:CC:DD:EE:FF).');
+        // Ecowitt wants the MAC with colons; people paste it with dashes or none.
+        const mac = normalizeMac(v('mac'));
+        const keys = { applicationKey: v('app'), apiKey: v('api'), mac: mac ?? '' };
+        if (!keys.applicationKey || !keys.apiKey || !mac) throw new Error('Enter both keys and the gateway MAC (AA:BB:CC:DD:EE:FF).');
         const r = await ecowittRealtime(http, keys);
         if (r.status !== 'ok') throw new Error(r.reason);
         await connect(keys.mac, 'Ecowitt station', { applicationKey: keys.applicationKey, apiKey: keys.apiKey });

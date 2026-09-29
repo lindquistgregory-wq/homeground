@@ -42,7 +42,8 @@ const HEAT_PAINT = { 'fill-color': SUN_RAMP, 'fill-opacity': 0.6, 'fill-antialia
 const CONTOUR_PAINT = { 'line-color': '#f5e6c8', 'line-width': 0.8, 'line-opacity': 0.8 };
 const CAMERA_PADDING = { top: 40, right: 40, bottom: 40, left: 40 };
 const SENSOR_PIN_PAINT = { 'circle-color': '#4ea8f2', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 };
-const SENSOR_LABEL_LAYOUT = { 'text-field': ['get', 'label'], 'text-size': 11, 'text-offset': [0, 1.1], 'text-anchor': 'top' };
+// The OpenFreeMap style serves Noto Sans glyphs only; the MapLibre default font stack would render nothing.
+const SENSOR_LABEL_LAYOUT = { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, 1.1], 'text-anchor': 'top' };
 const SENSOR_LABEL_PAINT = { 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 };
 
 export default function DesignScreen() {

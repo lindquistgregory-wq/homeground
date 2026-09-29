@@ -13,13 +13,14 @@ import { useEntitlements } from '../../src/billing/entitlements';
 import { ParcelMap } from '../../src/components/ParcelMap';
 import { Chip } from '../../src/components/plants';
 import { SensorChart, type ChartPoint } from '../../src/components/SensorChart';
-import { EXPOSURE_LABEL, formatMetric } from '../../src/components/sensorFormat';
+import { EXPOSURE_LABEL, formatMetric, normalizeMac } from '../../src/components/sensorFormat';
+import { knownSensorsChanged } from '../../src/services/ble';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { getOrCreateDesign } from '../../src/db/designs';
 import { getParcel, type ParcelRecord } from '../../src/db/parcels';
 import { deleteSensor, getSensor, latestValues, listSensors, readingsBetween, saveSensor, sensorDays, type SensorRecord } from '../../src/db/sensors';
 import { bedName, isPlantable } from '../../src/services/garden';
-import { deleteSecrets, getSecret, setSecret } from '../../src/services/secrets';
+import { deleteSecret, deleteSecrets, getSecret, setSecret } from '../../src/services/secrets';
 import { localOffsetMin } from '../../src/services/sensorInsights';
 import { useSettings } from '../../src/services/settings';
 import { calibrateLightSensor, getCalibration, type StoredCalibration } from '../../src/services/sunCalibration';
@@ -201,6 +202,7 @@ export default function SensorDetail() {
       )}
 
       {s.kind === 'ble' && !s.parentId && <BindkeyCard s={s} onSave={(mac) => void save({ mac })} />}
+      {s.kind === 'cloud' && !s.parentId && <StationKeysCard s={s} />}
 
       <TextInput defaultValue={s.name} onEndEditing={(e) => e.nativeEvent.text.trim() && void save({ name: e.nativeEvent.text.trim() })} accessibilityLabel="Sensor name"
         style={[styles.input, { color: t.text, borderColor: t.border }]} />
@@ -256,13 +258,58 @@ function BindkeyCard({ s, onSave }: { s: SensorRecord; onSave: (mac: string | un
       <TextInput value={key} onChangeText={setKey} placeholder="New bindkey (hex)" placeholderTextColor={t.muted} autoCapitalize="none" autoCorrect={false}
         accessibilityLabel="Bindkey" style={[styles.input, { color: t.text, borderColor: t.border }]} />
       <TextInput defaultValue={s.mac ?? ''} placeholder="MAC AA:BB:CC:DD:EE:FF" placeholderTextColor={t.muted} autoCapitalize="characters" autoCorrect={false}
-        accessibilityLabel="MAC address" onEndEditing={(e) => onSave(e.nativeEvent.text.trim().toUpperCase() || undefined)} style={[styles.input, { color: t.text, borderColor: t.border }]} />
+        accessibilityLabel="MAC address" style={[styles.input, { color: t.text, borderColor: t.border }]}
+        onEndEditing={(e) => {
+          const text = e.nativeEvent.text.trim();
+          if (!text) return onSave(undefined);
+          const mac = normalizeMac(text);
+          if (!mac) return Alert.alert('MAC address', 'Enter it as AA:BB:CC:DD:EE:FF.');
+          onSave(mac);
+          knownSensorsChanged();
+        }} />
       <Button title="Save key" kind="secondary" onPress={async () => {
         const k = key.replace(/[\s:-]/g, '').toLowerCase();
-        if (!/^[0-9a-f]{24}$|^[0-9a-f]{32}$/.test(k)) return Alert.alert('Bindkey', 'Enter the 32-character (or 24 for older Xiaomi) hex key.');
+        // Only older Xiaomi (MiBeacon v2/v3) keys are 24 characters; everything else is AES-128 (32).
+        const ok = /^[0-9a-f]{32}$/.test(k) || (s.protocol === 'xiaomi' && /^[0-9a-f]{24}$/.test(k));
+        if (!ok) return Alert.alert('Bindkey', s.protocol === 'xiaomi' ? 'Enter the 32-character hex key (24 for older Xiaomi firmware).' : 'Enter the 32-character hex key.');
         await setSecret(s.id, { bindkey: k });
+        knownSensorsChanged();
         setKey(''); setHas(true);
       }} />
+    </Card>
+  );
+}
+
+/**
+ * Station keys live only in the keychain of the phone they were entered on. On another phone the
+ * synced station shows here so its keys can be entered once.
+ */
+function StationKeysCard({ s }: { s: SensorRecord }) {
+  const t = useTheme();
+  const [has, setHas] = useState<boolean | null>(null);
+  const [f, setF] = useState<Record<string, string>>({});
+  useEffect(() => { void getSecret(s.id).then((x) => setHas(!!(x?.apiKey))); }, [s.id]);
+  if (has === null || has) return null;
+  const fields: Array<[string, string]> = s.protocol === 'weatherlink' ? [['apiKey', 'API Key'], ['apiSecret', 'API Secret']] : [['applicationKey', 'Application Key'], ['apiKey', 'API Key']];
+  const save = async () => {
+    const secret = Object.fromEntries(fields.map(([k]) => [k, (f[k] ?? '').trim()]));
+    if (Object.values(secret).some((v) => !v)) return Alert.alert('Keys', 'Enter both keys.');
+    await setSecret(s.id, secret);
+    const r = await refreshStation(s, localOffsetMin()).catch((e: Error) => ({ status: 'unavailable' as const, reason: e.message }));
+    if (!r || r.status !== 'ok') {
+      await deleteSecret(s.id);
+      return Alert.alert('Couldn’t connect', r && 'reason' in r ? r.reason : 'Check the keys and try again.');
+    }
+    setHas(true);
+  };
+  return (
+    <Card title="Keys on this phone">
+      <Body>This station was connected on another device. Its keys stay on the phone they were entered on, so enter them here to read it from this phone too.</Body>
+      {fields.map(([k, label]) => (
+        <TextInput key={k} value={f[k] ?? ''} onChangeText={(v) => setF((x) => ({ ...x, [k]: v }))} placeholder={label} placeholderTextColor={t.muted}
+          secureTextEntry autoCapitalize="none" autoCorrect={false} accessibilityLabel={label} style={[styles.input, { color: t.text, borderColor: t.border }]} />
+      ))}
+      <Button title="Save and connect" onPress={() => void save()} />
     </Card>
   );
 }

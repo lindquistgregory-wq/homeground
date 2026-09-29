@@ -6,7 +6,8 @@
  *  - how much colder your low spot runs than the NWS forecast, for frost alerts
  */
 import {
-  blendSoilCurve, et0PenmanMonteith, forecastOffsetC, gddFromDailyC, modeledSoilF, waterBalance, type DayAggregate, type SiteConditions, type WaterBalance,
+  blendSoilCurve, et0PenmanMonteith, forecastOffsetC, fullDay, gddFromDailyC, localDate, modeledSoilF, waterBalance,
+  type DayAggregate, type MetricDay, type Offset, type SiteConditions, type WaterBalance,
 } from '@plotwright/core';
 import { regionalSoil, type SiteProfile } from '@plotwright/providers';
 import { kvGet, kvSet } from '../db/database';
@@ -15,10 +16,21 @@ import { http } from './http';
 
 const DAY = 86_400_000;
 const cToF = (c: number) => (c * 9) / 5 + 32;
-const isoDate = (t: number, offsetMin: number) => new Date(t + offsetMin * 60_000).toISOString().slice(0, 10);
+const isoDate = (t: number, offset: Offset) => localDate(t, offset).date;
 
-/** The phone's current UTC offset in minutes east (parcels are assumed to be in the phone's time zone). */
-export const localOffsetMin = (): number => -new Date().getTimezoneOffset();
+/**
+ * The phone's UTC offset (minutes east) at a given moment, so daylight-saving changes land each reading
+ * on the right local day. Parcels are assumed to be in the phone's time zone.
+ */
+const phoneOffset: Offset = (t: number) => -new Date(t).getTimezoneOffset();
+export const localOffsetMin = (): Offset => phoneOffset;
+
+/** Readings in at least three of the hours 2–7 am, when the overnight low happens. */
+const coversPreDawn = (m: MetricDay | undefined) => {
+  let n = 0;
+  for (let h = 2; h <= 7; h++) if (((m?.hm ?? 0) >> h) & 1) n++;
+  return n >= 3;
+};
 
 export interface SoilSource {
   kind: 'sensor' | 'regional' | 'model' | 'none';
@@ -63,7 +75,7 @@ async function airSensors(parcelId: string): Promise<SensorRecord[]> {
 /** Degree days since `fromDate` (local YYYY-MM-DD) from your own air temperature, with the number of days covered. */
 export async function measuredGdd(parcelId: string, fromDate: string, baseF = 50): Promise<{ gdd: number; days: number; sensor: string } | null> {
   for (const s of await airSensors(parcelId)) {
-    const days = (await sensorDays(s.id, fromDate)).filter((d) => d.metrics.temperature && d.metrics.temperature.n >= 12);
+    const days = (await sensorDays(s.id, fromDate)).filter((d) => fullDay(d.metrics.temperature));
     if (days.length >= 3) return { gdd: gddFromDailyC(days.map((d) => ({ tminC: d.metrics.temperature!.min, tmaxC: d.metrics.temperature!.max })), baseF), days: days.length, sensor: s.name };
   }
   return null;
@@ -88,7 +100,7 @@ export async function waterAdvice(parcelId: string, profile: SiteProfile | undef
   const since = isoDate(Date.now() - 8 * DAY, offset), today = isoDate(Date.now(), offset);
   const elevationM = profile.elevation.status === 'ok' ? profile.elevation.value.centroidM : 0;
   for (const s of await airSensors(parcelId)) {
-    const days = (await sensorDays(s.id, since)).filter((d) => d.date < today && d.metrics.temperature && d.metrics.temperature.n >= 12).slice(-7);
+    const days = (await sensorDays(s.id, since)).filter((d) => d.date < today && fullDay(d.metrics.temperature)).slice(-7);
     if (days.length < 3) continue;
     const estimated = new Set<string>();
     let rainKnown = true;
@@ -97,7 +109,7 @@ export async function waterAdvice(parcelId: string, profile: SiteProfile | undef
       const r = et0PenmanMonteith({
         latDeg: profile.centroid.lat, elevationM, doy: d.doy, tmaxC: m.temperature!.max, tminC: m.temperature!.min,
         rhMaxPct: m.humidity?.max, rhMinPct: m.humidity?.min, windMs: m.windSpeed?.mean, windHeightM: s.heightM ?? 2,
-        solarMJ: m.solarRadiation && m.solarRadiation.n >= 48 ? m.solarRadiation.mean * 0.0864 : undefined,
+        solarMJ: fullDay(m.solarRadiation) ? m.solarRadiation!.mean * 0.0864 : undefined,
       });
       r.estimated.forEach((e) => estimated.add(e));
       const rain = rainMm(d);
@@ -146,7 +158,7 @@ export async function frostOffset(parcelId: string): Promise<FrostOffset | null>
       // A night that starts on `date` bottoms out on the next morning.
       const next = new Date(Date.parse(`${date}T12:00:00Z`) + DAY).toISOString().slice(0, 10);
       const t = days.get(next)?.metrics.temperature;
-      if (t && t.n >= 12) pairs.push({ forecastLowC: ((lowF - 32) * 5) / 9, observedMinC: t.min });
+      if (t && coversPreDawn(t)) pairs.push({ forecastLowC: ((lowF - 32) * 5) / 9, observedMinC: t.min });
     }
     const off = forecastOffsetC(pairs);
     if (off !== null && (!best || off * 1.8 < best.offsetF)) best = { sensor: s.name, offsetF: off * 1.8, nights: pairs.length };

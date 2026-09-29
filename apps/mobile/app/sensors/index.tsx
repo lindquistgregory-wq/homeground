@@ -29,12 +29,18 @@ export default function Sensors() {
   const [parcelId, setParcelId] = useState<string | undefined>(params.parcelId);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [counts, setCounts] = useState({ ble: 0, stations: 0 });
 
   const load = useCallback(async () => {
     const pid = params.parcelId ?? (await listParcels())[0]?.id;
     setParcelId(pid);
     if (!pid) return setRows([]);
-    const sensors = await listSensors(pid);
+    const [sensors, all] = await Promise.all([listSensors(pid), listSensors()]);
+    // Plan limits are per account, not per property.
+    setCounts({
+      ble: all.filter((s) => s.kind === 'ble' && !s.parentId).length,
+      stations: all.filter((s) => (s.kind === 'cloud' || s.kind === 'local') && !s.parentId).length,
+    });
     setRows(await Promise.all(sensors.map(async (s) => ({ s, latest: await latestValues(s.id) }))));
   }, [params.parcelId]);
 
@@ -43,10 +49,8 @@ export default function Sensors() {
   if (!rows) return <Body>Loading…</Body>;
   if (!parcelId) return <Body>Add a property first.</Body>;
 
-  const topBle = rows.filter((r) => r.s.kind === 'ble' && !r.s.parentId).length;
-  const stations = rows.filter((r) => (r.s.kind === 'cloud' || r.s.kind === 'local') && !r.s.parentId).length;
-  const bleFull = topBle >= ent.limits.bleSensors;
-  const stationFull = stations >= ent.limits.stationAccounts;
+  const bleFull = counts.ble >= ent.limits.bleSensors;
+  const stationFull = counts.stations >= ent.limits.stationAccounts;
 
   const collect = async () => {
     setBusy('Listening for Bluetooth sensors and refreshing stations…');

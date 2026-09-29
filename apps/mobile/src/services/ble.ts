@@ -5,12 +5,12 @@
  * the sensors screen. react-native-ble-plx (Apache-2.0).
  */
 import {
-  decodeAdvertisement, deviceKey, hexToBytes, toReadings, type Advertisement, type DecodedAdvert, type MetricValues,
+  decodeAdvertisement, deviceKey, hexToBytes, toReadings, type Advertisement, type DecodedAdvert, type MetricValues, type Offset,
 } from '@plotwright/core';
 import { fromBase64 } from '@plotwright/providers';
 import { PermissionsAndroid, Platform } from 'react-native';
 import { BleManager, State, type Device } from 'react-native-ble-plx';
-import { findSensor, insertReadings, listSensors, touchSensor, type SensorRecord } from '../db/sensors';
+import { bleAliases, findSensor, insertReadings, listSensors, touchSensor, type SensorRecord } from '../db/sensors';
 import { getSecret } from './secrets';
 
 let manager: BleManager | null = null;
@@ -63,34 +63,114 @@ export interface SeenDevice {
 }
 
 /**
- * Scan and report decodable sensors as they're heard. Known sensors are decoded with their bindkey.
- * Returns a stop function. Active scanning is on because Govee and SwitchBot put data in scan responses.
+ * One native scan shared by every listener (collect-on-open, the scan screen): starting a second scan
+ * or stopping one would otherwise cut the other off. The scan runs while anyone is subscribed.
  */
-export async function scanSensors(onDevice: (d: SeenDevice) => void): Promise<() => void> {
-  const known = new Map<string, SensorRecord>();
-  for (const s of await listSensors()) if (s.kind === 'ble' && s.deviceKey) known.set(s.deviceKey, s);
-  const keys = new Map<string, { key?: Uint8Array; mac?: string }>();
-  for (const s of known.values()) {
-    const sec = await getSecret(s.id);
-    keys.set(s.deviceKey!, { key: sec?.bindkey ? hexToBytes(sec.bindkey) : undefined, mac: s.mac });
-  }
-  const seen = new Map<string, SeenDevice>();
+type Listener = (adv: Advertisement) => void;
+const listeners = new Set<Listener>();
+let scanning = false;
+
+function startNativeScan() {
+  if (scanning) return;
+  scanning = true;
+  // Active scanning, because Govee and SwitchBot put their data in scan responses.
   ble().startDeviceScan(null, { allowDuplicates: true }, (error, device) => {
     if (error || !device) return;
-    const adv = toAdvertisement(device);
+    let adv: Advertisement;
+    try {
+      adv = toAdvertisement(device);
+    } catch {
+      return;
+    }
+    for (const l of [...listeners]) {
+      // A bad packet or a bad key must never throw out of the native callback (a fatal error in release builds).
+      try {
+        l(adv);
+      } catch {
+        // ignore this packet for this listener
+      }
+    }
+  });
+}
+
+function subscribe(l: Listener): () => void {
+  listeners.add(l);
+  startNativeScan();
+  return () => {
+    listeners.delete(l);
+    if (!listeners.size && scanning) {
+      scanning = false;
+      ble().stopDeviceScan();
+    }
+  };
+}
+
+interface KnownIndex {
+  /** Sensors by device key, and by this phone's Bluetooth id (aliases), top-level sensors only. */
+  byKey: Map<string, SensorRecord>;
+  keys: Map<string, { key?: Uint8Array; mac?: string }>;
+}
+
+async function knownIndex(): Promise<KnownIndex> {
+  const byKey = new Map<string, SensorRecord>();
+  const keys = new Map<string, { key?: Uint8Array; mac?: string }>();
+  // Probe/remote channels share their parent's device key: only the parent identifies the device.
+  const top = (await listSensors()).filter((s) => s.kind === 'ble' && s.deviceKey && !s.parentId && !s.channel);
+  const byId = new Map(top.map((s) => [s.id, s]));
+  for (const s of top) byKey.set(s.deviceKey!, s);
+  for (const [platformKey, sensorId] of await bleAliases()) {
+    const s = byId.get(sensorId);
+    if (s) byKey.set(platformKey, s);
+  }
+  for (const [k, s] of byKey) {
+    const sec = await getSecret(s.id);
+    keys.set(k, { key: bindkeyBytes(sec?.bindkey), mac: s.mac });
+  }
+  return { byKey, keys };
+}
+
+/** Bindkey text → bytes; a malformed key is treated as missing (the sensor then shows "needs its key"). */
+function bindkeyBytes(hex: string | undefined): Uint8Array | undefined {
+  if (!hex || !/^[0-9a-f]+$/i.test(hex) || hex.length % 2) return undefined;
+  try {
+    return hexToBytes(hex);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Re-read known sensors (after adding one or saving a key) for scans already running. */
+let reindex: Array<() => void> = [];
+export function knownSensorsChanged(): void {
+  for (const f of reindex) f();
+}
+
+/**
+ * Scan and report decodable sensors as they're heard. Known sensors are decoded with their bindkey.
+ * Returns a stop function.
+ */
+export async function scanSensors(onDevice: (d: SeenDevice) => void): Promise<() => void> {
+  let idx = await knownIndex();
+  const refresh = () => { void knownIndex().then((i) => (idx = i)); };
+  reindex.push(refresh);
+  const seen = new Map<string, SeenDevice>();
+  const unsubscribe = subscribe((adv) => {
     // First pass without a key to learn the device identity, then decode with its key if we have one.
     const probe = decodeAdvertisement(adv, {});
     if (!probe) return;
     const key = deviceKey(adv, probe);
-    const k = keys.get(key);
-    const rec = known.get(key);
+    const rec = idx.byKey.get(key) ?? idx.byKey.get(adv.id);
+    const k = idx.keys.get(key) ?? idx.keys.get(adv.id);
     const decoded = k || rec?.modelHint ? decodeAdvertisement(adv, { key: k?.key, mac: k?.mac ?? rec?.mac, modelHint: rec?.modelHint }) ?? probe : probe;
     const prev = seen.get(key);
     const d: SeenDevice = { key, adv, decoded, values: { ...(prev?.values ?? {}), ...decoded.values }, lastSeen: Date.now(), known: rec };
     seen.set(key, d);
     onDevice(d);
   });
-  return () => ble().stopDeviceScan();
+  return () => {
+    unsubscribe();
+    reindex = reindex.filter((f) => f !== refresh);
+  };
 }
 
 /** Minimum spacing between stored readings per sensor, so a 1-second broadcaster doesn't flood the database. */
@@ -98,7 +178,7 @@ const STORE_EVERY_MS = 60_000;
 const lastStored = new Map<string, number>();
 
 /** Store readings for known sensors from a seen device (called from scans). Returns true if stored. */
-export async function ingestSeen(d: SeenDevice, offsetMin: number): Promise<boolean> {
+export async function ingestSeen(d: SeenDevice, offsetMin: Offset): Promise<boolean> {
   const s = d.known;
   if (!s || d.decoded.needsKey) return false;
   const now = Date.now();
@@ -115,16 +195,18 @@ export async function ingestSeen(d: SeenDevice, offsetMin: number): Promise<bool
   return true;
 }
 
-/** "Collect on open": a short scan that stores readings from known Bluetooth sensors. */
-export async function collectOnOpen(offsetMin: number, durationMs = 12_000): Promise<number> {
+/** "Collect on open": a short scan that stores readings from known Bluetooth sensors. Resolves when the writes finish. */
+export async function collectOnOpen(offsetMin: Offset, durationMs = 12_000): Promise<number> {
   const sensors = (await listSensors()).filter((s) => s.kind === 'ble');
   if (!sensors.length) return 0;
   if ((await ensureBlePermission()) !== 'ok') return 0;
   let stored = 0;
+  const writes: Array<Promise<unknown>> = [];
   const stop = await scanSensors((d) => {
-    if (d.known) void ingestSeen(d, offsetMin).then((ok) => { if (ok) stored++; });
+    if (d.known) writes.push(ingestSeen(d, offsetMin).then((ok) => { if (ok) stored++; }).catch(() => undefined));
   });
   await new Promise((r) => setTimeout(r, durationMs));
   stop();
+  await Promise.all(writes);
   return stored;
 }

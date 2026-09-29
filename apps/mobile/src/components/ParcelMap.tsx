@@ -96,7 +96,7 @@ export function ParcelMap({ center, zoom = 17, boundary, candidates = [], draft 
             data={{ type: 'FeatureCollection', features: markers.map((m) => ({ type: 'Feature' as const, geometry: { type: 'Point' as const, coordinates: [m.lon, m.lat] }, properties: { label: m.label ?? '', hl: m.highlight ? 1 : 0 } })) }}
           >
             <Layer type="circle" id="markers-pt" paint={{ 'circle-color': ['case', ['==', ['get', 'hl'], 1], '#4ea8f2', '#ffffff'], 'circle-radius': 7, 'circle-stroke-color': '#1c1f1a', 'circle-stroke-width': 2 }} />
-            <Layer type="symbol" id="markers-label" layout={{ 'text-field': ['get', 'label'], 'text-size': 12, 'text-offset': [0, 1.2], 'text-anchor': 'top' }} paint={{ 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 }} />
+            <Layer type="symbol" id="markers-label" layout={{ 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-offset': [0, 1.2], 'text-anchor': 'top' }} paint={{ 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 }} />
           </GeoJSONSource>
         )}
       </Map>

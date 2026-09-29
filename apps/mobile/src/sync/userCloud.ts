@@ -43,9 +43,10 @@ const store: LocalStore = {
       return { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data };
     }
     if (collection === 'sensorReadings') {
-      const [sensorId, date] = id.split('|');
-      const r = await db.getFirstAsync<{ doy: number; metrics: string; updated_hlc: string }>('SELECT doy, metrics, updated_hlc FROM sensor_days WHERE sensor_id = ? AND date = ?', sensorId ?? '', date ?? '');
-      return r ? { collection, id, hlc: r.updated_hlc, deleted: false, data: { sensor_id: sensorId, date, doy: r.doy, metrics: r.metrics } } : undefined;
+      const [sensorId, date, deviceId] = id.split('|');
+      const r = await db.getFirstAsync<{ doy: number; metrics: string; updated_hlc: string }>(
+        'SELECT doy, metrics, updated_hlc FROM sensor_days WHERE sensor_id = ? AND date = ? AND device_id = ?', sensorId ?? '', date ?? '', deviceId ?? '');
+      return r ? { collection, id, hlc: r.updated_hlc, deleted: false, data: { sensor_id: sensorId, date, device_id: deviceId, doy: r.doy, metrics: r.metrics } } : undefined;
     }
     if (collection === 'plantings') {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM plantings WHERE id = ?', id);
@@ -107,13 +108,14 @@ const store: LocalStore = {
         await db.runAsync('DELETE FROM sensor_days WHERE sensor_id = ?', rec.id);
       }
     } else if (rec.collection === 'sensorReadings' && rec.data) {
-      const d = rec.data as { sensor_id: string; date: string; doy: number; metrics: string };
+      const d = rec.data as { sensor_id: string; date: string; device_id?: string; doy: number; metrics: string };
       const parent = await db.getFirstAsync<{ deleted: number }>('SELECT deleted FROM sensors WHERE id = ?', d.sensor_id);
       if (parent?.deleted === 1) return;
+      // Each phone's part of the day is its own record, so applying another phone's never replaces ours.
       await db.runAsync(
-        `INSERT INTO sensor_days (sensor_id, date, doy, metrics, updated_hlc) VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT(sensor_id, date) DO UPDATE SET doy = excluded.doy, metrics = excluded.metrics, updated_hlc = excluded.updated_hlc`,
-        d.sensor_id, d.date, Number(d.doy), String(d.metrics), rec.hlc,
+        `INSERT INTO sensor_days (sensor_id, date, device_id, doy, metrics, updated_hlc) VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT(sensor_id, date, device_id) DO UPDATE SET doy = excluded.doy, metrics = excluded.metrics, updated_hlc = excluded.updated_hlc`,
+        d.sensor_id, d.date, d.device_id ?? rec.id.split('|')[2] ?? 'unknown', Number(d.doy), String(d.metrics), rec.hlc,
       );
     } else if (rec.collection === 'plantings') {
       const d = (rec.data ?? {}) as Record<string, unknown>;

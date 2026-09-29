@@ -27,10 +27,11 @@ export default function RootLayout() {
       setReady(true);
       // Best effort; the app is fully usable without a cloud account.
       syncNow().catch(() => undefined);
-      checkAlerts().catch(() => undefined);
       // "Collect on open": Bluetooth sensors only report while the app runs; stations refresh too.
-      collectOnOpen(localOffsetMin()).catch(() => undefined);
-      refreshAllStations(localOffsetMin(), true).catch(() => undefined);
+      // Alerts run after both, so greenhouse thresholds see the readings just collected.
+      Promise.allSettled([collectOnOpen(localOffsetMin()), refreshAllStations(localOffsetMin(), true)])
+        .then(() => checkAlerts())
+        .catch(() => undefined);
     })();
   }, []);
 

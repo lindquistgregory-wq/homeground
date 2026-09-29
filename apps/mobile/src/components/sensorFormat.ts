@@ -21,3 +21,10 @@ export function formatMetric(m: Metric, v: number, units: 'imperial' | 'metric')
   }
 }
 
+
+/** "aabbccddeeff", "AA-BB-CC-DD-EE-FF" or "aa:bb:…" → "AA:BB:CC:DD:EE:FF"; null if it isn't a MAC. */
+export function normalizeMac(input: string): string | null {
+  const hex = input.replace(/[\s:.-]/g, '').toUpperCase();
+  if (!/^[0-9A-F]{12}$/.test(hex)) return null;
+  return hex.match(/../g)!.join(':');
+}

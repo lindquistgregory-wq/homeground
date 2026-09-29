@@ -133,13 +133,21 @@ const MIGRATIONS: string[] = [
     PRIMARY KEY (sensor_id, metric, t)
   ) WITHOUT ROWID;
   CREATE INDEX IF NOT EXISTS readings_time ON readings(sensor_id, t);
+  -- One partial summary per sensor, day and phone (each phone hears Bluetooth sensors separately);
+  -- they sync individually and are merged when read, so two phones never overwrite each other's day.
   CREATE TABLE IF NOT EXISTS sensor_days (
     sensor_id TEXT NOT NULL,
     date TEXT NOT NULL,                 -- local date YYYY-MM-DD
+    device_id TEXT NOT NULL,            -- phone that collected these readings
     doy INTEGER NOT NULL,
-    metrics TEXT NOT NULL,              -- JSON { metric: {min,max,mean,n,last} }
+    metrics TEXT NOT NULL,              -- JSON { metric: {min,max,mean,n,last,hm} }
     updated_hlc TEXT NOT NULL,
-    PRIMARY KEY (sensor_id, date)
+    PRIMARY KEY (sensor_id, date, device_id)
+  ) WITHOUT ROWID;
+  -- This phone's Bluetooth id for a sensor (iOS gives each phone its own ids); never synced.
+  CREATE TABLE IF NOT EXISTS ble_aliases (
+    platform_key TEXT PRIMARY KEY,
+    sensor_id TEXT NOT NULL
   ) WITHOUT ROWID;
   `,
 ];
@@ -206,6 +214,6 @@ export async function maxStoredHlc(): Promise<string | undefined> {
 export async function deleteAllLocalData(): Promise<void> {
   const db = await getDb();
   await db.execAsync(
-    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings; DELETE FROM sensors; DELETE FROM readings; DELETE FROM sensor_days;',
+    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings; DELETE FROM sensors; DELETE FROM readings; DELETE FROM sensor_days; DELETE FROM ble_aliases;',
   );
 }
