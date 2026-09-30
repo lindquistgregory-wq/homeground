@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getDb } from '../src/db/database';
 import { initIdentity } from '../src/services/identity';
 import { useSettings } from '../src/services/settings';
@@ -63,28 +63,37 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="auto" />
-      <Stack screenOptions={{ contentStyle: { backgroundColor: t.bg }, headerTintColor: t.accent }}>
-        <Stack.Screen name="index" options={{ title: 'Plotwright' }} />
-        <Stack.Screen name="locate" options={{ title: 'Find your property' }} />
-        <Stack.Screen name="boundary" options={{ title: 'Property boundary' }} />
-        <Stack.Screen name="profile/[id]" options={{ title: 'Site profile' }} />
-        <Stack.Screen name="design/[id]" options={{ title: 'Design' }} />
-        <Stack.Screen name="sun/[id]" options={{ title: 'Sun path' }} />
-        <Stack.Screen name="plants/index" options={{ title: 'Plants' }} />
-        <Stack.Screen name="plants/[plantId]" options={{ title: 'Plant' }} />
-        <Stack.Screen name="garden/[id]" options={{ title: 'Bed planner' }} />
-        <Stack.Screen name="calendar/[id]" options={{ title: 'Planting calendar' }} />
-        <Stack.Screen name="sensors/index" options={{ title: 'Sensors' }} />
-        <Stack.Screen name="sensors/scan" options={{ title: 'Find Bluetooth sensors' }} />
-        <Stack.Screen name="sensors/station" options={{ title: 'Connect a weather station' }} />
-        <Stack.Screen name="sensors/import" options={{ title: 'Import CSV' }} />
-        <Stack.Screen name="sensors/[id]" options={{ title: 'Sensor' }} />
-        <Stack.Screen name="planner/[id]" options={{ title: 'Homestead planner' }} />
-        <Stack.Screen name="data-sources" options={{ title: 'Data sources' }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
-        <Stack.Screen name="paywall" options={{ title: 'Plans', presentation: 'modal' }} />
-      </Stack>
+      <Screens />
     </SafeAreaProvider>
+  );
+}
+
+/** The screen stack. Android 15+ draws edge-to-edge, so every screen is padded clear of the system navigation bar. */
+function Screens() {
+  const t = useTheme();
+  const insets = useSafeAreaInsets();
+  return (
+    <Stack screenOptions={{ contentStyle: { backgroundColor: t.bg, paddingBottom: insets.bottom }, headerTintColor: t.accent }}>
+      <Stack.Screen name="index" options={{ title: 'Plotwright' }} />
+      <Stack.Screen name="locate" options={{ title: 'Find your property' }} />
+      <Stack.Screen name="boundary" options={{ title: 'Property boundary' }} />
+      <Stack.Screen name="profile/[id]" options={{ title: 'Site profile' }} />
+      <Stack.Screen name="design/[id]" options={{ title: 'Design' }} />
+      <Stack.Screen name="sun/[id]" options={{ title: 'Sun path' }} />
+      <Stack.Screen name="plants/index" options={{ title: 'Plants' }} />
+      <Stack.Screen name="plants/[plantId]" options={{ title: 'Plant' }} />
+      <Stack.Screen name="garden/[id]" options={{ title: 'Bed planner' }} />
+      <Stack.Screen name="calendar/[id]" options={{ title: 'Planting calendar' }} />
+      <Stack.Screen name="sensors/index" options={{ title: 'Sensors' }} />
+      <Stack.Screen name="sensors/scan" options={{ title: 'Find Bluetooth sensors' }} />
+      <Stack.Screen name="sensors/station" options={{ title: 'Connect a weather station' }} />
+      <Stack.Screen name="sensors/import" options={{ title: 'Import CSV' }} />
+      <Stack.Screen name="sensors/[id]" options={{ title: 'Sensor' }} />
+      <Stack.Screen name="planner/[id]" options={{ title: 'Homestead planner' }} />
+      <Stack.Screen name="data-sources" options={{ title: 'Data sources' }} />
+      <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+      <Stack.Screen name="paywall" options={{ title: 'Plans', presentation: 'modal' }} />
+    </Stack>
   );
 }
 

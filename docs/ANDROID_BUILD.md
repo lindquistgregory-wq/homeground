@@ -57,7 +57,13 @@ If a build fails, save the full output (`npx expo run:android 2>&1 | tee build.l
 1. Find your property (search an address), draw the boundary, open the Site Profile.
 2. Design: place a raised bed; switch to the Sun tab.
 3. Planting calendar; plant library (debug builds show Google **test** ads on the library screens only).
-4. Settings → Dev: Homestead Pro, then save an offline pack from the Site Profile. **Currently not possible in a native build:** the Dev button only appears with the stub billing adapter, and native builds link Play Billing.
+4. Settings → Dev: Homestead Pro, then save an offline pack from the Site Profile. The Dev tier buttons only appear with the stub billing adapter; native builds link Play Billing, so start Metro with the stub switched on (debug builds only, no rebuild needed):
+
+   ```sh
+   EXPO_PUBLIC_BILLING_STUB=1 npx expo start --dev-client --clear
+   ```
+
+   On Windows PowerShell: `$env:EXPO_PUBLIC_BILLING_STUB="1"; npx expo start --dev-client --clear`. Stop Metro and start it again without the variable to go back to Play Billing.
 5. Planner: the guided questions work on every phone; Gemini Nano chat only on supported phones (Pixel 9 / Galaxy S25 class), not in the emulator.
 
 Bluetooth sensors need a physical phone; the emulator has no Bluetooth.
