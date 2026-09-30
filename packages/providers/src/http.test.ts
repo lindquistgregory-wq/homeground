@@ -39,6 +39,15 @@ test('does not retry 4xx; throws HttpError', async () => {
   assert.equal(calls.length, 1);
 });
 
+test('a request our timeout aborts says the host was slow, not that the network failed', async () => {
+  // A fetch that never answers until it is aborted.
+  const hang = (_url: string, init?: { signal?: AbortSignal }) =>
+    new Promise<never>((_, reject) => init?.signal?.addEventListener('abort', () => reject(new Error('aborted'))));
+  const http = new HttpClient({ fetch: hang as never, userAgent: 'Plotwright/test', defaultTimeoutMs: 10, sleep: async () => {} });
+  await assert.rejects(http.text('https://slow.gov/q', { maxAttempts: 1 }), (e: unknown) =>
+    e instanceof HttpError && e.message === 'slow.gov took too long to respond' && e.retryable);
+});
+
 test('serves stale cache when the network fails (offline)', async () => {
   let t = 0;
   const cache = new MemoryCache();

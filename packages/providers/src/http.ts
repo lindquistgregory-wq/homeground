@@ -274,7 +274,9 @@ export class HttpClient {
       try {
         res = await this.fetchImpl(url, { method, headers, body: opts.body, signal: controller?.signal });
       } catch (e) {
-        throw new HttpError(`Network error contacting ${host}`, null, true, url);
+        // Our own timeout aborts the request; say so, rather than implying the phone is offline.
+        const timedOut = controller?.signal.aborted === true;
+        throw new HttpError(timedOut ? `${host} took too long to respond` : `Network error contacting ${host}`, null, true, url);
       }
       if (!res.ok) {
         const retryable = res.status === 429 || res.status >= 500;

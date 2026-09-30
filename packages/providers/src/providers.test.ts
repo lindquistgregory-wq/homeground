@@ -6,7 +6,7 @@ import { geocode, geocodeCensus, reverseCensus } from './geocode';
 import {
   endpointsFor, esriRingsToGeoJson, findParcel, mergeRegistries, normalizeLayerUrl, sanitizeAttributes, validateUserEndpoint,
 } from './parcel/arcgis';
-import { parcelElevation, pointElevation } from './elevation';
+import { demResolution, parcelElevation, pointElevation } from './elevation';
 import { hardinessZone, zoneRangeF } from './hardiness';
 import { parseStationSearch, parcelClimate } from './climate';
 import { buildSoilUnits, parcelSoils, parseSdaTable, toWkt } from './soils';
@@ -150,6 +150,27 @@ test('EPQS point elevation (recorded) and no-data handling', async () => {
   assert.equal(await pointElevation(sea, { lat: 40, lon: -70 }), null);
   const layer = await parcelElevation(sea, LOT);
   assert.equal(layer.status, 'unavailable');
+});
+
+test('EPQS resolution: metres for projected lidar DEMs, degrees for the geographic national DEMs', () => {
+  assert.deepEqual(demResolution(1), { resolutionM: 1, resolutionLabel: '1 m' });
+  // Seen live in Randolph County, NC (2026-09-30): 1/9 arc-second, reported in degrees.
+  const ninth = demResolution(0.00003086419871794868)!;
+  assert.equal(ninth.resolutionLabel, '~3 m (1/9 arc-second)');
+  assert.ok(Math.abs(ninth.resolutionM - 3.44) < 0.01);
+  assert.equal(demResolution(1 / 3 / 3600)!.resolutionLabel, '~10 m (1/3 arc-second)');
+  assert.equal(demResolution(undefined), undefined);
+  assert.equal(demResolution(0), undefined);
+});
+
+test('parcel elevation labels a degree-reported DEM in metres, and keeps 1/9 arc-second high confidence', async () => {
+  const { http } = testClient([{ match: /epqs/, body: { value: '187.2', resolution: 0.00003086419871794868 } }]);
+  const layer = await parcelElevation(http, LOT);
+  assert.equal(layer.status, 'ok');
+  if (layer.status !== 'ok') return;
+  assert.equal(layer.attribution.resolution, '~3 m (1/9 arc-second) DEM');
+  assert.equal(layer.attribution.confidence, 'high');
+  assert.ok(!layer.attribution.notes?.some((n) => /No lidar/.test(n)));
 });
 
 test('parcel elevation summarises 5 samples with min/max/relief', async () => {
