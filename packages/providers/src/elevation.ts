@@ -20,6 +20,23 @@ export interface PointElevation {
   elevationM: number;
   /** Native resolution of the DEM that answered, metres (1 = lidar-derived 1 m). */
   resolutionM?: number;
+  /** Human label for that resolution, e.g. "1 m" or "~3 m (1/9 arc-second)". */
+  resolutionLabel?: string;
+}
+
+const M_PER_DEGREE = 111_320;
+
+/**
+ * EPQS reports the answering raster's cell size in its own units: metres for projected lidar DEMs
+ * (e.g. 1), degrees for the geographic national DEMs (e.g. 3.0864e-5 = 1/9 arc-second, 9.259e-5 = 1/3).
+ */
+export function demResolution(raw: number | undefined): { resolutionM: number; resolutionLabel: string } | undefined {
+  if (raw === undefined || !Number.isFinite(raw) || raw <= 0) return undefined;
+  if (raw >= 0.01) return { resolutionM: raw, resolutionLabel: `${raw} m` };
+  const arcsec = raw * 3600;
+  const named = Math.abs(arcsec - 1 / 9) < 0.01 ? '1/9' : Math.abs(arcsec - 1 / 3) < 0.02 ? '1/3' : Math.abs(arcsec - 1) < 0.05 ? '1' : arcsec.toFixed(2);
+  const m = raw * M_PER_DEGREE;
+  return { resolutionM: m, resolutionLabel: `~${Math.round(m)} m (${named} arc-second)` };
 }
 
 export async function pointElevation(http: HttpClient, p: LatLon): Promise<PointElevation | null> {
@@ -28,7 +45,7 @@ export async function pointElevation(http: HttpClient, p: LatLon): Promise<Point
   const v = typeof data.value === 'number' ? data.value : Number(data.value);
   // EPQS returns -1000000 (or a non-number) where there is no data, e.g. offshore.
   if (!Number.isFinite(v) || v <= -1000) return null;
-  return { elevationM: v, resolutionM: typeof data.resolution === 'number' ? data.resolution : undefined };
+  return { elevationM: v, ...demResolution(typeof data.resolution === 'number' ? data.resolution : undefined) };
 }
 
 export interface ElevationSummary {
@@ -70,12 +87,13 @@ export async function parcelElevation(http: HttpClient, g: Areal): Promise<Layer
       {
         source: EPQS_SOURCE,
         license: LICENSE,
-        resolution: res ? `${res} m DEM` : undefined,
-        confidence: res !== undefined && res <= 3 ? 'high' : 'medium',
+        resolution: center.resolutionLabel ? `${center.resolutionLabel} DEM` : undefined,
+        // 1 m and 1/9 arc-second (~3 m) DEMs are lidar-derived; 1/3 arc-second (~10 m) is the national fallback.
+        confidence: res !== undefined && res <= 5 ? 'high' : 'medium',
         basis: 'reference',
         notes: [
           `Sampled at ${vals.length} points; full slope/aspect analysis arrives with the DEM engine.`,
-          ...(res !== undefined && res > 3 ? ['No lidar DEM here; values come from the ~10 m national DEM.'] : []),
+          ...(res !== undefined && res > 5 ? ['No lidar DEM here; values come from the ~10 m national DEM.'] : []),
         ],
         url: 'https://www.usgs.gov/3d-elevation-program',
       },

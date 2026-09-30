@@ -50,6 +50,8 @@ These got the first build through. Each is marked in the code with what would le
   - Remove both once React Native moves to Kotlin 2.2 or newer.
 - **MapLibre must be loaded with `import`, never `require()`.** Its package `exports` send `require()` to the CommonJS build and `import` to the ESM build; loading both registers the native views twice ("Tried to register two views with the same name MLRNCamera").
 
+- **Editing `packages/*` on Windows:** the app reaches the workspace packages through junctions under `node_modules/@plotwright/`, and Metro's file watcher doesn't see edits made through them, so it keeps serving the old code. After changing anything in `packages/`, stop Metro and start it again with `--clear`.
+
 If a build fails, save the full output (`npx expo run:android 2>&1 | tee build.log`): the first error in the log is the one that matters.
 
 ## Quick smoke test once it launches

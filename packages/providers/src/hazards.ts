@@ -14,6 +14,8 @@ export const NFHL_SOURCE = 'FEMA National Flood Hazard Layer';
 export const NHD_SOURCE = 'USGS National Hydrography Dataset';
 const NFHL_ZONES = 'https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28';
 const NHD = 'https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer';
+// The NHD service is often slow (queries seen taking 60 s+ in 2026-09): wait longer, retry once.
+const NHD_LIMITS = { timeoutMs: 45_000, maxAttempts: 2 };
 const PD = 'Public domain (U.S. Government work)';
 
 function esriPolygon(g: Areal) {
@@ -25,12 +27,16 @@ interface EsriFeatures {
   error?: { message?: string };
 }
 
-async function postQuery(http: HttpClient, layerUrl: string, params: Record<string, string>, ttlMs: number): Promise<EsriFeatures> {
+async function postQuery(
+  http: HttpClient, layerUrl: string, params: Record<string, string>, ttlMs: number,
+  limits?: { timeoutMs: number; maxAttempts: number },
+): Promise<EsriFeatures> {
   const { data } = await http.json<EsriFeatures>(`${layerUrl}/query`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: qs({ f: 'json', ...params }),
     ttlMs,
+    ...limits,
   });
   if (data.error) throw new Error(data.error.message ?? 'service error');
   return data;
@@ -140,8 +146,8 @@ export async function parcelWater(http: HttpClient, g: Areal, searchRadiusM = 30
       spatialRel: 'esriSpatialRelIntersects', outFields: 'gnis_name,ftype', returnGeometry: 'true',
     };
     const [flow, body] = await Promise.all([
-      postQuery(http, `${NHD}/6`, common, TTL.terrain),
-      postQuery(http, `${NHD}/12`, common, TTL.terrain),
+      postQuery(http, `${NHD}/6`, common, TTL.terrain, NHD_LIMITS),
+      postQuery(http, `${NHD}/12`, common, TTL.terrain, NHD_LIMITS),
     ]);
     const c = centroid(g);
     const frame = localFrame(c);
@@ -184,6 +190,6 @@ export async function parcelWater(http: HttpClient, g: Areal, searchRadiusM = 30
       url: 'https://www.usgs.gov/national-hydrography',
     });
   } catch (e) {
-    return unavailable(NHD_SOURCE, `Hydrography service unreachable (${(e as Error).message}).`, true);
+    return unavailable(NHD_SOURCE, `The USGS hydrography service is slow or down right now (${(e as Error).message}). Your other layers are unaffected.`, true);
   }
 }
