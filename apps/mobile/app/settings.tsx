@@ -12,6 +12,7 @@ import { deleteAllLocalData } from '../src/db/database';
 import { listParcels, saveUserEndpoint } from '../src/db/parcels';
 import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
+import { alertsEnabled, setAlertsEnabled } from '../src/services/alerts';
 import { cloudSyncAvailable, syncNow, wipeCloudData } from '../src/sync/userCloud';
 
 /**
@@ -52,9 +53,11 @@ export default function Settings() {
   const [endpointUrl, setEndpointUrl] = useState('');
   const [checking, setChecking] = useState(false);
   const [bench, setBench] = useState<string | null>(null);
+  const [alerts, setAlerts] = useState(false);
 
   useEffect(() => {
     cloudSyncAvailable().then(setCloud);
+    alertsEnabled().then(setAlerts);
   }, []);
 
   const contribute = async () => {
@@ -76,6 +79,28 @@ export default function Settings() {
       <Card title="Units">
         <Button title={units === 'imperial' ? '✓ Imperial (ft, acres, °F)' : 'Imperial (ft, acres, °F)'} kind={units === 'imperial' ? 'primary' : 'secondary'} onPress={() => setUnits('imperial')} />
         <Button title={units === 'metric' ? '✓ Metric (m, ha, °C)' : 'Metric (m, ha, °C)'} kind={units === 'metric' ? 'primary' : 'secondary'} onPress={() => setUnits('metric')} />
+      </Card>
+
+      <Card title="Frost & weather alerts">
+        <Body>
+          Notifies you when the National Weather Service forecast threatens crops you’ve marked as planted: frost or freeze for
+          tender crops, extreme heat, and strong wind for tall crops. Checked on this device (about twice a day when your phone
+          allows background refresh, and whenever you open the app). No account or push server involved.
+        </Body>
+        <Button
+          title={alerts ? '✓ Alerts on' : 'Turn on alerts'}
+          kind={alerts ? 'primary' : 'secondary'}
+          onPress={async () => {
+            try {
+              const r = await setAlertsEnabled(!alerts);
+              setAlerts(r.on);
+              if (r.denied) Alert.alert('Notifications are off', 'Allow notifications for Plotwright in your phone’s Settings to get frost alerts.');
+              else if (r.on && !r.background) Alert.alert('Alerts on', 'Background refresh is off or restricted on this phone, so Plotwright will check the forecast each time you open it.');
+            } catch (e) {
+              Alert.alert('Couldn’t change alerts', (e as Error).message);
+            }
+          }}
+        />
       </Card>
 
       <Card title="Sync">

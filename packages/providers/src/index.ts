@@ -10,3 +10,4 @@ export * from './hazards';
 export * from './basemaps';
 export * from './siteProfile';
 export * from './rasters';
+export * from './weather';

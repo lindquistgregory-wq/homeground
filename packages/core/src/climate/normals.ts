@@ -34,6 +34,8 @@ export interface StationNormals {
   growingSeasonDays: FreezeTable;
   /** Seasonal mean daily minimum temperature normals, °F. */
   tminF: { DJF?: number; MAM?: number; JJA?: number; SON?: number; ANN?: number };
+  /** Seasonal mean daily maximum temperature normals, °F. */
+  tmaxF: { DJF?: number; MAM?: number; JJA?: number; SON?: number; ANN?: number };
   /** Annual growing degree days base 50 °F (NCEI `ANN-GRDD-BASE50`), if present. */
   gddBase50F?: number;
   /** Annual precipitation normal, inches. */
@@ -94,6 +96,7 @@ export function parseNormalsRow(row: Record<string, unknown>): StationNormals | 
     firstFall: {},
     growingSeasonDays: {},
     tminF: {},
+    tmaxF: {},
     gddBase50F: num(row['ANN-GRDD-BASE50']),
     precipIn: num(row['ANN-PRCP-NORMAL']),
   };
@@ -109,10 +112,11 @@ export function parseNormalsRow(row: Record<string, unknown>): StationNormals | 
       (table[t] ??= {})[p] = value;
       continue;
     }
-    const season = /^(DJF|MAM|JJA|SON|ANN)-TMIN-NORMAL$/.exec(key);
+    const season = /^(DJF|MAM|JJA|SON|ANN)-(TMIN|TMAX)-NORMAL$/.exec(key);
     if (season) {
       const v = num(raw);
-      if (v !== undefined) out.tminF[season[1] as keyof StationNormals['tminF']] = v;
+      const table = season[2] === 'TMIN' ? out.tminF : out.tmaxF;
+      if (v !== undefined) table[season[1] as keyof StationNormals['tminF']] = v;
     }
   }
   return out;
@@ -125,6 +129,7 @@ export function normalsDataTypes(): string[] {
     for (const t of [32, 28])
       for (const p of [10, 50, 90]) types.push(`ANN-TMIN-${kind}-T${t}FP${p}`);
   types.push('DJF-TMIN-NORMAL', 'MAM-TMIN-NORMAL', 'JJA-TMIN-NORMAL', 'SON-TMIN-NORMAL', 'ANN-TMIN-NORMAL');
+  types.push('DJF-TMAX-NORMAL', 'MAM-TMAX-NORMAL', 'JJA-TMAX-NORMAL', 'SON-TMAX-NORMAL', 'ANN-TMAX-NORMAL');
   types.push('ANN-GRDD-BASE50', 'ANN-PRCP-NORMAL');
   return types;
 }

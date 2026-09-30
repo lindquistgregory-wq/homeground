@@ -35,6 +35,10 @@ const store: LocalStore = {
       if (!r) return undefined;
       return { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r };
     }
+    if (collection === 'plantings') {
+      const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM plantings WHERE id = ?', id);
+      return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
+    }
     if (collection === 'designs') {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM designs WHERE id = ?', id);
       return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
@@ -70,6 +74,18 @@ const store: LocalStore = {
            updated_hlc = excluded.updated_hlc, deleted = 0`,
         rec.id, String(d.name), String(d.geometry), String(d.boundary_source), (d.boundary_meta as string | null) ?? null,
         (d.county_fips as string | null) ?? null, (d.zip as string | null) ?? null, Number(d.area_m2), String(d.created_at), rec.hlc,
+      );
+    } else if (rec.collection === 'plantings') {
+      const d = (rec.data ?? {}) as Record<string, unknown>;
+      const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
+      await db.runAsync(
+        `INSERT INTO plantings (id, parcel_id, design_id, bed_object_id, plant_id, variety, year, share, status, planted_on, notes, created_at, updated_hlc, deleted)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET plant_id = excluded.plant_id, variety = excluded.variety, year = excluded.year, share = excluded.share,
+           status = excluded.status, planted_on = excluded.planted_on, notes = excluded.notes, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
+        rec.id, String(d.parcel_id ?? ''), String(d.design_id ?? ''), String(d.bed_object_id ?? ''), String(d.plant_id ?? ''), str(d.variety),
+        Number(d.year ?? new Date().getFullYear()), Number(d.share ?? 1), String(d.status ?? 'planned'), str(d.planted_on), str(d.notes),
+        String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
       );
     } else if (rec.collection === 'designs') {
       const d = (rec.data ?? {}) as Record<string, unknown>;

@@ -5,7 +5,7 @@
  * Normals are static for a decade, so both are cached for a year.
  */
 import {
-  bufferBBox, distanceM, estimateFrostDates, normalsDataTypes, parseNormalsRow, sourced, unavailable,
+  bufferBBox, chillHours, climateCurves, distanceM, estimateFrostDates, peakSummerMax, type ClimateCurves, normalsDataTypes, parseNormalsRow, sourced, unavailable,
   type FrostEstimate, type LatLon, type Layer, type StationNormals,
 } from '@plotwright/core';
 import { type HttpClient, TTL } from './http';
@@ -87,6 +87,12 @@ export interface ClimateSummary {
   frost: FrostEstimate;
   /** Nearest station's annual normals for context. */
   annual?: { tminF?: number; gddBase50F?: number; precipIn?: number; stationId: string };
+  /** Daily temperature curves (elevation-adjusted) for the planting calendar, soil model and GDD. */
+  curves?: ClimateCurves;
+  /** Estimated winter chill hours (32–45 °F, Oct–Feb). */
+  chillHours?: number;
+  /** Hottest normal daily maximum, °F. */
+  peakSummerMaxF?: number;
 }
 
 export async function parcelClimate(
@@ -114,6 +120,11 @@ export async function parcelClimate(
     const nearestTemp = stations
       .filter((s) => s.tminF.ANN !== undefined)
       .sort((a, b) => distanceM(p, a) - distanceM(p, b))[0];
+    // Seasonal curves come from the nearest station with both min and max seasonal normals.
+    const curveStation = stations
+      .filter((s) => Object.keys(s.tminF).length >= 4 && Object.keys(s.tmaxF).length >= 4)
+      .sort((a, b) => distanceM(p, a) - distanceM(p, b))[0];
+    const curves = curveStation ? climateCurves(curveStation, p.elevationM, { lapseRateCPerKm: opts.lapseRateCPerKm }) ?? undefined : undefined;
     return sourced(
       {
         frost,
@@ -123,6 +134,9 @@ export async function parcelClimate(
           precipIn: nearestTemp.precipIn,
           stationId: nearestTemp.stationId,
         },
+        curves,
+        chillHours: curves ? Math.round(chillHours(curves)) : undefined,
+        peakSummerMaxF: curves ? Math.round(peakSummerMax(curves) * 10) / 10 : undefined,
       },
       {
         source: NORMALS_SOURCE,
@@ -130,7 +144,7 @@ export async function parcelClimate(
         resolution: 'Station-based, elevation-adjusted',
         confidence: frost.confidence,
         basis: 'modeled',
-        notes: frost.notes,
+        notes: [...frost.notes, ...(curves?.notes ?? [])],
         url: 'https://www.ncei.noaa.gov/products/land-based-station/us-climate-normals',
       },
     );

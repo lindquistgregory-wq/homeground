@@ -32,6 +32,12 @@ export async function designsForParcel(parcelId: string): Promise<Design[]> {
   return (await db.getAllAsync<Row>('SELECT * FROM designs WHERE parcel_id = ? AND deleted = 0 ORDER BY created_at', parcelId)).map(fromRow);
 }
 
+export async function getDesign(id: string): Promise<Design | undefined> {
+  const db = await getDb();
+  const r = await db.getFirstAsync<Row>('SELECT * FROM designs WHERE id = ? AND deleted = 0', id);
+  return r ? fromRow(r) : undefined;
+}
+
 export async function getOrCreateDesign(parcelId: string): Promise<Design> {
   const existing = (await designsForParcel(parcelId))[0];
   if (existing) return existing;

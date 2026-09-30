@@ -6,7 +6,7 @@ import {
   formatArea, formatDoy, formatElevation, formatLength, mToFt, type RiskLevel, type ThresholdF,
 } from '@plotwright/core';
 import { bundledZoneTable } from '@plotwright/data';
-import { buildSiteProfile, type SiteProfile } from '@plotwright/providers';
+import { SITE_PROFILE_VERSION, buildSiteProfile, type SiteProfile } from '@plotwright/providers';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -42,7 +42,8 @@ export default function Profile() {
       setParcel(p);
       const cached = await getSiteProfile(id);
       if (cached) setProfile(cached);
-      else await compute(p);
+      // Build it, or rebuild one from an older app version (shown meanwhile) that lacks newer layers.
+      if (!cached || cached.version < SITE_PROFILE_VERSION) await compute(p);
     })();
   }, [id, compute]);
 
@@ -151,6 +152,8 @@ export default function Profile() {
       )}
 
       <Button title="Design your land" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcel.id } })} />
+      <Button title="Planting calendar & alerts" kind="secondary" onPress={() => router.push({ pathname: '/calendar/[id]', params: { id: parcel.id } })} />
+      <Button title="What grows here: plant library" kind="secondary" onPress={() => router.push({ pathname: '/plants', params: { parcelId: parcel.id } })} />
       <Button title="Sun path & sun check" kind="secondary" onPress={() => router.push({ pathname: '/sun/[id]', params: { id: parcel.id } })} />
       <Button title={loading.length ? 'Updating…' : 'Refresh site profile'} onPress={() => compute(parcel, true)} disabled={loading.length > 0} />
       <Button

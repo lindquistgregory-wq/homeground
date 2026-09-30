@@ -9,6 +9,8 @@ import { useSettings } from '../src/services/settings';
 import { useEntitlements } from '../src/billing/entitlements';
 import { syncNow } from '../src/sync/userCloud';
 import { useTheme } from '../src/components/ui';
+// Registers the background alert task at startup (the OS may launch the app headless to run it).
+import { checkAlerts } from '../src/services/alerts';
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -22,6 +24,7 @@ export default function RootLayout() {
       setReady(true);
       // Best effort; the app is fully usable without a cloud account.
       syncNow().catch(() => undefined);
+      checkAlerts().catch(() => undefined);
     })();
   }, []);
 
@@ -43,6 +46,10 @@ export default function RootLayout() {
         <Stack.Screen name="profile/[id]" options={{ title: 'Site profile' }} />
         <Stack.Screen name="design/[id]" options={{ title: 'Design' }} />
         <Stack.Screen name="sun/[id]" options={{ title: 'Sun path' }} />
+        <Stack.Screen name="plants/index" options={{ title: 'Plants' }} />
+        <Stack.Screen name="plants/[plantId]" options={{ title: 'Plant' }} />
+        <Stack.Screen name="garden/[id]" options={{ title: 'Bed planner' }} />
+        <Stack.Screen name="calendar/[id]" options={{ title: 'Planting calendar' }} />
         <Stack.Screen name="data-sources" options={{ title: 'Data sources' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack>

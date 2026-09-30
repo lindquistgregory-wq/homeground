@@ -26,6 +26,11 @@
       "commercialUse": true,
       "note": "Local builds are free; EAS cloud build is optional and has its own free-tier quota"
     },
+    "expo-background-task": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Uses the OS scheduler (BGTaskScheduler / WorkManager); no server"
+    },
     "expo-crypto": {
       "license": "MIT",
       "commercialUse": true
@@ -51,6 +56,11 @@
       "license": "MIT",
       "commercialUse": true
     },
+    "expo-notifications": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Local notifications / OS background scheduling only; no push service or server"
+    },
     "expo-print": {
       "license": "MIT",
       "commercialUse": true,
@@ -72,6 +82,11 @@
     "expo-status-bar": {
       "license": "MIT",
       "commercialUse": true
+    },
+    "expo-task-manager": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Uses the OS scheduler (BGTaskScheduler / WorkManager); no server"
     },
     "fflate": {
       "license": "MIT",

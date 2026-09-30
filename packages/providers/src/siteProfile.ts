@@ -13,7 +13,8 @@ import { parcelFlood, parcelWater, type FloodSummary, type WaterSummary } from '
 import { reverseCensus, type CensusPlace } from './geocode';
 import { USGS_IMAGERY } from './basemaps';
 
-export const SITE_PROFILE_VERSION = 1;
+/** 2: climate curves, chill hours and peak summer heat for the planting guide (Phase 3). */
+export const SITE_PROFILE_VERSION = 2;
 
 export interface SiteProfile {
   version: number;
