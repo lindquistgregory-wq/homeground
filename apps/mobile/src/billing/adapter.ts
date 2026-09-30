@@ -7,7 +7,7 @@
  * Everything above this interface sees StoreRecord / StoreProduct, and tier logic stays in @plotwright/core.
  */
 import {
-  PRODUCT_IDS, isOneTime, needsFinish, type PaywallPlan, type StoreProduct, type StoreRecord, type StoreOffer,
+  PRODUCT_IDS, activeSubscription, isOneTime, needsFinish, planChange, type PaywallPlan, type StoreProduct, type StoreRecord, type StoreOffer,
 } from '@plotwright/core';
 import { Linking, Platform } from 'react-native';
 import { kvGet, kvSet } from '../db/database';
@@ -57,6 +57,7 @@ export function recordFrom(p: Record<string, unknown>): StoreRecord {
     isUpgradedIOS: p.isUpgradedIOS === true,
     gracePeriodExpirationDateIOS: ms(renewal.gracePeriodExpirationDate),
     environmentIOS: typeof p.environmentIOS === 'string' ? p.environmentIOS : null,
+    purchaseTokenAndroid: typeof p.purchaseToken === 'string' && (p.platform === 'android' || Platform.OS === 'android') ? p.purchaseToken : undefined,
   };
 }
 
@@ -86,8 +87,15 @@ export class StoreBillingAdapter implements BillingAdapter {
     if (!this.connected) throw new Error('The store is unavailable.');
   }
 
-  async start(onChange: () => void): Promise<void> {
-    await this.connect();
+  private onChange: () => void = () => undefined;
+  private listening = false;
+  /** Latest records from the store, used to find the subscription a plan change replaces. */
+  private lastRecords: StoreRecord[] = [];
+
+  /** Register the purchase listeners exactly once (purchase() calls this too, in case start() failed). */
+  private listen(): void {
+    if (this.listening) return;
+    this.listening = true;
     this.iap.purchaseUpdatedListener(async (purchase) => {
       const rec = recordFrom(purchase as unknown as Record<string, unknown>);
       const settle = this.pending.get(rec.productId);
@@ -97,19 +105,25 @@ export class StoreBillingAdapter implements BillingAdapter {
         return;
       }
       // Grant first (the check reads the store's verified state), then finish/acknowledge.
-      onChange();
+      this.onChange();
       try {
         if (needsFinish(rec)) await this.iap.finishTransaction({ purchase, isConsumable: false });
       } catch { /* retried on the next launch: unfinished transactions are redelivered */ }
       settle?.('purchased');
       this.pending.delete(rec.productId);
-      onChange();
+      this.onChange();
     });
     this.iap.purchaseErrorListener((e) => {
       const outcome: PurchaseOutcome = e.code === this.iap.ErrorCode.UserCancelled ? 'cancelled' : 'failed';
       for (const [, settle] of this.pending) settle(outcome);
       this.pending.clear();
     });
+  }
+
+  async start(onChange: () => void): Promise<void> {
+    this.onChange = onChange;
+    await this.connect();
+    this.listen();
     if (Platform.OS === 'android') this.iap.showInAppMessagesAndroid?.().catch?.(() => undefined);
     // Acknowledge anything bought while the app was closed (Play refunds unacknowledged purchases after 3 days).
     const owned = await this.iap.getAvailablePurchases().catch(() => []);
@@ -151,6 +165,7 @@ export class StoreBillingAdapter implements BillingAdapter {
           else records.push(r);
         }
       }
+      this.lastRecords = records;
       return { ok: true, records, at };
     } catch (e) {
       // One unverified entitlement makes the whole StoreKit call fail: keep the cached state.
@@ -160,7 +175,10 @@ export class StoreBillingAdapter implements BillingAdapter {
 
   async purchase(plan: Pick<PaywallPlan, 'productId' | 'offerTokenAndroid'>): Promise<PurchaseOutcome> {
     await this.connect();
+    this.listen();
     const sub = !isOneTime(plan.productId);
+    // Android: replace the current subscription instead of starting a second one alongside it.
+    const change = sub ? planChange(activeSubscription(this.lastRecords), plan.productId) : undefined;
     const done = new Promise<PurchaseOutcome>((resolve) => this.pending.set(plan.productId, resolve));
     try {
       await this.iap.requestPurchase({
@@ -168,16 +186,30 @@ export class StoreBillingAdapter implements BillingAdapter {
         request: {
           apple: { sku: plan.productId },
           // Always name the offer: without one, Play silently uses the first offer it returns.
-          google: sub && plan.offerTokenAndroid
-            ? { skus: [plan.productId], subscriptionOffers: [{ sku: plan.productId, offerToken: plan.offerTokenAndroid }] }
-            : { skus: [plan.productId] },
+          google: {
+            skus: [plan.productId],
+            ...(sub && plan.offerTokenAndroid ? { subscriptionOffers: [{ sku: plan.productId, offerToken: plan.offerTokenAndroid }] } : {}),
+            ...(change ?? {}),
+          },
         },
       });
     } catch (e) {
       this.pending.delete(plan.productId);
       return (e as { code?: string }).code === this.iap.ErrorCode.UserCancelled ? 'cancelled' : 'failed';
     }
-    return done;
+    // Never leave the paywall waiting forever (Ask to Buy, a lost event): after 10 minutes, ask the store.
+    const timeout = new Promise<PurchaseOutcome>((resolve) => setTimeout(async () => {
+      if (!this.pending.has(plan.productId)) return;
+      this.pending.delete(plan.productId);
+      const c = await this.check();
+      resolve(c.ok && c.records.some((r) => r.productId === plan.productId) ? 'purchased' : 'pending');
+    }, 10 * 60_000));
+    return Promise.race([done, timeout]);
+  }
+
+  /** The product the user subscribes to now (for the manage-subscription link). */
+  currentSubscription(): string | undefined {
+    return activeSubscription(this.lastRecords)?.productId;
   }
 
   async restore(): Promise<StoreCheck> {
@@ -190,9 +222,11 @@ export class StoreBillingAdapter implements BillingAdapter {
 
   async manageSubscriptions(): Promise<void> {
     try {
-      await this.iap.deepLinkToSubscriptions({ skuAndroid: PRODUCT_IDS.proAnnual, packageNameAndroid: PACKAGE });
+      const sku = this.currentSubscription();
+      await this.iap.deepLinkToSubscriptions({ ...(sku ? { skuAndroid: sku } : {}), packageNameAndroid: PACKAGE });
     } catch {
-      await Linking.openURL(Platform.OS === 'ios' ? 'https://apps.apple.com/account/subscriptions' : `https://play.google.com/store/account/subscriptions?package=${PACKAGE}`);
+      const sku = this.currentSubscription();
+      await Linking.openURL(Platform.OS === 'ios' ? 'https://apps.apple.com/account/subscriptions' : `https://play.google.com/store/account/subscriptions?package=${PACKAGE}${sku ? `&sku=${sku}` : ''}`);
     }
   }
 }

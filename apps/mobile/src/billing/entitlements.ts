@@ -58,6 +58,12 @@ async function readJson<T>(key: string): Promise<T | undefined> {
 
 /** One store connection + listener per app run; retried on the next refresh if it failed. */
 let starting: Promise<void> | undefined;
+let firstCheck: Promise<void> | undefined;
+
+/** Resolves when the first store check of this launch has finished (or failed). */
+export function firstStoreCheck(): Promise<void> {
+  return firstCheck ?? Promise.resolve();
+}
 
 export const useEntitlements = create<EntitlementState>((set, get) => ({
   cache: undefined,
@@ -66,7 +72,7 @@ export const useEntitlements = create<EntitlementState>((set, get) => ({
 
   async init() {
     await get().loadCached();
-    void get().refresh().catch(() => undefined);
+    firstCheck = get().refresh().catch(() => undefined);
   },
 
   async loadCached() {
@@ -91,7 +97,7 @@ export const useEntitlements = create<EntitlementState>((set, get) => ({
     track('purchase_started', { product: plan.productId });
     const outcome = await billing.purchase(plan);
     if (outcome === 'purchased') track('purchase_completed', { product: plan.productId });
-    else if (outcome !== 'cancelled') track('purchase_failed', { reason: outcome });
+    else if (outcome === 'failed') track('purchase_failed', { reason: outcome });
     await get().refresh();
     return outcome;
   },

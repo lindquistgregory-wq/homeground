@@ -18,7 +18,6 @@ import { frostOffset, measuredGdd, waterAdvice, type FrostOffset, type WaterAdvi
 import { latestValues, listSensors } from '../../src/db/sensors';
 import type { SiteProfile } from '@plotwright/providers';
 import { useSettings } from '../../src/services/settings';
-import { useNaturalBreakOnLeave } from '../../src/ads/useAds';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const monthOf = (doy: number) => new Date(Date.UTC(2023, 0, doy)).getUTCMonth();
@@ -30,7 +29,6 @@ const todayDoy = () => {
 export default function CalendarScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
-  useNaturalBreakOnLeave('calendar-closed');
   const ent = useEntitlements((s) => s.entitlements);
   const { state, error } = useGarden(id);
   const [risk, setRisk] = useState<'cautious' | 'typical'>('cautious');

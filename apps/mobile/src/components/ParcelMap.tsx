@@ -21,8 +21,8 @@ export interface ParcelMapProps {
   markers?: Array<{ id: string; lon: number; lat: number; label?: string; highlight?: boolean }>;
   onPress?: (lon: number, lat: number) => void;
   style?: object;
-  /** file:// tile template of a saved offline pack's imagery. */
-  offlineImagery?: string;
+  /** A saved offline pack's imagery: file:// tile template and deepest saved zoom. */
+  offlineImagery?: { template: string; maxZoom: number };
 }
 
 const PARCEL = '#f2c14e';
@@ -51,7 +51,7 @@ export function ParcelMap({ center, zoom = 17, boundary, candidates = [], draft 
 
         {/* Saved offline imagery sits under the live layer: it shows through wherever live tiles don't load. */}
         {showImagery && offlineImagery && (
-          <RasterSource id="usgs-imagery-offline" tiles={[offlineImagery]} tileSize={USGS_IMAGERY.tileSize} maxzoom={16} attribution={USGS_IMAGERY.attribution}>
+          <RasterSource id="usgs-imagery-offline" tiles={[offlineImagery.template]} tileSize={USGS_IMAGERY.tileSize} maxzoom={offlineImagery.maxZoom} attribution={USGS_IMAGERY.attribution}>
             <Layer type="raster" id="usgs-imagery-offline-layer" paint={{ 'raster-opacity': 1 }} />
           </RasterSource>
         )}

@@ -23,12 +23,23 @@ export interface PackInfo {
   bbox: Bbox;
   layers: Array<{ id: string; maxZoom: number; tiles: number; ext: string; saved: number }>;
   complete: boolean;
-  /** file:// tile templates by layer id, for MapLibre. */
-  templates: Record<string, string>;
+  /**
+   * Filled in when read (never stored: the app's folder path changes on iOS updates): the imagery
+   * layer's file:// template and deepest saved zoom, if the files are still there.
+   */
+  imagery?: { template: string; maxZoom: number };
+  /** The phone removed the saved tiles to free space (they live in the cache folder). */
+  cleared?: boolean;
 }
 
 const key = (parcelId: string) => `pack.${parcelId}`;
-const root = (parcelId: string) => new Directory(Paths.document, 'packs', parcelId);
+/**
+ * Tiles can be downloaded again, so they go in the cache folder (Apple's storage guidelines keep
+ * re-downloadable data out of iCloud backups). The OS may clear it when storage runs low; the pack
+ * card then offers to download again.
+ */
+const packsDir = () => new Directory(Paths.cache, 'packs');
+const root = (parcelId: string) => new Directory(Paths.cache, 'packs', parcelId);
 
 /** Keep more of what the user has looked at on the vector basemap (MapLibre's ambient cache, 50 MB by default). */
 export function configureMapCache(): void {
@@ -42,7 +53,13 @@ export function configureMapCache(): void {
 export async function getPack(parcelId: string): Promise<PackInfo | undefined> {
   const raw = await kvGet(key(parcelId));
   if (!raw) return undefined;
-  try { return JSON.parse(raw) as PackInfo; } catch { return undefined; }
+  let info: PackInfo;
+  try { info = JSON.parse(raw) as PackInfo; } catch { return undefined; }
+  delete (info as { templates?: unknown }).templates; // stored by early Phase 6 builds
+  const dir = root(parcelId);
+  const layer = info.layers.find((l) => l.id === 'usgs-imagery');
+  if (!dir.exists) return { ...info, imagery: undefined, cleared: true };
+  return { ...info, cleared: false, imagery: layer ? { template: `${dir.uri.replace(/\/$/, '')}/${layer.id}/{z}/{x}/{y}.${layer.ext}`, maxZoom: layer.maxZoom } : undefined };
 }
 
 export async function planForParcel(parcelId: string): Promise<PackPlan | undefined> {
@@ -64,14 +81,13 @@ export async function downloadPack(parcelId: string, onProgress: (p: PackProgres
   const dir = root(parcelId);
   if (!dir.exists) dir.create({ intermediates: true, idempotent: true });
   const info: PackInfo = {
-    parcelId, createdAt: new Date().toISOString(), bbox: plan.bbox, complete: false, templates: {},
+    parcelId, createdAt: new Date().toISOString(), bbox: plan.bbox, complete: false,
     layers: plan.layers.map((l) => ({ id: l.id, maxZoom: l.maxZoom, tiles: l.tiles, ext: OFFLINE_PACK_LAYERS.find((x) => x.id === l.id)!.ext, saved: 0 })),
   };
   const jobs: Array<{ url: string; rel: string; layer: PackInfo['layers'][number] }> = [];
   for (const l of info.layers) {
     const src = plan.layers.find((x) => x.id === l.id)!;
     for (const t of tilesFor(plan.bbox, plan.minZoom, l.maxZoom)) jobs.push({ url: tileUrl(src.template, t), rel: tilePath(l.id, t, l.ext), layer: l });
-    info.templates[l.id] = `${dir.uri.replace(/\/$/, '')}/${l.id}/{z}/{x}/{y}.${l.ext}`;
   }
   let done = 0;
   let failed = 0;
@@ -97,7 +113,7 @@ export async function downloadPack(parcelId: string, onProgress: (p: PackProgres
   await Promise.all([worker(), worker()]);
   if (signal.cancelled) {
     await kvSet(key(parcelId), JSON.stringify(info));
-    throw new Error('Download cancelled. Tap again to resume.');
+    throw new Error('Download stopped. Tap Update pack to continue where it left off.');
   }
   // Refresh the Site Profile so the pack carries current data (falls back to the cache offline).
   onProgress({ done, total, stage: 'profile' });
@@ -108,7 +124,7 @@ export async function downloadPack(parcelId: string, onProgress: (p: PackProgres
   info.complete = failed === 0;
   await kvSet(key(parcelId), JSON.stringify(info));
   track('offline_pack', { result: info.complete ? 'complete' : 'partial' });
-  return info;
+  return (await getPack(parcelId)) ?? info;
 }
 
 export async function deletePack(parcelId: string): Promise<void> {
@@ -119,6 +135,6 @@ export async function deletePack(parcelId: string): Promise<void> {
 
 /** "Delete all my data": remove every saved pack. */
 export function deleteAllPacks(): void {
-  const dir = new Directory(Paths.document, 'packs');
+  const dir = packsDir();
   if (dir.exists) dir.delete();
 }

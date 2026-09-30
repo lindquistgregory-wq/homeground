@@ -87,6 +87,7 @@ button.x { background: none; color: var(--muted); padding: 4px 8px }
           <tbody></tbody>
         </table></div>
         <button type="button" id="addCountry">Add a country</button>
+        <p class="hint">Shares start at 100% United States as a placeholder. Enter your own split from App Store Connect or Play Console.</p>
         <p class="src">Where to find eCPMs: your own AdMob reports, and <a href="https://support.google.com/admob/answer/14659812" target="_blank" rel="noopener">AdMob eCPM Trends</a> (peer benchmarks by category, platform and country, in the AdMob console). Public dashboards such as <a href="https://appodeal.com/benchmarks" target="_blank" rel="noopener">Appodeal Benchmarks</a> skew toward games; note the date and category of any figure you use.</p>
       </section>
 
@@ -157,8 +158,8 @@ function addCountry(name, share) {
   const cells = FORMATS.map((f) => `<td><input id="ecpm-${i}-${f.id}" type="number" min="0" step="0.01" value="" aria-label="${f.name} eCPM"></td>`).join('');
   $('countries').tBodies[0].insertAdjacentHTML('beforeend', `<tr data-i="${i}"><td><input id="cname-${i}" type="text" value="${name}" aria-label="Country"></td><td><input id="cshare-${i}" type="number" min="0" max="1" step="0.01" value="${share}" aria-label="Share of users"></td>${cells}<td><button type="button" class="x" data-remove="${i}" aria-label="Remove">✕</button></td></tr>`);
 }
-addCountry('United States', 0.8);
-addCountry('Rest of world', 0.2);
+addCountry('United States', 1);
+addCountry('Rest of world', 0);
 $('addCountry').addEventListener('click', () => { addCountry('', 0); calc(); });
 $('countries').addEventListener('click', (e) => { const i = e.target?.dataset?.remove; if (i !== undefined) { e.target.closest('tr').remove(); calc(); } });
 

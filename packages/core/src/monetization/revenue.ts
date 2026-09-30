@@ -120,12 +120,16 @@ export function compareModels(input: {
   subscriptions: Omit<SubscriptionInputs, 'mau'>;
   donations: DonationInputs;
   removeAds: { ownersShare: number; newBuyersPerMonth: number; priceUsd: number };
+  /** Audience of the open-source builds relative to the tiers build (1 = same). */
+  openSourceGrowth?: number;
 }): ModelComparison {
+  const g = input.openSourceGrowth === undefined ? 1 : nonNeg(input.openSourceGrowth);
+  const osInputs = { ...input.ads, mau: nonNeg(input.ads.mau) * g };
   const subs = subscriptionRevenue({ ...input.subscriptions, mau: input.ads.mau });
   const paidShare = input.subscriptions.plans.reduce((a, p) => a + clamp01(p.share), 0);
   const tierAds = adRevenue({ ...input.ads, adFreeShare: clamp01(paidShare) });
-  const osAds = adRevenue({ ...input.ads, adFreeShare: 0 });
-  const osRemove = adRevenue({ ...input.ads, adFreeShare: clamp01(input.removeAds.ownersShare) });
+  const osAds = adRevenue({ ...osInputs, adFreeShare: 0 });
+  const osRemove = adRevenue({ ...osInputs, adFreeShare: clamp01(input.removeAds.ownersShare) });
   const donations = donationRevenue(input.donations);
   const removeNet = nonNeg(input.removeAds.newBuyersPerMonth) * nonNeg(input.removeAds.priceUsd) * (1 - clamp01(input.subscriptions.storeFee));
   return {
@@ -134,4 +138,20 @@ export function compareModels(input: {
     openSourceRemoveAds: { adsUsd: osRemove.totalUsd, removeAdsNetUsd: removeNet, donationsUsd: donations, totalUsd: osRemove.totalUsd + removeNet + donations },
     missing: [...new Set([...tierAds.missing, ...osAds.missing])],
   };
+}
+
+/**
+ * Open source out-earns tiers on ads alone only if it grows the audience by more than this factor:
+ * g > p·N/A + (1 − p), where p = paying share, N = net monthly revenue per payer, A = monthly ad
+ * revenue per ad-viewing user. Undefined when A is 0 (no ad revenue entered).
+ */
+export function breakEvenGrowth(p: number, netPerPayerUsd: number, adPerUserUsd: number): number | undefined {
+  if (!(adPerUserUsd > 0)) return undefined;
+  const pp = clamp01(p);
+  return (pp * nonNeg(netPerPayerUsd)) / adPerUserUsd + (1 - pp);
+}
+
+/** Blended eCPM at which one user's ads earn as much as one paying subscriber (N × 1000 ÷ impressions). */
+export function breakEvenEcpm(netPerPayerUsd: number, impressionsPerUserPerMonth: number): number | undefined {
+  return impressionsPerUserPerMonth > 0 ? (nonNeg(netPerPayerUsd) * 1000) / impressionsPerUserPerMonth : undefined;
 }

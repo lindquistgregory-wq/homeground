@@ -6,6 +6,7 @@ import {
   compareModels, compareScenarios, copyObjects, countEvent, defaultPlan, disclosure, errorEntry, frameForBoundary, grantReward, mergeStoreCheck,
   needsFinish, newAdSession, newObject, objectType, parseScenarioMeta, planPack, resolveEntitlements, sanitizeEvent, scenarioLabel, scrubText, subscriptionRevenue,
   tileCount, tilesFor, toVerifiedTransactions, INTERSTITIAL_MIN_SESSION_MS, type StoreProduct, type StoreRecord,
+  IOS_MISSING_EXPIRY_DAYS, REPLACEMENT_MODE, SAFETY_ALERT_GRACE_DAYS, activeSubscription, breakEvenEcpm, breakEvenGrowth, offerLength, planChange, safetyEntitlements,
 } from '@plotwright/core';
 import { OFFLINE_PACK_LAYERS } from '@plotwright/providers';
 const USGS_PACK_LAYERS_FOR_TEST = OFFLINE_PACK_LAYERS;
@@ -238,4 +239,58 @@ test('scenarios: metadata parsing is strict and labels read naturally', () => {
   assert.equal(parseScenarioMeta('not json'), undefined);
   assert.equal(parseScenarioMeta(null), undefined);
   assert.equal(scenarioLabel({ season: 'winter', year: 2028 }), 'Winter 2028');
+});
+
+// ---------- review fixes ----------
+
+test('store: an iOS subscription without a readable expiry is trusted for days, not forever', () => {
+  const txs = toVerifiedTransactions([{ platform: 'ios', productId: PRODUCT_IDS.proMonthly, expirationDateIOS: null }], NOW);
+  assert.equal(resolveEntitlements(txs, { now: new Date(NOW + (IOS_MISSING_EXPIRY_DAYS - 1) * DAY) }).tier, 'pro');
+  assert.equal(resolveEntitlements(txs, { now: new Date(NOW + (IOS_MISSING_EXPIRY_DAYS + 1) * DAY) }).tier, 'free');
+  // One-time products still never expire.
+  assert.equal(toVerifiedTransactions([{ platform: 'ios', productId: PRODUCT_IDS.proLifetime }], NOW)[0]!.expiresAt, undefined);
+});
+
+test('store: Android plan changes replace the current subscription instead of adding a second one', () => {
+  const grower: StoreRecord = { platform: 'android', productId: PRODUCT_IDS.growerAnnual, purchaseState: 'purchased', purchaseTokenAndroid: 'tok-g' };
+  assert.equal(activeSubscription([grower])?.productId, PRODUCT_IDS.growerAnnual);
+  assert.deepEqual(planChange(grower, PRODUCT_IDS.proAnnual), { purchaseTokenAndroid: 'tok-g', replacementModeAndroid: REPLACEMENT_MODE.chargeProratedPrice });
+  assert.equal(planChange(grower, PRODUCT_IDS.growerMonthly)!.replacementModeAndroid, REPLACEMENT_MODE.withTimeProration);
+  const pro: StoreRecord = { ...grower, productId: PRODUCT_IDS.proMonthly };
+  assert.equal(planChange(pro, PRODUCT_IDS.growerAnnual)!.replacementModeAndroid, REPLACEMENT_MODE.deferred);
+  assert.equal(planChange(grower, PRODUCT_IDS.proLifetime), undefined, 'one-time purchases never replace a subscription');
+  assert.equal(planChange({ ...grower, platform: 'ios' }, PRODUCT_IDS.proAnnual), undefined, 'StoreKit handles changes within the group');
+  assert.equal(planChange(undefined, PRODUCT_IDS.proAnnual), undefined);
+});
+
+test('paywall: month and year trials are shown in their own unit, not converted to days', () => {
+  assert.equal(offerLength({ paymentMode: 'free-trial', period: { unit: 'month', value: 1 } }), '1 month');
+  assert.equal(offerLength({ paymentMode: 'free-trial', period: { unit: 'week', value: 2 } }), '14 days');
+  assert.equal(offerLength({ paymentMode: 'free-trial', period: { unit: 'day', value: 1 } }), '1 day');
+  const month = buildPlans([{ ...products[1]!, offers: [{ paymentMode: 'free-trial', period: { unit: 'month', value: 1 }, offerTokenAndroid: 't' }] }], 'android')[0]!;
+  assert.ok(disclosure(month, 'android').includes('Free for 1 month'));
+});
+
+test('safety alerts fail open for a while after the cached plan lapses', () => {
+  const txs = [{ productId: PRODUCT_IDS.proMonthly, expiresAt: new Date(NOW).toISOString() }];
+  const later = new Date(NOW + 10 * DAY);
+  assert.equal(resolveEntitlements(txs, { now: later }).has('sensors.greenhouseAlerts'), false);
+  assert.equal(safetyEntitlements(txs, { now: later }).has('sensors.greenhouseAlerts'), true);
+  assert.equal(safetyEntitlements(txs, { now: new Date(NOW + (SAFETY_ALERT_GRACE_DAYS + 1) * DAY) }).has('sensors.greenhouseAlerts'), false);
+});
+
+test('revenue: growth multiplier and break-even figures match the §12 document', () => {
+  const base = {
+    ads: { mau: 1000, sessionsPerUserPerMonth: 10, requestsPerSession: { banner: 1 }, fillRate: { banner: 1 }, countries: [{ name: 'US', share: 1, ecpm: { banner: 1 } }] },
+    subscriptions: { storeFee: 0.15, plans: [] },
+    donations: { monthlyUsd: 0, feeRate: 0 },
+    removeAds: { ownersShare: 0, newBuyersPerMonth: 0, priceUsd: 0 },
+  };
+  assert.equal(compareModels({ ...base, openSourceGrowth: 2 }).openSourceAds.adsUsd, 2 * compareModels(base).openSourceAds.adsUsd);
+  const N = (24.99 / 12) * 0.85;
+  assert.equal(breakEvenEcpm(N, 20)!.toFixed(2), '88.51');
+  assert.equal(breakEvenEcpm(N, 60)!.toFixed(2), '29.50');
+  assert.equal(breakEvenEcpm(N, 150)!.toFixed(2), '11.80');
+  assert.equal(breakEvenGrowth(0.05, 2, 1), 0.05 * 2 + 0.95);
+  assert.equal(breakEvenGrowth(0.05, 2, 0), undefined);
 });

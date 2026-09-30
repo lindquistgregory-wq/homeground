@@ -74,7 +74,7 @@ export default function DesignScreen() {
   const [plantings, setPlantings] = useState<Planting[]>([]);
   const [sensorPins, setSensorPins] = useState<object | null>(null);
   const [shadeSeason, setShadeSeason] = useState({ fromDoy: 180, toDoy: 288 });
-  const [offlineImagery, setOfflineImagery] = useState<string | undefined>(undefined);
+  const [offlineImagery, setOfflineImagery] = useState<{ template: string; maxZoom: number } | undefined>(undefined);
   const pendingChange = useRef<DesignObject[]>([]);
   const sunRef = useRef<SunResult | null>(null);
 
@@ -85,7 +85,7 @@ export default function DesignScreen() {
       if (!p) return;
       setParcel(p);
       setDesign(await getOrCreateDesign(p.id));
-      void getPack(p.id).then((pk) => setOfflineImagery(pk?.templates['usgs-imagery']));
+      void getPack(p.id).then((pk) => setOfflineImagery(pk?.imagery));
       setSetbackM(Number((await kvGet(`setback.${p.id}`)) ?? 0));
       const profile = await getSiteProfile(p.id);
       const frost = profile?.climate.status === 'ok'
@@ -276,7 +276,7 @@ export default function DesignScreen() {
         >
           <Camera initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding: CAMERA_PADDING }} />
           {layers.imagery && offlineImagery && (
-            <RasterSource id="img-offline" tiles={[offlineImagery]} tileSize={256} maxzoom={16} attribution={USGS_IMAGERY.attribution}>
+            <RasterSource id="img-offline" tiles={[offlineImagery.template]} tileSize={256} maxzoom={offlineImagery.maxZoom} attribution={USGS_IMAGERY.attribution}>
               <Layer type="raster" id="img-offline-l" />
             </RasterSource>
           )}

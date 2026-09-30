@@ -31,6 +31,8 @@ export interface StoreRecord {
   /** From the renewal info: the store is retrying payment and access continues until this time. */
   gracePeriodExpirationDateIOS?: number | null;
   environmentIOS?: string | null;
+  /** Android: the purchase token, needed to replace this subscription when the user changes plan. */
+  purchaseTokenAndroid?: string;
 }
 
 /**
@@ -38,6 +40,8 @@ export interface StoreRecord {
  * long after the last successful check with Play. Any successful check replaces the cache.
  */
 export const ANDROID_OFFLINE_DAYS = 14;
+/** An iOS subscription record without a readable expiry is trusted only this long, never forever. */
+export const IOS_MISSING_EXPIRY_DAYS = 3;
 const DAY = 86_400_000;
 
 export function toVerifiedTransaction(r: StoreRecord, checkedAt: number): VerifiedTransaction | null {
@@ -53,7 +57,8 @@ export function toVerifiedTransaction(r: StoreRecord, checkedAt: number): Verifi
   const grace = typeof r.gracePeriodExpirationDateIOS === 'number' ? r.gracePeriodExpirationDateIOS : 0;
   const exp = typeof r.expirationDateIOS === 'number' && r.expirationDateIOS > 0 ? r.expirationDateIOS : undefined;
   // In grace period the transaction's own expiry may already be past; access lasts until grace ends.
-  const effective = exp === undefined ? undefined : Math.max(exp, grace);
+  let effective = exp === undefined ? undefined : Math.max(exp, grace);
+  if (effective === undefined && !isOneTime(r.productId)) effective = Math.max(grace, checkedAt + IOS_MISSING_EXPIRY_DAYS * DAY);
   return {
     productId: r.productId,
     expiresAt: effective === undefined ? undefined : new Date(effective).toISOString(),
@@ -103,4 +108,30 @@ export function mergeStoreCheck(
 ): EntitlementCache {
   if (result.ok) return { transactions: toVerifiedTransactions(result.records, result.at), checkedAt: result.at };
   return cache ?? { transactions: [], checkedAt: 0 };
+}
+
+/**
+ * Android plan changes (§10): Play needs the current subscription's token and a replacement mode, or it
+ * starts a second subscription alongside the first. Modes are Play Billing's ReplacementMode values.
+ * iOS needs nothing here: all plans live in one subscription group and StoreKit handles the change.
+ */
+export const REPLACEMENT_MODE = { withTimeProration: 1, chargeProratedPrice: 2, withoutProration: 3, chargeFullPrice: 5, deferred: 6 } as const;
+
+const SUB_RANK: Record<string, number> = {
+  [PRODUCT_IDS.growerMonthly]: 1, [PRODUCT_IDS.growerAnnual]: 1, [PRODUCT_IDS.proMonthly]: 2, [PRODUCT_IDS.proAnnual]: 2,
+};
+
+export function planChange(current: StoreRecord | undefined, targetProductId: string): { purchaseTokenAndroid: string; replacementModeAndroid: number } | undefined {
+  if (!current || current.platform !== 'android' || !current.purchaseTokenAndroid || isOneTime(targetProductId) || isOneTime(current.productId)) return undefined;
+  if (current.productId === targetProductId) return undefined;
+  const from = SUB_RANK[current.productId] ?? 0;
+  const to = SUB_RANK[targetProductId] ?? 0;
+  // Upgrade: charge the difference now. Same tier, different period: credit remaining time. Downgrade: at renewal.
+  const mode = to > from ? REPLACEMENT_MODE.chargeProratedPrice : to === from ? REPLACEMENT_MODE.withTimeProration : REPLACEMENT_MODE.deferred;
+  return { purchaseTokenAndroid: current.purchaseTokenAndroid, replacementModeAndroid: mode };
+}
+
+/** The user's current auto-renewing subscription among the records, if any. */
+export function activeSubscription(records: StoreRecord[]): StoreRecord | undefined {
+  return records.find((r) => !isOneTime(r.productId) && SUB_RANK[r.productId] !== undefined && (r.platform !== 'android' || r.purchaseState === 'purchased'));
 }

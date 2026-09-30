@@ -18,7 +18,7 @@ import { useAds } from '../src/ads/useAds';
 import { billing } from '../src/billing/adapter';
 import { useEntitlements } from '../src/billing/entitlements';
 import { Body, Button, Card, useTheme } from '../src/components/ui';
-import { BUSINESS_MODEL, PRIVACY_POLICY_URL, TERMS_URL } from '../src/config';
+import { BUSINESS_MODEL, PRIVACY_POLICY_URL, TERMS_URL, TERMS_URL_ANDROID } from '../src/config';
 import { track } from '../src/services/metrics';
 
 const FEATURE_NAMES: Partial<Record<Feature, string>> = {
@@ -32,7 +32,9 @@ export default function Paywall() {
   const { feature, source } = useLocalSearchParams<{ feature?: Feature; source?: string }>();
   const t = useTheme();
   const platform = Platform.OS === 'ios' ? 'ios' : 'android';
-  const { entitlements, purchase, restore, addReward } = useEntitlements();
+  const { entitlements, purchase, restore, addReward, cache } = useEntitlements();
+  const owned = new Set((cache?.transactions ?? []).map((t) => t.productId));
+  const subscribed = [...owned].some((id) => id !== PRODUCT_IDS.proLifetime && id !== PRODUCT_IDS.removeAds);
   const adsReady = useAds((s) => s.ready);
   const [products, setProducts] = useState<StoreProduct[] | null>(null);
   const [eligible, setEligible] = useState<Record<string, boolean>>({});
@@ -59,10 +61,23 @@ export default function Paywall() {
   const reward = feature && canOfferReward(feature, entitlements, adsReady) ? feature : undefined;
 
   const buy = async (plan: Pick<PaywallPlan, 'productId' | 'offerTokenAndroid'>) => {
+    // A one-time purchase doesn't end a subscription: say so before charging.
+    if (plan.productId === PRODUCT_IDS.proLifetime && subscribed) {
+      const go = await new Promise<boolean>((resolve) => Alert.alert('You still have a subscription', 'Buying Pro Lifetime doesn’t cancel it. After buying, cancel the subscription in your store account so it doesn’t renew.', [
+        { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
+        { text: 'Continue', onPress: () => resolve(true) },
+      ]));
+      if (!go) return;
+    }
     setBusy(plan.productId);
     const r = await purchase(plan);
     setBusy(null);
-    if (r === 'purchased') { Alert.alert('Thank you!', 'Your purchase is active on this device and any device signed in to the same store account.'); router.back(); }
+    if (r === 'purchased') {
+      const cancelSub = plan.productId === PRODUCT_IDS.proLifetime && subscribed;
+      Alert.alert('Thank you!', cancelSub ? 'Pro Lifetime is active. Now cancel your subscription so it doesn’t renew.' : 'Your purchase is active on this device and any device signed in to the same store account.',
+        cancelSub ? [{ text: 'Manage subscription', onPress: () => billing.manageSubscriptions() }, { text: 'Later' }] : undefined);
+      router.back();
+    }
     else if (r === 'pending') Alert.alert('Payment pending', 'The store is waiting for your payment to complete. Your plan will switch on when it does.');
     else if (r === 'failed') Alert.alert('Purchase didn’t go through', 'Nothing was charged. Please try again later.');
   };
@@ -128,7 +143,7 @@ export default function Paywall() {
               style={[styles.plan, { borderColor: on ? t.accent : t.border, backgroundColor: t.card }]}>
               <Text style={{ color: t.text, fontSize: 16, fontWeight: '700' }}>{TIER_NAMES[p.tier]} · {p.displayPrice} {PERIOD[p.period]}</Text>
               <Text style={{ color: t.muted }}>
-                {[p.trialDays ? `${p.trialDays}-day free trial` : null, p.savingsPct ? `save ${p.savingsPct}% vs monthly` : null, p.period === 'lifetime' ? 'no subscription' : null].filter(Boolean).join(' · ') || ' '}
+                {[p.trialLength ? `free trial: ${p.trialLength}` : null, p.savingsPct ? `save ${p.savingsPct}% vs monthly` : null, p.period === 'lifetime' ? 'no subscription' : null].filter(Boolean).join(' · ') || ' '}
               </Text>
             </Pressable>
           );
@@ -136,8 +151,8 @@ export default function Paywall() {
         {chosen && (
           <>
             <Button
-              title={busy === chosen.productId ? 'Opening the store…' : chosen.trialDays ? `Start ${chosen.trialDays}-day free trial` : `Continue · ${chosen.displayPrice}`}
-              disabled={!!busy || rank(chosen.tier) <= rank(entitlements.tier)}
+              title={busy === chosen.productId ? 'Opening the store…' : owned.has(chosen.productId) ? 'Your current plan' : chosen.trialLength ? `Start free trial (${chosen.trialLength})` : `Continue · ${chosen.displayPrice}`}
+              disabled={!!busy || owned.has(chosen.productId) || owned.has(PRODUCT_IDS.proLifetime) || rank(chosen.tier) < rank(entitlements.tier)}
               onPress={() => buy(chosen)}
             />
             <Body muted>{disclosure(chosen, platform)}</Body>
@@ -166,7 +181,7 @@ function Legal() {
   const t = useTheme();
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, marginVertical: 16 }}>
-      <Text accessibilityRole="link" style={{ color: t.accent, padding: 8 }} onPress={() => Linking.openURL(TERMS_URL)}>Terms of Use</Text>
+      <Text accessibilityRole="link" style={{ color: t.accent, padding: 8 }} onPress={() => Linking.openURL(Platform.OS === 'ios' ? TERMS_URL : TERMS_URL_ANDROID)}>Terms of Use</Text>
       <Text accessibilityRole="link" style={{ color: t.accent, padding: 8 }} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>Privacy Policy</Text>
     </View>
   );

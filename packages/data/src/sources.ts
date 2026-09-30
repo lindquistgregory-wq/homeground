@@ -219,7 +219,7 @@ export const DATA_SOURCES: DataSource[] = [
     id: 'store-billing', name: 'App Store (StoreKit 2) and Google Play Billing', provider: 'Apple, Google',
     use: 'Subscriptions and one-time purchases, verified on the device. Contacted by the OS store frameworks; Plotwright has no receipt server',
     hosts: [], license: 'Apple Developer Program License Agreement; Google Play Developer Distribution Agreement', commercialUse: true, attribution: '',
-    policy: 'Store commission on sales: Apple 15% (Small Business Program); Google Play 10% + 5% billing fee in the US on the first $1M and on subscriptions (from 30 June 2026)',
+    policy: 'Store commission on sales: Apple 15% (Small Business Program); Google Play 10% + 5% billing fee in the US, UK and EEA on the first $1M and on subscriptions (from 30 June 2026)',
     url: 'https://developer.apple.com/app-store/small-business-program/', reviewed: '2026-09-29',
   },
   {

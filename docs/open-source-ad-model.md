@@ -136,7 +136,7 @@ Using this plan's own prices, a Grower annual subscriber is worth N = $24.99 ÷ 
 
 | Impressions per user per month | eCPM needed to match one Grower subscriber |
 |---|---|
-| 20 | $88.50 |
+| 20 | $88.51 |
 | 60 | $29.50 |
 | 150 | $11.80 |
 

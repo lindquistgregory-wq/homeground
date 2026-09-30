@@ -169,3 +169,15 @@ export const AD_FREE_SCREENS = new Set(['design', 'planner-chat', 'alerts', 'onb
 export function canShowAdOn(screen: string, ent: Entitlements): boolean {
   return ent.showAds && !AD_FREE_SCREENS.has(screen);
 }
+
+/**
+ * Safety alerts (greenhouse thresholds) run in the background, where the store can't be asked. They
+ * fail open: a plan that lapsed less than this long ago in the cached state still counts, so a renewal
+ * the phone hasn't seen yet never silences an alert.
+ */
+export const SAFETY_ALERT_GRACE_DAYS = 45;
+
+export function safetyEntitlements(transactions: VerifiedTransaction[], opts: { model?: BusinessModel; now?: Date } = {}): Entitlements {
+  const now = (opts.now ?? new Date()).getTime();
+  return resolveEntitlements(transactions, { model: opts.model, now: new Date(now - SAFETY_ALERT_GRACE_DAYS * 86_400_000) });
+}

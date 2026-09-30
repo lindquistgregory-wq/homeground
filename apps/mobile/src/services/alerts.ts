@@ -14,7 +14,8 @@ import { getDb, kvGet, kvSet } from '../db/database';
 import { getDesign } from '../db/designs';
 import { listParcels, getSiteProfile } from '../db/parcels';
 import { plantingsForParcel } from '../db/plantings';
-import { checkThresholds, METRIC_LABEL } from '@plotwright/core';
+import { checkThresholds, METRIC_LABEL, safetyEntitlements } from '@plotwright/core';
+import { BUSINESS_MODEL } from '../config';
 import { latestValues, listSensors } from '../db/sensors';
 import { activePlantings, bedName } from './garden';
 import { frostOffset, localOffsetMin, recordForecastLows } from './sensorInsights';
@@ -208,7 +209,9 @@ async function checkSensorThresholds(sent: Set<string>): Promise<void> {
   } catch {
     // keep the last known plan
   }
-  if (!useEntitlements.getState().entitlements.has('sensors.greenhouseAlerts')) return;
+  // Fail open: a renewal this phone hasn't seen yet (app not opened) must not silence a safety alert.
+  const st = useEntitlements.getState();
+  if (!st.entitlements.has('sensors.greenhouseAlerts') && !safetyEntitlements(st.cache?.transactions ?? [], { model: BUSINESS_MODEL }).has('sensors.greenhouseAlerts')) return;
   const now = Date.now();
   for (const s of await listSensors()) {
     if (!s.thresholds) continue;
@@ -233,13 +236,18 @@ async function checkSensorThresholds(sent: Set<string>): Promise<void> {
 }
 
 /**
- * Was the app opened by tapping one of our alerts (in the last 10 minutes)? The ad rules use this so
+ * Was the app opened by tapping one of our alerts? The ad rules use this so
  * no interstitial ever comes between the user and a frost or heat warning.
  */
 export async function openedFromAlert(): Promise<boolean> {
   try {
     const r = await Notifications.getLastNotificationResponseAsync();
-    return !!r && Date.now() - r.notification.date < 10 * 60_000;
+    if (!r) return false;
+    // Tapped at any time after delivery counts; a response already seen on an earlier launch doesn't.
+    const id = r.notification.request.identifier;
+    if ((await kvGet('ads.lastAlertResponse')) === id) return false;
+    await kvSet('ads.lastAlertResponse', id);
+    return true;
   } catch {
     return false;
   }

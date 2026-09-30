@@ -7,7 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getDb } from '../src/db/database';
 import { initIdentity } from '../src/services/identity';
 import { useSettings } from '../src/services/settings';
-import { useEntitlements } from '../src/billing/entitlements';
+import { firstStoreCheck, useEntitlements } from '../src/billing/entitlements';
 import { syncNow } from '../src/sync/userCloud';
 import { useTheme } from '../src/components/ui';
 // Registers the background alert task at startup (the OS may launch the app headless to run it).
@@ -17,7 +17,7 @@ import { localOffsetMin } from '../src/services/sensorInsights';
 import { refreshAllStations } from '../src/services/stations';
 import { initMetrics, track } from '../src/services/metrics';
 import { useAds } from '../src/ads/useAds';
-import { openedFromAlert } from '../src/services/alerts';
+import { onAlertOpened, openedFromAlert } from '../src/services/alerts';
 import { configureMapCache } from '../src/services/offlinePacks';
 
 export default function RootLayout() {
@@ -25,6 +25,8 @@ export default function RootLayout() {
   const t = useTheme();
   const path = usePathname();
   useEffect(() => { if (ready) track('screen_view', { screen: screenName(path) }); }, [path, ready]);
+  // Tapping a frost/heat alert while the app is running: no interstitial for the rest of this session.
+  useEffect(() => onAlertOpened(() => useAds.getState().markFromAlert()), []);
 
   useEffect(() => {
     (async () => {
@@ -35,7 +37,11 @@ export default function RootLayout() {
       setReady(true);
       configureMapCache();
       // Ads (free plan only): consent first, after the first screen is up; never around a safety alert.
-      openedFromAlert().then((fromAlert) => useAds.getState().start(fromAlert)).catch(() => undefined);
+      // Wait briefly for the store so a paid user reinstalling (empty cache) never loads the ads SDK.
+      Promise.race([firstStoreCheck(), new Promise((r) => setTimeout(r, 5000))])
+        .then(() => openedFromAlert())
+        .then((fromAlert) => useAds.getState().start(fromAlert))
+        .catch(() => undefined);
       // Best effort; the app is fully usable without a cloud account.
       syncNow().catch(() => undefined);
       // "Collect on open": Bluetooth sensors only report while the app runs; stations refresh too.

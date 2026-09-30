@@ -24,5 +24,7 @@ export const ADMOB_UNITS: Record<'ios' | 'android', Partial<Record<'browse-banne
 
 /** Shown on the paywall (App Review 3.1.2 needs both in the app and the store listing). */
 export const PRIVACY_POLICY_URL = `${PROJECT_URL}/blob/main/docs/PRIVACY.md`;
-/** Apple's standard licence agreement; replace if the app gets its own terms. */
+/** iOS: Apple's standard licence agreement (App Store Connect default). */
 export const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+/** Android: the app's own terms. */
+export const TERMS_URL_ANDROID = `${PROJECT_URL}/blob/main/docs/TERMS.md`;

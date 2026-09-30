@@ -18,8 +18,12 @@ export function canShowBanner(screen: string, ent: Entitlements, adsReady: boole
   return adsReady && ent.showAds && BANNER_SCREENS.has(screen) && !AD_FREE_SCREENS.has(screen);
 }
 
-/** Natural breaks where one interstitial may appear (after finishing something, never mid-task). */
-export type NaturalBreak = 'plant-guide-closed' | 'calendar-closed' | 'sensor-list-closed';
+/**
+ * Natural breaks where one interstitial may appear (after finishing something, never mid-task). Only
+ * closing a plant guide counts: the calendar and sensor screens show frost, heat and threshold alerts,
+ * so leaving them never triggers an ad.
+ */
+export type NaturalBreak = 'plant-guide-closed';
 
 export interface AdSession {
   startedAt: number;

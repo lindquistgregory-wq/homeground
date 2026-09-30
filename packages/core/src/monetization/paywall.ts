@@ -36,8 +36,10 @@ export interface PaywallPlan {
   displayPrice: string;
   price: number;
   currency: string;
-  /** Free-trial length in days when the store offers one to this user. */
+  /** Free-trial length in days when the store offers one to this user (approximate for months). */
   trialDays?: number;
+  /** The trial length to show: "14 days", "1 month". */
+  trialLength?: string;
   /** Android: the offer token to buy (trial offer if eligible, else the base plan). */
   offerTokenAndroid?: string;
   /** "Save 30%" versus 12 × the monthly price of the same tier, from store prices. */
@@ -52,10 +54,25 @@ const PLAN_META: Record<string, { tier: Exclude<Tier, 'free'>; period: PlanPerio
   [PRODUCT_IDS.proLifetime]: { tier: 'pro', period: 'lifetime' },
 };
 
+/** Approximate length in days (for ordering only; never shown for month/year periods). */
 export function offerDays(o: StoreOffer): number | undefined {
   if (!o.period || !(o.period.value > 0)) return undefined;
   const per = { day: 1, week: 7, month: 30, year: 365 }[o.period.unit];
   return per * o.period.value * Math.max(1, o.periodCount ?? 1);
+}
+
+/**
+ * The trial length as the store defines it: days and weeks in days ("14 days"), months and years in
+ * their own unit ("1 month"), since the stores run those by calendar month.
+ */
+export function offerLength(o: StoreOffer): string | undefined {
+  if (!o.period || !(o.period.value > 0)) return undefined;
+  const n = o.period.value * Math.max(1, o.periodCount ?? 1);
+  if (o.period.unit === 'day' || o.period.unit === 'week') {
+    const d = n * (o.period.unit === 'week' ? 7 : 1);
+    return `${d} day${d === 1 ? '' : 's'}`;
+  }
+  return `${n} ${o.period.unit}${n === 1 ? '' : 's'}`;
 }
 
 /**
@@ -86,6 +103,7 @@ export function buildPlans(products: StoreProduct[], platform: 'ios' | 'android'
     plans.push({
       productId: p.id, tier: meta.tier, period: meta.period, displayPrice: p.displayPrice, price: p.price, currency: p.currency,
       trialDays: trial ? offerDays(trial) : undefined,
+      trialLength: trial ? offerLength(trial) : undefined,
       offerTokenAndroid: platform === 'android' && meta.period !== 'lifetime' ? trial?.offerTokenAndroid ?? basePlanToken(p) : undefined,
     });
   }
@@ -118,11 +136,11 @@ export function disclosure(plan: PaywallPlan, platform: 'ios' | 'android'): stri
   if (plan.period === 'lifetime') return `${name}, one-time purchase of ${plan.displayPrice}. No subscription; it doesn't renew.`;
   const per = plan.period === 'year' ? 'year' : 'month';
   const store = platform === 'ios' ? 'your Apple Account settings' : 'Google Play › Payments & subscriptions';
-  const trial = plan.trialDays ? `Free for ${plan.trialDays} days, then ${plan.displayPrice} per ${per}. ` : '';
+  const trial = plan.trialLength ? `Free for ${plan.trialLength}, then ${plan.displayPrice} per ${per}. ` : '';
   const renew = platform === 'ios'
     ? 'Renews automatically unless cancelled at least 24 hours before the end of the current period.'
     : 'Renews automatically until you cancel.';
-  const trialCancel = plan.trialDays ? ' Cancel before the trial ends and you won’t be charged.' : '';
+  const trialCancel = plan.trialLength ? ' Cancel before the trial ends and you won’t be charged.' : '';
   return `${name}, ${plan.displayPrice} per ${per}. ${trial}${renew} Manage or cancel any time in ${store}.${trialCancel}`;
 }
 

@@ -56,7 +56,7 @@ export default function Profile() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       <View style={styles.map}>
-        <ParcelMap boundary={parcel.geometry} offlineImagery={pack?.templates['usgs-imagery']} />
+        <ParcelMap boundary={parcel.geometry} offlineImagery={pack?.imagery} />
       </View>
       <Body muted>{LEGAL_DISCLAIMER}</Body>
 

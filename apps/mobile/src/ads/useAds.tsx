@@ -23,6 +23,7 @@ interface AdState {
   start(fromAlert: boolean): Promise<void>;
   showPrivacyOptions(): Promise<void>;
   naturalBreak(kind: NaturalBreak): Promise<void>;
+  markFromAlert(): void;
 }
 
 export const useAds = create<AdState>((set, get) => ({
@@ -30,6 +31,9 @@ export const useAds = create<AdState>((set, get) => ({
   privacyOptionsRequired: false,
   session: newAdSession(Date.now()),
   personalised: false,
+  markFromAlert() {
+    set({ session: { ...get().session, fromAlert: true } });
+  },
   async setPersonalised(want) {
     let on = want;
     // iOS: personalised ads need Apple's tracking permission. It's only ever asked for here, when the user opts in.

@@ -2,8 +2,9 @@
  * AdProvider (§10): the app talks to ads only through this interface, so the ads SDK can be swapped
  * (another free mediation SDK) or left out entirely (an F-Droid / open-source build without ads).
  * Today's implementation is Google AdMob via react-native-google-mobile-ads (Apache-2.0) with Google's
- * UMP consent SDK for GDPR/TCF and US state privacy. On iOS, UMP shows Apple's tracking (ATT) prompt
- * itself after its explainer, when that message is turned on in AdMob's Privacy & messaging settings.
+ * UMP consent SDK for GDPR/TCF and US state privacy. Apple's tracking (ATT) prompt is shown only when
+ * the user turns on personalised ads in Settings (useAds.setPersonalised). Owner setup: do NOT enable
+ * UMP's "IDFA explainer" message in AdMob's Privacy & messaging, or UMP would show ATT at launch too.
  */
 import { AD_REQUEST_CONFIG, adRequestOptions } from '@plotwright/core';
 import { createElement, type ReactElement } from 'react';
