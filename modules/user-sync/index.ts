@@ -1,4 +1,4 @@
-import { requireOptionalNativeModule } from 'expo-modules-core';
+import { requireOptionalNativeModule } from 'expo';
 
 /**
  * JS surface of the native module. Batches are opaque JSON strings; the native side only stores and lists

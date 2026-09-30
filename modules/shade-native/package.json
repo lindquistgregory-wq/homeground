@@ -5,5 +5,5 @@
   "description": "Native (Swift/Kotlin) inner loop of the shade engine. Mirrors packages/core/src/sun/shade.ts sunHours().",
   "main": "index.ts",
   "types": "index.ts",
-  "peerDependencies": { "expo": "*", "expo-modules-core": "*" }
+  "peerDependencies": { "expo": "*" }
 }

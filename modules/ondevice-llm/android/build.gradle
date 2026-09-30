@@ -1,24 +1,26 @@
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
 
 group = 'app.plotwright.ondevicellm'
 version = '0.1.0'
 
-def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
-apply from: expoModulesCorePlugin
-applyKotlinExpoModulesCorePlugin()
-useCoreDependencies()
-useExpoPublishing()
-
 android {
   namespace "app.plotwright.ondevicellm"
   // The Prompt API needs minSdk 26; the app's minimum is Android 10 (29).
-  defaultConfig { minSdkVersion 29 }
+  defaultConfig {
+    minSdkVersion 29
+    versionCode 1
+    versionName "0.1.0"
+  }
 }
 
 dependencies {
   // ML Kit GenAI Prompt API (Gemini Nano via AICore). Free, on-device, no key or Firebase project.
   // Beta: "not subject to any SLA or deprecation policy". Terms: ML Kit GenAI Additional Terms.
-  implementation "com.google.mlkit:genai-prompt:1.0.0-beta4"
+  // Pinned to beta2: beta3+ require kotlin-stdlib 2.3, which React Native 0.83's Kotlin 2.1 compiler
+  // cannot build against. Move up once RN's Kotlin reaches 2.2+.
+  implementation "com.google.mlkit:genai-prompt:1.0.0-beta2"
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
 }

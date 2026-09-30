@@ -6,7 +6,6 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "app.plotwright.planner",
       "supportsTablet": true,
@@ -88,7 +87,9 @@
             "minSdkVersion": 29
           }
         }
-      ]
+      ],
+      "./plugins/withAdsKotlinMetadataFix",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true
