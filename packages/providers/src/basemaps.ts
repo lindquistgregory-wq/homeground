@@ -57,3 +57,12 @@ export const USGS_HILLSHADE: RasterSource = {
 };
 
 export const RASTER_SOURCES = [USGS_IMAGERY, USGS_TOPO, USGS_HILLSHADE];
+
+/**
+ * Layers saved in an offline parcel pack (Pro): the aerial imagery the maps draw. Only USGS services, which are public domain and
+ * publish `exportTilesAllowed: true` (checked 2026-09-29). Saved to zoom 16, the deepest scale the
+ * imagery service advertises (maxScale 1:9,028); the offline map overzooms past it.
+ */
+export const OFFLINE_PACK_LAYERS = [
+  { id: USGS_IMAGERY.id, template: USGS_IMAGERY.tiles[0]!, maxZoom: 16, avgTileKb: 30, ext: 'jpg' },
+];

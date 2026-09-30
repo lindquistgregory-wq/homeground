@@ -44,6 +44,8 @@ export interface Design {
   objects: DesignObject[];
   createdAt: string;
   updatedAt: string;
+  /** Set on alternative season/year layouts (Pro); the main plan has none. */
+  scenario?: import('./scenarios').ScenarioMeta;
 }
 
 export interface DesignVersion {

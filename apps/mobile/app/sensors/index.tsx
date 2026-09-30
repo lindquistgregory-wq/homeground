@@ -15,6 +15,7 @@ import { collectOnOpen } from '../../src/services/ble';
 import { localOffsetMin } from '../../src/services/sensorInsights';
 import { useSettings } from '../../src/services/settings';
 import { STATION_LABEL, refreshAllStations, type StationProtocol } from '../../src/services/stations';
+import { useNaturalBreakOnLeave } from '../../src/ads/useAds';
 
 const SHOWN: Metric[] = ['temperature', 'humidity', 'soilMoisture', 'soilTemperature', 'soilTension', 'illuminance', 'solarRadiation', 'rainDaily', 'windSpeed', 'co2', 'battery'];
 const EXPECTED_MS: Record<string, number> = { ble: 6 * 3_600_000, cloud: 15 * 60_000, local: 5 * 60_000, csv: 7 * 86_400_000 };
@@ -24,6 +25,7 @@ type Row = { s: SensorRecord; latest: Awaited<ReturnType<typeof latestValues>> }
 export default function Sensors() {
   const params = useLocalSearchParams<{ parcelId?: string }>();
   const t = useTheme();
+  useNaturalBreakOnLeave('sensor-list-closed');
   const units = useSettings((s) => s.units);
   const ent = useEntitlements((s) => s.entitlements);
   const [parcelId, setParcelId] = useState<string | undefined>(params.parcelId);

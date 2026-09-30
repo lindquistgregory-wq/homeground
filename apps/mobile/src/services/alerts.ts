@@ -204,7 +204,7 @@ async function runCheck(opts: { background?: boolean }): Promise<void> {
 async function checkSensorThresholds(sent: Set<string>): Promise<void> {
   // A headless run hasn't loaded the plan yet; and thresholds stop when Homestead Pro lapses.
   try {
-    await useEntitlements.getState().refresh();
+    await useEntitlements.getState().loadCached();
   } catch {
     // keep the last known plan
   }
@@ -230,4 +230,23 @@ async function checkSensorThresholds(sent: Set<string>): Promise<void> {
       });
     }
   }
+}
+
+/**
+ * Was the app opened by tapping one of our alerts (in the last 10 minutes)? The ad rules use this so
+ * no interstitial ever comes between the user and a frost or heat warning.
+ */
+export async function openedFromAlert(): Promise<boolean> {
+  try {
+    const r = await Notifications.getLastNotificationResponseAsync();
+    return !!r && Date.now() - r.notification.date < 10 * 60_000;
+  } catch {
+    return false;
+  }
+}
+
+/** Calls `cb` whenever the user taps one of our alerts while the app is running. */
+export function onAlertOpened(cb: () => void): () => void {
+  const sub = Notifications.addNotificationResponseReceivedListener(() => cb());
+  return () => sub.remove();
 }

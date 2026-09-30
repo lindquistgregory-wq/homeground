@@ -7,6 +7,7 @@ import { cropGuide, stateExtensionHub } from '@plotwright/data';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
+import { BrowseBanner, useNaturalBreakOnLeave } from '../../src/ads/useAds';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { CalendarList, Chip, ExternalLink, FactorList, StaleProfileNotice, VerdictBadge } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
@@ -24,6 +25,7 @@ export default function PlantDetail() {
   const { state } = useGarden(parcelId);
   const [risk, setRisk] = useState<'cautious' | 'typical'>('cautious');
   const plant = plantById(plantId);
+  useNaturalBreakOnLeave('plant-guide-closed');
 
   const cal = useMemo(() => (plant && state ? calendarFor(plant, state.site, { risk, dynamicGdd: ent.has('planting.dynamicScheduling'), soilF: state.soil.soilF, soilLabel: state.soil.basisLabel }) : null), [plant, state, risk, ent]);
   const fit = useMemo(() => (plant && state ? scorePlant(plant, state.site, {}, undefined, 'your climate') : null), [plant, state]);
@@ -88,6 +90,8 @@ export default function PlantDetail() {
         {plant.companions?.length ? <Body muted>Traditional companions: {plant.companions.map((id) => plantById(id)?.commonName ?? id).join(', ')} (mostly anecdotal)</Body> : null}
         {plant.avoidNear?.length ? <Body muted>Keep apart from: {plant.avoidNear.map((id) => plantById(id)?.commonName ?? id).join(', ')}</Body> : null}
       </Card>
+
+      <BrowseBanner screen="plant-guide" />
 
       {plant.notes?.length ? (
         <Card title="Notes">

@@ -6,7 +6,8 @@ import { Camera, GeoJSONSource, Layer, Map, RasterSource, type MapRef } from '@m
 import {
   OBJECT_LIBRARY, bbox, estimatePv, footprintAreaM2, footprintLonLat, formatArea, formatLength, materialList, newObject, objectType,
   project, siteSuitability, snapRotationToBoundary, snapToContour, snapToGridM, unproject, validateDesign,
-  type Design, type DesignObject, type DesignWarning, type ObjectCategory, type SitingTarget,
+  SCENARIO_SEASONS, compareScenarios, scenarioLabel, sunPeriodForSeason,
+  type Design, type DesignObject, type DesignWarning, type LocalFrame, type ObjectCategory, type ScenarioSeason, type SitingTarget,
 } from '@plotwright/core';
 import { OPENFREEMAP_STYLE_URL, USGS_HILLSHADE, USGS_IMAGERY, solarClimatology } from '@plotwright/providers';
 import { http } from '../../src/services/http';
@@ -16,7 +17,9 @@ import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Tex
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { getParcel, getSiteProfile, type ParcelRecord } from '../../src/db/parcels';
-import { getOrCreateDesign, listVersions, saveDesign, saveVersion } from '../../src/db/designs';
+import { createScenario, deleteScenario, getOrCreateDesign, listScenarios, listVersions, saveDesign, saveVersion } from '../../src/db/designs';
+import { getPack } from '../../src/services/offlinePacks';
+import { track } from '../../src/services/metrics';
 import { kvGet, kvSet } from '../../src/db/database';
 import {
   PERIOD_LABELS, computeSun, contourGeoJSON, heatmapGeoJSON, loadAnalysis, sunSummary,
@@ -71,6 +74,7 @@ export default function DesignScreen() {
   const [plantings, setPlantings] = useState<Planting[]>([]);
   const [sensorPins, setSensorPins] = useState<object | null>(null);
   const [shadeSeason, setShadeSeason] = useState({ fromDoy: 180, toDoy: 288 });
+  const [offlineImagery, setOfflineImagery] = useState<string | undefined>(undefined);
   const pendingChange = useRef<DesignObject[]>([]);
   const sunRef = useRef<SunResult | null>(null);
 
@@ -81,6 +85,7 @@ export default function DesignScreen() {
       if (!p) return;
       setParcel(p);
       setDesign(await getOrCreateDesign(p.id));
+      void getPack(p.id).then((pk) => setOfflineImagery(pk?.templates['usgs-imagery']));
       setSetbackM(Number((await kvGet(`setback.${p.id}`)) ?? 0));
       const profile = await getSiteProfile(p.id);
       const frost = profile?.climate.status === 'ok'
@@ -247,8 +252,9 @@ export default function DesignScreen() {
   const doExport = async (fmt: ExportFormat) => {
     if (!design || !parcel || !frame) return;
     const need = fmt === 'pdf' ? 'export.pdf' : 'export.gis';
-    if (!ent.has(need)) return Alert.alert('Upgrade needed', fmt === 'pdf' ? 'PDF export is part of Grower and Homestead Pro.' : 'GIS exports are part of Homestead Pro.');
+    if (!ent.has(need)) return router.push({ pathname: '/paywall', params: { feature: need, source: 'design' } });
     try {
+      track('export', { format: fmt });
       await exportDesign(fmt, { design, boundary: parcel.geometry, frame, units, parcelName: parcel.name, boundaryDisplayOnly: !!parcel.boundaryMeta.displayOnly });
     } catch (e) {
       Alert.alert('Export failed', (e as Error).message);
@@ -269,6 +275,11 @@ export default function DesignScreen() {
           onPress={(e) => onMapPress(e.nativeEvent.lngLat[0], e.nativeEvent.lngLat[1])}
         >
           <Camera initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding: CAMERA_PADDING }} />
+          {layers.imagery && offlineImagery && (
+            <RasterSource id="img-offline" tiles={[offlineImagery]} tileSize={256} maxzoom={16} attribution={USGS_IMAGERY.attribution}>
+              <Layer type="raster" id="img-offline-l" />
+            </RasterSource>
+          )}
           {layers.imagery && (
             <RasterSource id="img" tiles={USGS_IMAGERY.tiles} tileSize={256} maxzoom={USGS_IMAGERY.maxzoom} attribution={USGS_IMAGERY.attribution}>
               <Layer type="raster" id="img-l" />
@@ -345,6 +356,12 @@ export default function DesignScreen() {
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12 }}>
+        {design.scenario && (
+          <View style={[styles.scenarioBar, { borderColor: t.accent }]}>
+            <Text style={{ color: t.text, flex: 1 }}>Scenario: {design.name}. The main plan isn't changed.</Text>
+            <Pressable accessibilityRole="button" onPress={async () => setDesign(await getOrCreateDesign(parcel.id))}><Text style={{ color: t.accent, padding: 6 }}>Back to main plan</Text></Pressable>
+          </View>
+        )}
         {analysisError && <Body muted>Terrain couldn't load ({analysisError}). Shade is computed on flat ground until it does.</Body>}
 
         {tab === 'add' && (
@@ -379,7 +396,7 @@ export default function DesignScreen() {
               if (planted) Alert.alert('Delete bed?', `This also removes its ${planted} planting${planted === 1 ? '' : 's'} and their history.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => void remove() }]);
               else void remove();
             }}
-            onPlan={isPlantable(selected) ? () => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } }) : undefined}
+            onPlan={isPlantable(selected) && !design.scenario ? () => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } }) : undefined}
             planted={plantings.filter((p) => p.bedObjectId === selected.id).length}
           />
         ) : <Body muted>Tap an object on the map to edit it.</Body>)}
@@ -403,7 +420,7 @@ export default function DesignScreen() {
                 <Body>Part sun (3–6 h): {formatArea(summary.part * summary.cellAreaM2, units)}</Body>
                 <Body>Shade (under 3 h): {formatArea(summary.shade * summary.cellAreaM2, units)}</Body>
                 <Body muted>At most {sun.possibleHours.toFixed(1)} h of sun above your horizon that day. Grid {analysis!.ground.cell.toFixed(1)} m · computed in {sun.ms} ms ({sun.engine === 'native' ? 'native engine' : 'JavaScript engine'}).</Body>
-                {!ent.has('sun.heatmaps') && <Body muted>Sun-hour heatmaps on the map are part of Grower and Homestead Pro.</Body>}
+                {!ent.has('sun.heatmaps') && <Button title="Sun-hour heatmaps: see plans or unlock for a day" kind="secondary" onPress={() => router.push({ pathname: '/paywall', params: { feature: 'sun.heatmaps', source: 'design' } })} />}
                 {!ent.has('layers.canopyShade') && <Body muted>Tree shade from satellite canopy heights is part of Homestead Pro. Trees you place yourself always cast shade.</Body>}
               </Card>
             )}
@@ -430,8 +447,9 @@ export default function DesignScreen() {
             ] as Array<[keyof typeof layers, string, Parameters<typeof ent.has>[0]]>).map(([k, label, feature]) => {
               const locked = !ent.has(feature);
               return (
-                <Button key={k} title={`${layers[k] && !locked ? '✓ ' : ''}${label}${locked ? ' 🔒' : ''}`} kind={layers[k] && !locked ? 'primary' : 'secondary'} disabled={locked}
-                  onPress={() => setLayers((l) => ({ ...l, [k]: !l[k] }))} />
+                <Button key={k} title={`${layers[k] && !locked ? '✓ ' : ''}${label}${locked ? ' 🔒' : ''}`} kind={layers[k] && !locked ? 'primary' : 'secondary'}
+                  accessibilityHint={locked ? 'Shows the plans that include this layer' : undefined}
+                  onPress={() => (locked ? router.push({ pathname: '/paywall', params: { feature, source: 'design' } }) : setLayers((l) => ({ ...l, [k]: !l[k] })))} />
               );
             })}
             {contourGeo && Math.abs(contourGeo.intervalM - contourInterval) > 1e-6 && (
@@ -461,6 +479,15 @@ export default function DesignScreen() {
             canVersion={ent.has('design.versions')}
             onRestore={(objects) => update(objects, [...design.objects, ...objects])}
             onExport={doExport}
+          />
+        )}
+        {tab === 'plan' && (
+          <ScenariosPanel
+            design={design}
+            frame={frame}
+            allowed={ent.has('design.multiSeason')}
+            onOpen={(d) => { setSelectedId(null); setDesign(d); if (d.scenario) setPeriod(sunPeriodForSeason(d.scenario.season)); }}
+            onMain={async () => setDesign(await getOrCreateDesign(parcel.id))}
           />
         )}
       </ScrollView>
@@ -640,12 +667,91 @@ function PlanPanel({ design, warnings, units, setbackM, onSetback, materials, ca
   );
 }
 
+/** Multi-season scenarios (Homestead Pro): alternative layouts tagged with a season and year, compared with the main plan. */
+function ScenariosPanel({ design, frame, allowed, onOpen, onMain }: {
+  design: Design; frame: LocalFrame | undefined; allowed: boolean; onOpen: (d: Design) => void; onMain: () => void;
+}) {
+  const t = useTheme();
+  const [list, setList] = useState<Design[]>([]);
+  const [main, setMain] = useState<Design | null>(null);
+  const [season, setSeason] = useState<ScenarioSeason>('summer');
+  const [year, setYear] = useState(new Date().getFullYear() + 1);
+  const reload = useCallback(async () => {
+    setList(await listScenarios(design.parcelId));
+    setMain(await getOrCreateDesign(design.parcelId));
+  }, [design.parcelId]);
+  useEffect(() => { void reload(); }, [reload, design.id]);
+
+  if (!allowed) {
+    return (
+      <Card title="Season scenarios">
+        <Body muted>Try alternative layouts for another season or year (a winter layout, next year with a high tunnel) and compare them with your plan. Part of Homestead Pro.</Body>
+        <Button title="See Homestead Pro" kind="secondary" onPress={() => router.push({ pathname: '/paywall', params: { feature: 'design.multiSeason', source: 'design' } })} />
+      </Card>
+    );
+  }
+  const diff = design.scenario && main && frame ? compareScenarios(main.objects, design.objects, frame) : null;
+  return (
+    <Card title="Season scenarios">
+      {design.scenario ? (
+        <>
+          <Body>Editing {design.name}.</Body>
+          {diff && (
+            <>
+              <Body muted>Compared with the main plan: {diff.added.length} added, {diff.removed.length} removed, {diff.moved.length} moved.</Body>
+              {diff.areaByCategory.filter((c) => c.a !== c.b).map((c) => <Body key={c.category} muted>• {c.category}: {c.a} → {c.b} m²</Body>)}
+            </>
+          )}
+          <Button title="Back to main plan" kind="secondary" onPress={onMain} />
+          <Button title="Delete this scenario" kind="secondary" onPress={() => Alert.alert('Delete scenario?', design.name, [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Delete', style: 'destructive', onPress: async () => { await deleteScenario(design); onMain(); } },
+          ])} />
+        </>
+      ) : (
+        <>
+          <Body muted>Copies the main plan into a new layout you can change freely. The sun tab switches to that season.</Body>
+          <View style={styles.row}>
+            {SCENARIO_SEASONS.map((k) => (
+              <Pressable key={k} accessibilityRole="radio" accessibilityState={{ selected: season === k }} onPress={() => setSeason(k)} style={[styles.chip, { borderColor: season === k ? t.accent : t.border }]}>
+                <Text style={{ color: season === k ? t.accent : t.text }}>{scenarioLabel({ season: k })}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <View style={styles.row}>
+            {[0, 1, 2, 3].map((d) => {
+              const y = new Date().getFullYear() + d;
+              return (
+                <Pressable key={y} accessibilityRole="radio" accessibilityState={{ selected: year === y }} onPress={() => setYear(y)} style={[styles.chip, { borderColor: year === y ? t.accent : t.border }]}>
+                  <Text style={{ color: year === y ? t.accent : t.text }}>{y}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Button title={`Create “${scenarioLabel({ season, year })}”`} onPress={async () => {
+            const d = await createScenario(design, { season, year });
+            track('scenario_created');
+            await reload();
+            onOpen(d);
+          }} />
+        </>
+      )}
+      {list.filter((d) => d.id !== design.id).map((d) => (
+        <Pressable key={d.id} accessibilityRole="button" onPress={() => onOpen(d)}>
+          <Text style={{ color: t.accent, paddingVertical: 10 }}>{d.name} · {d.objects.filter((o) => !o.existing).length} objects</Text>
+        </Pressable>
+      ))}
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
   map: { height: '48%' },
   banner: { position: 'absolute', top: 8, left: 8, right: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderRadius: 10 },
   tabs: { flexDirection: 'row', borderBottomWidth: 1 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 3, borderBottomColor: 'transparent' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  scenarioBar: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, padding: 8, marginBottom: 8 },
   chip: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, minHeight: 40, justifyContent: 'center' },
   libItem: { paddingVertical: 10, borderBottomWidth: 1 },
   stepBtn: { width: 48, height: 48, borderWidth: 1, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginLeft: 6 },

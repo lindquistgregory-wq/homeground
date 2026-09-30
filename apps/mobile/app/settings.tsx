@@ -1,10 +1,10 @@
-import { DEFAULT_TRANSMITTANCE, Material, centroid, daySunSamples, emptySurface, makeGrid, prepareSamples, PRODUCT_IDS, runShadeBenchmark, sunHours } from '@plotwright/core';
+import { DEFAULT_TRANSMITTANCE, Material, TIER_NAMES, centroid, daySunSamples, emptySurface, makeGrid, prepareSamples, PRODUCT_IDS, runShadeBenchmark, sunHours } from '@plotwright/core';
 import { ShadeNativeModule } from '@plotwright/shade-native';
 import { validateUserEndpoint } from '@plotwright/providers';
 import { UserSync } from '@plotwright/user-sync';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, Share, StyleSheet, TextInput } from 'react-native';
 import { StubBillingAdapter, billing } from '../src/billing/adapter';
 import { useEntitlements } from '../src/billing/entitlements';
 import { Body, Button, Card, useTheme } from '../src/components/ui';
@@ -16,6 +16,10 @@ import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
 import { alertsEnabled, setAlertsEnabled } from '../src/services/alerts';
 import { cloudSyncAvailable, syncNow, wipeCloudData } from '../src/sync/userCloud';
+import { useAds } from '../src/ads/useAds';
+import { BUSINESS_MODEL, PRIVACY_POLICY_URL } from '../src/config';
+import { clearMetrics, metricsConsent, metricsReport, setMetricsConsent } from '../src/services/metrics';
+import { deleteAllPacks } from '../src/services/offlinePacks';
 
 /**
  * A synthetic 100 m yard (sloped ground, a tree line, a house) run through both engines: times the
@@ -50,7 +54,9 @@ function benchNative(): { ms: number; maxDiffH: number } {
 export default function Settings() {
   const t = useTheme();
   const { units, setUnits } = useSettings();
-  const { entitlements, refresh, purchase } = useEntitlements();
+  const { entitlements, refresh, restore, storeError } = useEntitlements();
+  const { privacyOptionsRequired, showPrivacyOptions, personalised, setPersonalised } = useAds();
+  const [metricsOn, setMetricsOn] = useState(metricsConsent());
   const [cloud, setCloud] = useState<boolean | null>(null);
   const [endpointUrl, setEndpointUrl] = useState('');
   const [checking, setChecking] = useState(false);
@@ -136,15 +142,54 @@ export default function Settings() {
         <Button title={checking ? 'Testing…' : 'Test and add'} onPress={contribute} disabled={checking || endpointUrl.length < 12} />
       </Card>
 
-      <Card title={`Plan: ${entitlements.tier === 'free' ? 'Free' : entitlements.tier === 'grower' ? 'Grower' : 'Homestead Pro'}`}>
-        <Body muted>Store billing arrives in a later phase. In development builds you can switch tiers here to test feature gates.</Body>
+      <Card title={BUSINESS_MODEL === 'openSource' ? 'Ads' : `Plan: ${TIER_NAMES[entitlements.tier]}`}>
+        {BUSINESS_MODEL === 'openSource'
+          ? <Body muted>Every feature is free. {entitlements.showAds ? 'Ads support the app; a one-time purchase removes them.' : 'Ads are removed on this store account. Thank you!'}</Body>
+          : <Body muted>{entitlements.tier === 'free' ? 'The free plan shows a few ads on browse screens, never on the design canvas, in the planner chat or with alerts.' : 'No ads. Thank you for supporting Plotwright.'}</Body>}
+        {storeError && <Body muted>The store couldn't be reached, so your last known plan is used.</Body>}
+        <Button title={entitlements.tier === 'free' || entitlements.showAds ? 'See plans' : 'Change plan'} onPress={() => router.push({ pathname: '/paywall', params: { source: 'settings' } })} />
+        <Button title="Restore purchases" kind="secondary" onPress={async () => {
+          const r = await restore();
+          Alert.alert(r.ok ? (r.found ? 'Purchases restored' : 'Nothing to restore') : 'Couldn’t reach the store', r.ok ? (r.found ? `You're on ${TIER_NAMES[useEntitlements.getState().entitlements.tier]}.` : 'No active purchases were found for this store account.') : 'Check your connection and try again.');
+        }} />
+        {entitlements.tier !== 'free' && BUSINESS_MODEL === 'tiers' && <Button title="Manage subscription" kind="secondary" onPress={() => billing.manageSubscriptions()} />}
         {__DEV__ && billing instanceof StubBillingAdapter && (
           <>
+            <Body muted>Development build: switch tiers to test feature gates.</Body>
             <Button title="Dev: Free" kind="secondary" onPress={async () => { await (billing as StubBillingAdapter).reset(); await refresh(); }} />
-            <Button title="Dev: Grower" kind="secondary" onPress={() => purchase(PRODUCT_IDS.growerAnnual)} />
-            <Button title="Dev: Homestead Pro" kind="secondary" onPress={() => purchase(PRODUCT_IDS.proAnnual)} />
+            <Button title="Dev: Grower" kind="secondary" onPress={async () => { await billing.purchase({ productId: PRODUCT_IDS.growerAnnual }); await refresh(); }} />
+            <Button title="Dev: Homestead Pro" kind="secondary" onPress={async () => { await billing.purchase({ productId: PRODUCT_IDS.proAnnual }); await refresh(); }} />
           </>
         )}
+      </Card>
+
+      <Card title="Privacy">
+        <Body muted>
+          Your properties, designs, sensor readings and plans stay on this phone and in your own cloud account. Plotwright has no server and
+          never sells or shares your data. Ads on the free plan come from Google AdMob and are not personalised unless you choose so here
+          (and, in the EU and UK, agree in the consent form).
+        </Body>
+        {entitlements.showAds && (
+          <Button title={personalised ? '✓ Personalised ads allowed' : 'Allow personalised ads'} kind={personalised ? 'primary' : 'secondary'}
+            accessibilityHint="Lets Google use data about your device to choose ads. Off by default." onPress={async () => {
+              await setPersonalised(!personalised);
+              if (!personalised && !useAds.getState().personalised) Alert.alert('Ads stay non-personalised', 'Tracking permission is off for Plotwright. You can change it in the Settings app under Privacy & Security › Tracking.');
+            }} />
+        )}
+        {privacyOptionsRequired && <Button title="Ad privacy choices" kind="secondary" onPress={() => showPrivacyOptions()} />}
+        <Body muted>
+          Usage statistics: counts of which screens and features you use, plus a log of app errors, kept on this phone only and never
+          sent anywhere. Off unless you turn it on; you can read or share them yourself.
+        </Body>
+        <Button title={metricsOn ? '✓ Keep usage statistics on this phone' : 'Keep usage statistics on this phone'} kind={metricsOn ? 'primary' : 'secondary'}
+          onPress={async () => { await setMetricsConsent(!metricsOn); setMetricsOn(!metricsOn); }} />
+        {metricsOn && (
+          <>
+            <Button title="View or share statistics" kind="secondary" onPress={() => Share.share({ message: metricsReport() })} />
+            <Button title="Clear statistics" kind="secondary" onPress={() => clearMetrics()} />
+          </>
+        )}
+        <Button title="Privacy policy" kind="secondary" onPress={() => Linking.openURL(PRIVACY_POLICY_URL)} />
       </Card>
 
       <Card title="Diagnostics">
@@ -174,6 +219,8 @@ export default function Settings() {
                   // Station keys and bindkeys live in the keychain, not the database: remove them first.
                   await deleteSecrets((await listSensors()).map((x) => x.id));
                   await setAlertsEnabled(false).catch(() => undefined);
+                  deleteAllPacks();
+                  await setMetricsConsent(false).catch(() => undefined);
                   await deleteAllLocalData();
                   const cloudResult = await wipeCloudData();
                   if (cloudResult === 'deferred')

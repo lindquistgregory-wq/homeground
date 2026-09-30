@@ -5,7 +5,7 @@
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ambientDevices, ecowittLocal, ecowittRealtime, isLocalAddress, weatherLinkCurrent, weatherLinkLive, weatherLinkStations, type StationDevice } from '@plotwright/providers';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Chip } from '../../src/components/plants';
@@ -138,6 +138,15 @@ export default function ConnectStation() {
       <Text style={{ color: t.muted, fontSize: 12 }}>
         Your keys are stored in this phone’s keychain and sent only to {proto.includes('local') || proto === 'tempest-udp' ? 'your own device on your Wi-Fi' : 'your station’s own service'}. They don’t sync to your other devices; enter them again there.
       </Text>
+      <Card title="Share your station with NOAA (optional)">
+        <Body muted>
+          The volunteer Citizen Weather Observer Program (CWOP) passes home weather-station readings to NOAA’s MADIS system, where forecasters
+          use them. Your station’s own software uploads them (WeeWX, Cumulus, Weather Display and Davis WeatherLink can; Ambient needs a
+          bridge). Plotwright never sends your data anywhere; these links explain how.
+        </Body>
+        <Button title="Sign up for a CWOP station id (NOAA MADIS)" kind="secondary" onPress={() => Linking.openURL('https://madis.ncep.noaa.gov/cwop_signup.shtml')} />
+        <Button title="About CWOP" kind="secondary" onPress={() => Linking.openURL('http://www.wxqa.com/')} />
+      </Card>
     </ScrollView>
   );
 }

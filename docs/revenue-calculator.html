@@ -1,0 +1,243 @@
+<title>Plotwright Revenue Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: inputs column (left) feeds a sticky results ledger (right); stacks to one column on phones. */
+:root {
+  --bg: #f3f5f1; --panel: #ffffff; --ink: #1d2419; --muted: #5d6a57; --line: #d6ddd0;
+  --accent: #3f6b1f; --accent-soft: #e3ecd9; --warn: #9a5b00; --warn-soft: #fbefdc; --good: #2d6b3a;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141a12; --panel: #1c241a; --ink: #e6ecdf; --muted: #9aa893; --line: #2f3a2b;
+  --accent: #9fcf6e; --accent-soft: #26341d; --warn: #f0b35a; --warn-soft: #33260f; --good: #8fd29c; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #141a12; --panel: #1c241a; --ink: #e6ecdf; --muted: #9aa893; --line: #2f3a2b;
+  --accent: #9fcf6e; --accent-soft: #26341d; --warn: #f0b35a; --warn-soft: #33260f; --good: #8fd29c; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); padding-inline: 16px; padding-block: 24px 48px }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 24px }
+header h1 { font: 700 clamp(26px, 4vw, 36px)/1.1 var(--display); margin: 0 0 8px; text-wrap: balance }
+header p { margin: 0; color: var(--muted); max-width: 68ch }
+.grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: start }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr) } }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0 }
+h2 { font: 600 17px/1.2 var(--display); margin: 0 }
+.hint { color: var(--muted); font-size: 13px; margin: 0 }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px }
+label { display: grid; gap: 4px; font-size: 13px; font-weight: 500 }
+input[type=number], input[type=text] { font: 500 14px var(--mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; width: 100%; min-width: 0 }
+input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+input.missing { border-color: var(--warn); background: var(--warn-soft) }
+.table { overflow-x: auto }
+table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 560px }
+th, td { text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--line); vertical-align: middle }
+th { font-weight: 600; color: var(--muted); font-size: 12px; letter-spacing: .02em; text-transform: uppercase }
+td input { padding: 6px 8px }
+button { font: 600 13px var(--body); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; justify-self: start }
+button.x { background: none; color: var(--muted); padding: 4px 8px }
+.ledger { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px) }
+.model { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line) }
+.model:last-of-type { border-bottom: 0 }
+.model .name { font-weight: 600 }
+.model .val { font: 500 18px var(--mono); font-variant-numeric: tabular-nums; text-align: right }
+.model .sub { grid-column: 1 / -1; color: var(--muted); font-size: 12px; font-family: var(--mono) }
+.model.best .name::after { content: "highest"; margin-left: 8px; font: 600 11px var(--body); color: var(--good); border: 1px solid var(--good); border-radius: 99px; padding: 1px 7px; vertical-align: 1px }
+.key { background: var(--accent-soft); border-radius: 8px; padding: 12px; display: grid; gap: 6px; font-size: 13px }
+.key strong { font-family: var(--mono); font-variant-numeric: tabular-nums }
+.warnbox { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 10px 12px; font-size: 13px }
+.src { font-size: 12px; color: var(--muted) }
+.src a { color: var(--accent) }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Plotwright revenue calculator</h1>
+    <p>Compares three ways to fund the app each month: subscription tiers with ads on the free plan, open source with ads only, and open source with a one-time “remove ads” purchase. Every rate is yours to enter. Nothing here is a benchmark: eCPM, fill rate and conversion start empty on purpose. Same formulas as <code>packages/core/src/monetization/revenue.ts</code>.</p>
+  </header>
+
+  <div class="grid">
+    <div style="display:grid;gap:24px;min-width:0">
+      <section>
+        <h2>Audience</h2>
+        <div class="fields">
+          <label for="mau">Monthly active users<input id="mau" type="number" min="0" step="100" value="10000"></label>
+          <label for="sessions">Sessions per user per month<input id="sessions" type="number" min="0" step="1" value=""></label>
+          <label for="growth">Users if open source, × tiers<input id="growth" type="number" min="0" step="0.05" value="1"></label>
+        </div>
+        <p class="hint">Sessions: App Store Connect and Play Console report these. The multiplier lets you test “open source brings more users”; 1 means the same audience.</p>
+      </section>
+
+      <section>
+        <h2>Ads per session</h2>
+        <div class="table"><table id="formats">
+          <thead><tr><th>Format</th><th>Requests / session</th><th>Fill rate (0–1)</th><th>Placement in Plotwright</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <p class="hint">Interstitials are capped at one per session by the app’s placement rules, so any higher number counts as one. Rewarded ads only play when someone asks for one.</p>
+      </section>
+
+      <section>
+        <h2>eCPM by country (USD per 1,000 impressions)</h2>
+        <div class="table"><table id="countries">
+          <thead><tr><th>Country or region</th><th>Share of users</th><th>Banner</th><th>Interstitial</th><th>Rewarded</th><th>Native</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <button type="button" id="addCountry">Add a country</button>
+        <p class="src">Where to find eCPMs: your own AdMob reports, and <a href="https://support.google.com/admob/answer/14659812" target="_blank" rel="noopener">AdMob eCPM Trends</a> (peer benchmarks by category, platform and country, in the AdMob console). Public dashboards such as <a href="https://appodeal.com/benchmarks" target="_blank" rel="noopener">Appodeal Benchmarks</a> skew toward games; note the date and category of any figure you use.</p>
+      </section>
+
+      <section>
+        <h2>Subscriptions (tiers model)</h2>
+        <div class="table"><table id="plans">
+          <thead><tr><th>Plan</th><th>Price (USD)</th><th>Billed</th><th>Share of MAU paying (0–1)</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <div class="fields">
+          <label for="fee">Store fee (0–1)<input id="fee" type="number" min="0" max="1" step="0.01" value="0.15"></label>
+        </div>
+        <p class="src">Prices are the plan’s suggested prices. Store fee 0.15: <a href="https://developer.apple.com/app-store/small-business-program/" target="_blank" rel="noopener">Apple Small Business Program</a>; <a href="https://support.google.com/googleplay/android-developer/answer/112622" target="_blank" rel="noopener">Google Play</a> in the US/UK/EEA from 30 June 2026 (10% + 5% billing fee on the first $1M a year and on subscriptions). Paying shares: use your own store data. For context only, RevenueCat’s <a href="https://www.revenuecat.com/state-of-subscription-apps" target="_blank" rel="noopener">State of Subscription Apps 2026</a> reports a 2.0% median download-to-paid rate by day 35 across categories (2.1% for freemium apps); it has no gardening category and measures downloads, not active users.</p>
+      </section>
+
+      <section>
+        <h2>Open-source extras</h2>
+        <div class="fields">
+          <label for="donations">Donations per month (USD)<input id="donations" type="number" min="0" step="10" value=""></label>
+          <label for="donFee">Donation fees (0–1)<input id="donFee" type="number" min="0" max="1" step="0.01" value="0"></label>
+          <label for="raPrice">“Remove ads” price (USD)<input id="raPrice" type="number" min="0" step="0.5" value="4.99"></label>
+          <label for="raBuyers">New buyers per month<input id="raBuyers" type="number" min="0" step="1" value=""></label>
+          <label for="raShare">Share of MAU who own it (0–1)<input id="raShare" type="number" min="0" max="1" step="0.01" value=""></label>
+        </div>
+        <p class="src">GitHub Sponsors takes no fee on sponsorships from personal accounts and up to 6% from organisation accounts (<a href="https://docs.github.com/en/sponsors/sponsoring-open-source-contributors/about-sponsorships-fees-and-taxes" target="_blank" rel="noopener">GitHub Docs</a>). The $4.99 price is a placeholder to change.</p>
+      </section>
+    </div>
+
+    <section class="ledger" aria-live="polite">
+      <h2>Per month</h2>
+      <div id="models"></div>
+      <div class="key" id="key"></div>
+      <div class="warnbox" id="missing" hidden></div>
+      <p class="hint">Ad revenue is what AdMob reports to you (its revenue share is already taken out and isn’t published). Store fees come off subscriptions and the remove-ads purchase. Taxes are not included.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+const FORMATS = [
+  { id: 'banner', name: 'Banner', where: 'Plant library and plant guides only' },
+  { id: 'interstitial', name: 'Interstitial', where: 'At most one per session, at a natural break' },
+  { id: 'rewarded', name: 'Rewarded', where: 'Opt-in: unlocks one layer or export for 24 h' },
+  { id: 'native', name: 'Native', where: 'Not used yet' },
+];
+const PLANS = [
+  { id: 'gm', name: 'Grower monthly', price: 2.99, months: 1 },
+  { id: 'ga', name: 'Grower annual', price: 24.99, months: 12 },
+  { id: 'pm', name: 'Pro monthly', price: 9.99, months: 1 },
+  { id: 'pa', name: 'Pro annual', price: 79.99, months: 12 },
+];
+const $ = (id) => document.getElementById(id);
+const num = (el) => { const v = el.value.trim(); if (v === '') return undefined; const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : undefined; };
+const clamp01 = (x) => Math.min(1, Math.max(0, x ?? 0));
+const usd = (x) => x.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: x < 100 ? 2 : 0 });
+
+const ftBody = $('formats').tBodies[0];
+for (const f of FORMATS) {
+  ftBody.insertAdjacentHTML('beforeend', `<tr><td>${f.name}</td><td><input id="req-${f.id}" type="number" min="0" step="0.1" value=""></td><td><input id="fill-${f.id}" type="number" min="0" max="1" step="0.01" value=""></td><td class="hint">${f.where}</td></tr>`);
+}
+const plBody = $('plans').tBodies[0];
+for (const p of PLANS) {
+  plBody.insertAdjacentHTML('beforeend', `<tr><td>${p.name}</td><td><input id="price-${p.id}" type="number" min="0" step="0.01" value="${p.price}"></td><td>${p.months === 12 ? 'yearly' : 'monthly'}</td><td><input id="share-${p.id}" type="number" min="0" max="1" step="0.001" value=""></td></tr>`);
+}
+let countryN = 0;
+function addCountry(name, share) {
+  const i = countryN++;
+  const cells = FORMATS.map((f) => `<td><input id="ecpm-${i}-${f.id}" type="number" min="0" step="0.01" value="" aria-label="${f.name} eCPM"></td>`).join('');
+  $('countries').tBodies[0].insertAdjacentHTML('beforeend', `<tr data-i="${i}"><td><input id="cname-${i}" type="text" value="${name}" aria-label="Country"></td><td><input id="cshare-${i}" type="number" min="0" max="1" step="0.01" value="${share}" aria-label="Share of users"></td>${cells}<td><button type="button" class="x" data-remove="${i}" aria-label="Remove">✕</button></td></tr>`);
+}
+addCountry('United States', 0.8);
+addCountry('Rest of world', 0.2);
+$('addCountry').addEventListener('click', () => { addCountry('', 0); calc(); });
+$('countries').addEventListener('click', (e) => { const i = e.target?.dataset?.remove; if (i !== undefined) { e.target.closest('tr').remove(); calc(); } });
+
+function adRevenue({ mau, sessions, adFreeShare, countries }) {
+  const viewers = mau * (1 - clamp01(adFreeShare));
+  const sess = viewers * (sessions ?? 0);
+  const shareSum = countries.reduce((a, c) => a + clamp01(c.share), 0);
+  let total = 0; const missing = new Set(); let imps = 0;
+  for (const f of FORMATS) {
+    let per = num($(`req-${f.id}`)) ?? 0;
+    if (f.id === 'interstitial') per = Math.min(per, 1);
+    const im = sess * per * clamp01(num($(`fill-${f.id}`)));
+    imps += im;
+    for (const c of countries) {
+      const w = shareSum > 0 ? clamp01(c.share) / shareSum : 0;
+      const e = c.ecpm[f.id];
+      if (im > 0 && w > 0 && e === undefined) missing.add(`${f.name} eCPM for ${c.name || 'a country'}`);
+      total += (im * w * (e ?? 0)) / 1000;
+    }
+  }
+  return { total, missing, imps };
+}
+
+function calc() {
+  const mau = num($('mau')) ?? 0;
+  const sessions = num($('sessions'));
+  const g = num($('growth')) ?? 1;
+  const fee = clamp01(num($('fee')));
+  const countries = [...$('countries').tBodies[0].rows].map((r) => {
+    const i = r.dataset.i;
+    return { name: $(`cname-${i}`).value.trim(), share: num($(`cshare-${i}`)) ?? 0, ecpm: Object.fromEntries(FORMATS.map((f) => [f.id, num($(`ecpm-${i}-${f.id}`))])) };
+  });
+  let paidShare = 0, subsNet = 0, netPerPayerWeighted = 0;
+  for (const p of PLANS) {
+    const s = clamp01(num($(`share-${p.id}`)));
+    const perMonth = (num($(`price-${p.id}`)) ?? 0) / p.months;
+    paidShare += s;
+    subsNet += mau * s * perMonth * (1 - fee);
+    netPerPayerWeighted += s * perMonth * (1 - fee);
+  }
+  paidShare = clamp01(paidShare);
+  const tiersAds = adRevenue({ mau, sessions, adFreeShare: paidShare, countries });
+  const osMau = mau * g;
+  const osAds = adRevenue({ mau: osMau, sessions, adFreeShare: 0, countries });
+  const raShare = clamp01(num($('raShare')));
+  const osRaAds = adRevenue({ mau: osMau, sessions, adFreeShare: raShare, countries });
+  const donations = (num($('donations')) ?? 0) * (1 - clamp01(num($('donFee'))));
+  const raNet = (num($('raBuyers')) ?? 0) * (num($('raPrice')) ?? 0) * (1 - fee);
+
+  const models = [
+    { name: 'Subscription tiers + ads on Free', total: tiersAds.total + subsNet, sub: `ads ${usd(tiersAds.total)} · subscriptions ${usd(subsNet)} after store fee` },
+    { name: 'Open source, ads only', total: osAds.total + donations, sub: `ads ${usd(osAds.total)} · donations ${usd(donations)} · ${Math.round(osMau).toLocaleString()} MAU` },
+    { name: 'Open source + “remove ads”', total: osRaAds.total + raNet + donations, sub: `ads ${usd(osRaAds.total)} · remove ads ${usd(raNet)} · donations ${usd(donations)}` },
+  ];
+  const best = Math.max(...models.map((m) => m.total));
+  $('models').innerHTML = models.map((m) => `<div class="model${m.total > 0 && m.total === best ? ' best' : ''}"><span class="name">${m.name}</span><span class="val">${usd(m.total)}</span><span class="sub">${m.sub} · ${usd(m.total * 12)} a year · ${mau ? usd(m.total / (m.name.startsWith('Open') ? osMau || 1 : mau)) : '$0'} per MAU</span></div>`).join('');
+
+  // Break-even: ads-only matches tiers per user when ad revenue per ad-viewing user A equals the net
+  // subscription revenue per payer N; open source beats tiers when growth g > p·N/A + (1 − p).
+  const impsPerUser = osMau ? osAds.imps / osMau : 0;
+  const N = paidShare > 0 ? netPerPayerWeighted / paidShare : 0;
+  const A = osMau ? osAds.total / osMau : 0;
+  const lines = [];
+  if (N > 0 && impsPerUser > 0) lines.push(`Ads-only earns as much per user as a paying subscriber at a blended eCPM of <strong>${usd((N * 1000) / impsPerUser)}</strong> (${impsPerUser.toFixed(1)} impressions per user a month, subscriber worth ${usd(N)} a month net).`);
+  else lines.push('Enter sessions, ad requests, fill rates and at least one paying share to see the break-even eCPM.');
+  if (N > 0 && A > 0) lines.push(`Open source out-earns tiers only if it grows your audience by more than <strong>×${(paidShare * N / A + (1 - paidShare)).toFixed(2)}</strong>.`);
+  $('key').innerHTML = lines.map((l) => `<div>${l}</div>`).join('');
+
+  const missing = new Set([...tiersAds.missing, ...osAds.missing]);
+  if (sessions === undefined) missing.add('sessions per user');
+  $('missing').hidden = missing.size === 0;
+  $('missing').textContent = missing.size ? `Missing, so revenue is understated: ${[...missing].join('; ')}.` : '';
+  for (const el of document.querySelectorAll('input[id^="ecpm-"]')) {
+    const [, i, f] = el.id.split('-');
+    const req = num($(`req-${f}`)) ?? 0;
+    el.classList.toggle('missing', req > 0 && el.value.trim() === '' && (num($(`cshare-${i}`)) ?? 0) > 0);
+  }
+  $('sessions').classList.toggle('missing', sessions === undefined);
+}
+document.addEventListener('input', calc);
+calc();
+</script>

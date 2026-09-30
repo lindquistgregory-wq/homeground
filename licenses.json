@@ -52,6 +52,11 @@
       "license": "MIT",
       "commercialUse": true
     },
+    "expo-iap": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "StoreKit 2 / Play Billing Library 9 directly (openiap). Only the on-device APIs are used; the optional hosted IAPKit / verifyPurchaseWithProvider service is not. v5.8.x (repo moved to hyodotdev/openiap, Aug 2026)"
+    },
     "expo-location": {
       "license": "MIT",
       "commercialUse": true,
@@ -98,6 +103,11 @@
       "commercialUse": true,
       "note": "Uses the OS scheduler (BGTaskScheduler / WorkManager); no server"
     },
+    "expo-tracking-transparency": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Apple ATT prompt, shown only when the user opts in to personalised ads"
+    },
     "fflate": {
       "license": "MIT",
       "commercialUse": true
@@ -118,6 +128,11 @@
       "license": "Apache-2.0",
       "commercialUse": true,
       "note": "Passive BLE advertisement scanning; no service involved"
+    },
+    "react-native-google-mobile-ads": {
+      "license": "Apache-2.0",
+      "commercialUse": true,
+      "note": "AdMob + Google UMP consent (free). Pinned to 16.5.0: 17.x needs React Native 0.86 (Expo SDK 57). Wraps the proprietary Google Mobile Ads and UMP SDKs, see nativeDependencies"
     },
     "react-native-safe-area-context": {
       "license": "MIT",
@@ -167,6 +182,26 @@
       "license": "Apple SDK (free with iOS 26+)",
       "commercialUse": true,
       "note": "On-device only; Private Cloud Compute is not used. Weak-linked. modules/ondevice-llm/ios"
+    },
+    "Google-Mobile-Ads-SDK / com.google.android.gms:play-services-ads": {
+      "license": "Google Mobile Ads SDK terms (proprietary, free)",
+      "commercialUse": true,
+      "note": "Ads on the free plan (tiers model) or in the ads-supported open-source build. Revenue share, not a cost. Not F-Droid compatible: an F-Droid flavour must build without it (EXPO_PUBLIC_ADS=off and without the plugin)"
+    },
+    "GoogleUserMessagingPlatform / com.google.android.ump:user-messaging-platform": {
+      "license": "Google terms (proprietary, free)",
+      "commercialUse": true,
+      "note": "Consent (GDPR/TCF v2.3, US state privacy)"
+    },
+    "StoreKit.framework": {
+      "license": "Apple SDK",
+      "commercialUse": true,
+      "note": "In-app purchases; Apple takes its commission (15% in the Small Business Program)"
+    },
+    "com.android.billingclient:billing (9.x)": {
+      "license": "Android Software Development Kit License",
+      "commercialUse": true,
+      "note": "Play Billing; Google takes its service fee (15% total in the US on the first $1M and on subscriptions)"
     }
   }
 }

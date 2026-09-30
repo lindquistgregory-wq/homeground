@@ -207,6 +207,22 @@ export const DATA_SOURCES: DataSource[] = [
     caveat: 'Beta (no SLA). Terms require users to be 18+ and the app not to target minors; foreground use only',
   },
   {
+    id: 'admob', name: 'Google AdMob and User Messaging Platform (ads SDK)', provider: 'Google',
+    use: 'Ads on the free plan (browse screens only, one interstitial per session at most, opt-in rewarded ads) and the consent form (GDPR/TCF v2.3, US state privacy). Contacted by Google’s SDK, not by Plotwright code. Not loaded for paid plans',
+    hosts: ['googleads.g.doubleclick.net', 'pagead2.googlesyndication.com', 'fundingchoicesmessages.google.com'],
+    license: 'AdMob and Google Mobile Ads SDK terms; revenue share, no cost', commercialUse: true, attribution: '',
+    policy: 'Non-personalised ads unless the user opts in (and, on iOS, grants tracking permission); UMP consent before any ad request; content rating capped at PG',
+    url: 'https://support.google.com/admob/answer/6128543', reviewed: '2026-09-29',
+    caveat: 'Needs the owner’s own AdMob account and app/unit ids (public identifiers, not keys). Proprietary SDK: not allowed in F-Droid builds',
+  },
+  {
+    id: 'store-billing', name: 'App Store (StoreKit 2) and Google Play Billing', provider: 'Apple, Google',
+    use: 'Subscriptions and one-time purchases, verified on the device. Contacted by the OS store frameworks; Plotwright has no receipt server',
+    hosts: [], license: 'Apple Developer Program License Agreement; Google Play Developer Distribution Agreement', commercialUse: true, attribution: '',
+    policy: 'Store commission on sales: Apple 15% (Small Business Program); Google Play 10% + 5% billing fee in the US on the first $1M and on subscriptions (from 30 June 2026)',
+    url: 'https://developer.apple.com/app-store/small-business-program/', reviewed: '2026-09-29',
+  },
+  {
     id: 'static-host', name: 'Plotwright registry (GitHub Pages)', provider: 'This project',
     use: 'Refreshable parcel-endpoint registry (static JSON)', hosts: ['lindquistgregory-wq.github.io'],
     license: 'Project-owned', commercialUse: true, attribution: '', url: 'https://pages.github.com/', reviewed: '2026-09-28',
@@ -225,4 +241,8 @@ export const NON_SERVICE_HOSTS = [
   'www.weatherlink.com', 'bthome.io', 'docs.ruuvi.com',
   // Knowledge-base citations and on-device AI documentation (links only; the data is bundled)
   'developer.apple.com', 'developers.google.com', 'fdc.nal.usda.gov', 'www.dietaryguidelines.gov',
+  // Store pages the app links to (manage subscriptions, Apple's standard licence agreement)
+  'apps.apple.com', 'play.google.com', 'www.apple.com', 'support.google.com',
+  // CWOP instructions (link only; the app never relays station data)
+  'madis.ncep.noaa.gov', 'www.wxqa.com',
 ];

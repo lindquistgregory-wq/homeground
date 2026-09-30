@@ -23,3 +23,6 @@ export * from './design/siting';
 export * from './plants/index';
 export * from './sensors/index';
 export * from './planner/index';
+export * from './design/scenarios';
+export * from './monetization/index';
+export * from './offline/tiles';

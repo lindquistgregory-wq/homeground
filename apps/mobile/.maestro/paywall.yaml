@@ -1,0 +1,22 @@
+appId: app.plotwright.planner
+name: Paywall from a locked layer
+---
+# Assumes a property exists (run onboarding-to-schedule first) and the Free plan.
+- launchApp
+- tapOn:
+    index: 0
+    text: ".*acre.*|.*ha.*"
+- scrollUntilVisible:
+    element: "Design your land"
+    direction: DOWN
+- tapOn: "Design your land"
+- tapOn: "Layers"
+- tapOn: "Hillshade 🔒"
+- extendedWaitUntil:
+    visible: "Compare plans"
+    timeout: 15000
+- assertVisible: "Restore purchases"
+- assertVisible: "Terms of Use"
+- assertVisible: "Privacy Policy"
+- assertVisible: ".*per year.*"
+- assertNotVisible: "Advertisement"
