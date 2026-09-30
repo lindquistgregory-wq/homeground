@@ -151,7 +151,8 @@ export default function Profile() {
         </Card>
       )}
 
-      <Button title="Design your land" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcel.id } })} />
+      <Button title="Plan my homestead" onPress={() => router.push({ pathname: '/planner/[id]', params: { id: parcel.id } })} accessibilityHint="Guided questions or on-device AI chat, then a phased plan" />
+      <Button title="Design your land" kind="secondary" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcel.id } })} />
       <Button title="Planting calendar & alerts" kind="secondary" onPress={() => router.push({ pathname: '/calendar/[id]', params: { id: parcel.id } })} />
       <Button title="What grows here: plant library" kind="secondary" onPress={() => router.push({ pathname: '/plants', params: { parcelId: parcel.id } })} />
       <Button title="Sensors & weather station" kind="secondary" onPress={() => router.push({ pathname: '/sensors', params: { parcelId: parcel.id } })} />

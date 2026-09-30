@@ -48,6 +48,14 @@ const store: LocalStore = {
         'SELECT doy, metrics, updated_hlc FROM sensor_days WHERE sensor_id = ? AND date = ? AND device_id = ?', sensorId ?? '', date ?? '', deviceId ?? '');
       return r ? { collection, id, hlc: r.updated_hlc, deleted: false, data: { sensor_id: sensorId, date, device_id: deviceId, doy: r.doy, metrics: r.metrics } } : undefined;
     }
+    if (collection === 'plannerGoals') {
+      const r = await db.getFirstAsync<{ goals: string; updated_hlc: string; deleted: number }>('SELECT goals, updated_hlc, deleted FROM planner_goals WHERE parcel_id = ?', id);
+      return r ? { collection, id, hlc: r.updated_hlc, deleted: r.deleted === 1, data: { goals: r.goals } } : undefined;
+    }
+    if (collection === 'tasks') {
+      const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM tasks WHERE id = ?', id);
+      return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
+    }
     if (collection === 'plantings') {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM plantings WHERE id = ?', id);
       return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
@@ -116,6 +124,22 @@ const store: LocalStore = {
         `INSERT INTO sensor_days (sensor_id, date, device_id, doy, metrics, updated_hlc) VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(sensor_id, date, device_id) DO UPDATE SET doy = excluded.doy, metrics = excluded.metrics, updated_hlc = excluded.updated_hlc`,
         d.sensor_id, d.date, d.device_id ?? rec.id.split('|')[2] ?? 'unknown', Number(d.doy), String(d.metrics), rec.hlc,
+      );
+    } else if (rec.collection === 'plannerGoals') {
+      const d = (rec.data ?? {}) as { goals?: string };
+      await db.runAsync(
+        `INSERT INTO planner_goals (parcel_id, goals, updated_hlc, deleted) VALUES (?, ?, ?, ?)
+         ON CONFLICT(parcel_id) DO UPDATE SET goals = excluded.goals, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
+        rec.id, String(d.goals ?? '{}'), rec.hlc, rec.deleted ? 1 : 0,
+      );
+    } else if (rec.collection === 'tasks') {
+      const d = (rec.data ?? {}) as Record<string, unknown>;
+      const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
+      await db.runAsync(
+        `INSERT INTO tasks (id, parcel_id, title, due, category, notes, done, created_at, updated_hlc, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET title = excluded.title, due = excluded.due, category = excluded.category, notes = excluded.notes, done = excluded.done, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
+        rec.id, String(d.parcel_id ?? ''), String(d.title ?? ''), str(d.due), String(d.category ?? 'admin'), str(d.notes), Number(d.done ?? 0) ? 1 : 0,
+        String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
       );
     } else if (rec.collection === 'plantings') {
       const d = (rec.data ?? {}) as Record<string, unknown>;

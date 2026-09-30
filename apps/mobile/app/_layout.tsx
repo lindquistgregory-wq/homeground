@@ -62,6 +62,7 @@ export default function RootLayout() {
         <Stack.Screen name="sensors/station" options={{ title: 'Connect a weather station' }} />
         <Stack.Screen name="sensors/import" options={{ title: 'Import CSV' }} />
         <Stack.Screen name="sensors/[id]" options={{ title: 'Sensor' }} />
+        <Stack.Screen name="planner/[id]" options={{ title: 'Homestead planner' }} />
         <Stack.Screen name="data-sources" options={{ title: 'Data sources' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack>

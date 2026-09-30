@@ -5,6 +5,7 @@ import { getDb } from './database';
 import { clock, newId } from '../services/identity';
 import { deleteDesignsForParcel } from './designs';
 import { deletePlantingsForParcel } from './plantings';
+import { deletePlannerForParcel } from './planner';
 import { deleteSensorsForParcel } from './sensors';
 import { deleteSecrets } from '../services/secrets';
 
@@ -105,6 +106,7 @@ export async function deleteParcel(id: string): Promise<void> {
   await markPending('parcels', id, hlc);
   await deleteDesignsForParcel(id);
   await deletePlantingsForParcel(id);
+  await deletePlannerForParcel(id);
   await deleteSecrets(await deleteSensorsForParcel(id));
 }
 
