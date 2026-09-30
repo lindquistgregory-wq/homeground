@@ -2,7 +2,10 @@
  * Design mode (§6): place objects to scale on the parcel over real GIS layers, see live sun/shade,
  * get warnings (boundary, setbacks, slope, overlaps), keep versions, and export.
  */
-import { Camera, GeoJSONSource, Layer, Map, RasterSource, type MapRef } from '@maplibre/maplibre-react-native';
+import {
+  Camera, GeoJSONSource, Layer, Map, RasterSource, type CircleLayerSpecification, type FillLayerSpecification,
+  type LineLayerSpecification, type MapRef, type SymbolLayerSpecification,
+} from '@maplibre/maplibre-react-native';
 import {
   OBJECT_LIBRARY, bbox, estimatePv, footprintAreaM2, footprintLonLat, formatArea, formatLength, materialList, newObject, objectType,
   project, siteSuitability, snapRotationToBoundary, snapToContour, snapToGridM, unproject, validateDesign,
@@ -39,15 +42,16 @@ const CATEGORY_LABEL: Record<ObjectCategory, string> = {
 };
 
 /** Viridis stops: colour-blind safe and readable on imagery. */
-const SUN_RAMP = ['interpolate', ['linear'], ['get', 'hours'], 0, '#440154', 3, '#31688e', 6, '#35b779', 9, '#fde725'];
+const SUN_RAMP: NonNullable<FillLayerSpecification['paint']>['fill-color'] =
+  ['interpolate', ['linear'], ['get', 'hours'], 0, '#440154', 3, '#31688e', 6, '#35b779', 9, '#fde725'];
 // Hoisted so map layers keep stable props and big GeoJSON sources aren't re-serialised on every render.
-const HEAT_PAINT = { 'fill-color': SUN_RAMP, 'fill-opacity': 0.6, 'fill-antialias': false };
-const CONTOUR_PAINT = { 'line-color': '#f5e6c8', 'line-width': 0.8, 'line-opacity': 0.8 };
+const HEAT_PAINT: FillLayerSpecification['paint'] = { 'fill-color': SUN_RAMP, 'fill-opacity': 0.6, 'fill-antialias': false };
+const CONTOUR_PAINT: LineLayerSpecification['paint'] = { 'line-color': '#f5e6c8', 'line-width': 0.8, 'line-opacity': 0.8 };
 const CAMERA_PADDING = { top: 40, right: 40, bottom: 40, left: 40 };
-const SENSOR_PIN_PAINT = { 'circle-color': '#4ea8f2', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 };
+const SENSOR_PIN_PAINT: CircleLayerSpecification['paint'] = { 'circle-color': '#4ea8f2', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 };
 // The OpenFreeMap style serves Noto Sans glyphs only; the MapLibre default font stack would render nothing.
-const SENSOR_LABEL_LAYOUT = { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, 1.1], 'text-anchor': 'top' };
-const SENSOR_LABEL_PAINT = { 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 };
+const SENSOR_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, 1.1], 'text-anchor': 'top' };
+const SENSOR_LABEL_PAINT: SymbolLayerSpecification['paint'] = { 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 };
 
 export default function DesignScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -69,10 +73,10 @@ export default function DesignScreen() {
   const [layers, setLayers] = useState({ imagery: true, hillshade: false, contours: false, heatmap: true, siting: false });
   const [contourInterval, setContourInterval] = useState(units === 'imperial' ? 0.6096 : 0.5);
   const [setbackM, setSetbackM] = useState(0);
-  const [siting, setSiting] = useState<{ target: SitingTarget; geo: object; factors: string[] } | null>(null);
+  const [siting, setSiting] = useState<{ target: SitingTarget; geo: ReturnType<typeof heatmapGeoJSON>; factors: string[] } | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [plantings, setPlantings] = useState<Planting[]>([]);
-  const [sensorPins, setSensorPins] = useState<object | null>(null);
+  const [sensorPins, setSensorPins] = useState<GeoJSON.FeatureCollection<GeoJSON.Point, { label: string }> | null>(null);
   const [shadeSeason, setShadeSeason] = useState({ fromDoy: 180, toDoy: 288 });
   const [offlineImagery, setOfflineImagery] = useState<{ template: string; maxZoom: number } | undefined>(undefined);
   const pendingChange = useRef<DesignObject[]>([]);

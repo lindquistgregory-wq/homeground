@@ -125,9 +125,9 @@
       "commercialUse": true
     },
     "react-native-ble-plx": {
-      "license": "Apache-2.0",
+      "license": "MIT",
       "commercialUse": true,
-      "note": "Passive BLE advertisement scanning; no service involved"
+      "note": "Passive BLE advertisement scanning; no service involved. package.json (3.5.x) declares MIT but the shipped LICENSE file is Apache-2.0; both permit commercial use."
     },
     "react-native-google-mobile-ads": {
       "license": "Apache-2.0",
