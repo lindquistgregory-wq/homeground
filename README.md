@@ -4,7 +4,7 @@ A parcel-aware homestead and garden planner for iOS and Android. It works from y
 
 **Name:** Plotwright. A preliminary trademark knockout search on 2026-09-28 found no US marks for it. Get an attorney clearance search before filing. "Homeground" was dropped because of a live US registration covering software (Reg. 6891418).
 
-The build plan is in [`docs/PLAN.md`](docs/PLAN.md). Phase status and known limitations: [`docs/PHASE1_REPORT.md`](docs/PHASE1_REPORT.md), [`docs/PHASE2_REPORT.md`](docs/PHASE2_REPORT.md), [`docs/PHASE3_REPORT.md`](docs/PHASE3_REPORT.md), [`docs/PHASE4_REPORT.md`](docs/PHASE4_REPORT.md). Plant data provenance: [`docs/PLANT_DATA.md`](docs/PLANT_DATA.md); sensors: [`docs/SENSORS.md`](docs/SENSORS.md).
+The build plan is in [`docs/PLAN.md`](docs/PLAN.md). Phase status and known limitations: [`docs/PHASE1_REPORT.md`](docs/PHASE1_REPORT.md), [`docs/PHASE2_REPORT.md`](docs/PHASE2_REPORT.md), [`docs/PHASE3_REPORT.md`](docs/PHASE3_REPORT.md), [`docs/PHASE4_REPORT.md`](docs/PHASE4_REPORT.md), [`docs/PHASE5_REPORT.md`](docs/PHASE5_REPORT.md). Plant data provenance: [`docs/PLANT_DATA.md`](docs/PLANT_DATA.md); sensors: [`docs/SENSORS.md`](docs/SENSORS.md).
 
 ## Repository layout
 
