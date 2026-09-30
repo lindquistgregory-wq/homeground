@@ -45,7 +45,7 @@ export default function Planner() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState<number | null>(null);
-  const scroll = useRef<{ scrollToEnd(o?: { animated?: boolean }): void } | null>(null);
+  const scroll = useRef<ScrollView>(null);
 
   const refreshLists = useCallback(async () => {
     setDrafts(await listDrafts(id));
