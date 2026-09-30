@@ -66,12 +66,12 @@ export type Feature =
   | 'planner.income'
   | 'planner.multiYear'; // budgets and years 2–5 of the phased plan
 
-const FREE_FEATURES: Feature[] = ['layers.core'];
+// Every design object is free; paid tiers add unlimited objects, versions and exports.
+const FREE_FEATURES: Feature[] = ['layers.core', 'design.fullLibrary'];
 const GROWER_FEATURES: Feature[] = [
   ...FREE_FEATURES,
   'layers.standard',
   'sun.heatmaps',
-  'design.fullLibrary',
   'design.versions',
   'export.pdf',
   'planting.bedScoring',
@@ -101,7 +101,7 @@ export const TIER_FEATURES: Record<Tier, ReadonlySet<Feature>> = {
 };
 
 export const TIER_LIMITS: Record<Tier, Limits> = {
-  free: { parcels: 1, designObjects: 25, bleSensors: 1, stationAccounts: 0 },
+  free: { parcels: 1, designObjects: 100, bleSensors: 1, stationAccounts: 0 },
   grower: { parcels: 2, designObjects: Infinity, bleSensors: 5, stationAccounts: 1 },
   pro: { parcels: Infinity, designObjects: Infinity, bleSensors: Infinity, stationAccounts: Infinity },
 };

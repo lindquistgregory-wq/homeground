@@ -30,6 +30,8 @@ test('feature gates, limits and ad rules', () => {
   assert.equal(free.limits.parcels, 1);
   assert.equal(free.has('sun.heatmaps'), false);
   assert.equal(free.has('layers.core'), true, 'core Site Profile layers are free');
+  assert.equal(free.has('design.fullLibrary'), true, 'every design object is free');
+  assert.equal(free.limits.designObjects, 100);
   assert.equal(canShowAdOn('plant-library', free), true);
   assert.equal(canShowAdOn('design', free), false, 'never on the design canvas');
   assert.equal(canShowAdOn('planner-chat', free), false, 'never in AI chat');
@@ -37,6 +39,7 @@ test('feature gates, limits and ad rules', () => {
   const grower = resolveEntitlements([{ productId: PRODUCT_IDS.growerMonthly, expiresAt: '2026-11-01T00:00:00Z' }], { now: NOW });
   assert.equal(grower.showAds, false);
   assert.equal(grower.has('sun.heatmaps'), true);
+  assert.equal(grower.has('design.fullLibrary'), true);
   assert.equal(grower.has('layers.canopyShade'), false);
 
   const pro = resolveEntitlements([{ productId: PRODUCT_IDS.proAnnual, expiresAt: '2027-10-01T00:00:00Z' }], { now: NOW });
