@@ -16,8 +16,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      # Switch to --frozen-lockfile once pnpm-lock.yaml is committed.
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm check:licenses
@@ -32,6 +31,6 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @plotwright/mobile exec expo install --check || true
       - run: pnpm --filter @plotwright/mobile typecheck

@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "tsx --test \"packages/*/src/**/*.test.ts\" \"scripts/**/*.test.ts\"",
-    "typecheck": "tsc -p tsconfig.json --noEmit && pnpm --filter @plotwright/mobile typecheck",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "check:licenses": "tsx scripts/check-licenses.ts",
     "check": "pnpm typecheck && pnpm test && pnpm check:licenses",
     "build:zones": "tsx scripts/build-zone-table.ts",
