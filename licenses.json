@@ -151,5 +151,22 @@
       "license": "MIT",
       "commercialUse": true
     }
+  },
+  "nativeDependencies": {
+    "com.google.mlkit:genai-prompt": {
+      "license": "ML Kit terms (Google APIs Terms + ML Kit GenAI Additional Terms)",
+      "commercialUse": true,
+      "note": "Gemini Nano on-device (beta). Free; no key; users 18+ and app must not target minors; foreground only. modules/ondevice-llm/android"
+    },
+    "org.jetbrains.kotlinx:kotlinx-coroutines-android": {
+      "license": "Apache-2.0",
+      "commercialUse": true,
+      "note": "Coroutines for the Android planner bridge"
+    },
+    "FoundationModels.framework": {
+      "license": "Apple SDK (free with iOS 26+)",
+      "commercialUse": true,
+      "note": "On-device only; Private Cloud Compute is not used. Weak-linked. modules/ondevice-llm/ios"
+    }
   }
 }

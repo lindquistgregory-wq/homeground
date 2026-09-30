@@ -76,3 +76,5 @@ export function stateExtensionHub(stateFips: string | undefined): ExtensionLink 
   const s = (stateHubs.states as Record<string, (Omit<ExtensionLink, 'publisher'> & { institution: string; state: string }) | null>)[stateFips];
   return s ? { ...s, publisher: s.institution } : null;
 }
+
+export * from './knowledge';

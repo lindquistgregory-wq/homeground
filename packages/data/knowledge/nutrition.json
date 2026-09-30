@@ -1,0 +1,3660 @@
+{
+ "source": "USDA ARS FoodData Central, SR Legacy (April 2018 release; public domain / CC0). Nutrient values from the FDC SR Legacy CSV download (FoodData_Central_sr_legacy_food_csv_2019-04-02: food.csv, food_nutrient.csv, sr_legacy_food.csv); refuse % and refuse descriptions from the SR28 ASCII files (FOOD_DES.txt Refuse/Ref_desc, WEIGHT.txt), joined by NDB number. Values cross-checked FDC vs SR28 for all 9 nutrients; 3 foods differ (see notes on kale, celery, turkey-meat). Nutrient ids: 1008 kcal, 1003 protein, 1004 fat, 1005 carbohydrate by difference, 1079 fiber, 1106 vitamin A RAE, 1162 vitamin C, 1087 calcium, 1089 iron.",
+ "sourceUrls": {
+  "fdcApiDocumented": "https://api.nal.usda.gov/fdc/v1/food/{fdcId}?api_key=DEMO_KEY",
+  "fdcFoodPage": "https://fdc.nal.usda.gov/food-details/{fdcId}/nutrients",
+  "fdcDownloads": "https://fdc.nal.usda.gov/download-datasets",
+  "mirrorFdcCsv": "https://github.com/shahadsuliman/USDA-Food-DATA/tree/master/dataset/sr_legacy (FoodData_Central_sr_legacy_food_csv_ 2019-04-02.zip)",
+  "mirrorSr28Ascii": "https://github.com/alyssaq/usda-sqlite/tree/master/data (SR28 FOOD_DES.txt, NUT_DATA.txt, WEIGHT.txt)"
+ },
+ "retrievalNote": "api.nal.usda.gov returned HTTP 429 (DEMO_KEY rate limit) and fdc.nal.usda.gov / api.nal.usda.gov were blocked by the session egress policy, so values were read from GitHub mirrors of the official USDA downloads listed in sourceUrls.",
+ "retrieved": "2026-09-29",
+ "fieldNotes": {
+  "per100g": "Per 100 g of edible portion, raw.",
+  "ediblePortion": "1 - SR Legacy refuse% / 100: fraction of the harvestForm weight that is edible.",
+  "harvestForm": "What the plant-yield figure is assumed to weigh; ediblePortion converts it to edible weight.",
+  "alternates": "Other SR Legacy entries for variants; per100g as edible portion, refusePct as published."
+ },
+ "foods": {
+  "tomato": {
+   "food": true,
+   "name": "Tomato",
+   "fdcId": 170457,
+   "ndbNumber": "11529",
+   "dataType": "SR Legacy",
+   "description": "Tomatoes, red, ripe, raw, year round average",
+   "per100g": {
+    "kcal": 18,
+    "proteinG": 0.88,
+    "fatG": 0.2,
+    "carbG": 3.89,
+    "fiberG": 1.2,
+    "vitARaeUg": 42,
+    "vitCMg": 13.7,
+    "calciumMg": 10,
+    "ironMg": 0.27
+   },
+   "ediblePortion": 0.91,
+   "refuseNote": "SR Legacy refuse 9%: Core and stem ends",
+   "harvestForm": "whole fresh ripe fruit"
+  },
+  "pepper-sweet": {
+   "food": true,
+   "name": "Sweet pepper",
+   "fdcId": 170427,
+   "ndbNumber": "11333",
+   "dataType": "SR Legacy",
+   "description": "Peppers, sweet, green, raw",
+   "per100g": {
+    "kcal": 20,
+    "proteinG": 0.86,
+    "fatG": 0.17,
+    "carbG": 4.64,
+    "fiberG": 1.7,
+    "vitARaeUg": 18,
+    "vitCMg": 80.4,
+    "calciumMg": 10,
+    "ironMg": 0.34
+   },
+   "ediblePortion": 0.82,
+   "refuseNote": "SR Legacy refuse 18%: Stem ends, seeds and core",
+   "harvestForm": "whole fresh fruit (green stage)",
+   "notes": [
+    "Green (unripe) sweet pepper used. If harvested red/ripe, use alternate (vitamin A and C much higher)."
+   ],
+   "alternates": [
+    {
+     "label": "red (ripe) sweet pepper",
+     "fdcId": 170108,
+     "dataType": "SR Legacy",
+     "description": "Peppers, sweet, red, raw",
+     "per100g": {
+      "kcal": 26,
+      "proteinG": 0.99,
+      "fatG": 0.3,
+      "carbG": 6.03,
+      "fiberG": 2.1,
+      "vitARaeUg": 157,
+      "vitCMg": 127.7,
+      "calciumMg": 7,
+      "ironMg": 0.43
+     },
+     "refusePct": 18.0,
+     "refuseDescription": "Stem ends, seed and core"
+    }
+   ]
+  },
+  "pepper-hot": {
+   "food": true,
+   "name": "Hot pepper",
+   "fdcId": 170497,
+   "ndbNumber": "11670",
+   "dataType": "SR Legacy",
+   "description": "Peppers, hot chili, green, raw",
+   "per100g": {
+    "kcal": 40,
+    "proteinG": 2,
+    "fatG": 0.2,
+    "carbG": 9.46,
+    "fiberG": 1.5,
+    "vitARaeUg": 59,
+    "vitCMg": 242.5,
+    "calciumMg": 18,
+    "ironMg": 1.2
+   },
+   "ediblePortion": 0.73,
+   "refuseNote": "SR Legacy refuse 27%: Stem ends, seeds and core",
+   "harvestForm": "whole fresh fruit (green stage)",
+   "notes": [
+    "Green hot chili used; red (ripe) alternate given."
+   ],
+   "alternates": [
+    {
+     "label": "red (ripe) hot chili pepper",
+     "fdcId": 170106,
+     "dataType": "SR Legacy",
+     "description": "Peppers, hot chili, red, raw",
+     "per100g": {
+      "kcal": 40,
+      "proteinG": 1.87,
+      "fatG": 0.44,
+      "carbG": 8.81,
+      "fiberG": 1.5,
+      "vitARaeUg": 48,
+      "vitCMg": 143.7,
+      "calciumMg": 14,
+      "ironMg": 1.03
+     },
+     "refusePct": 27.0,
+     "refuseDescription": "Stem ends, seeds and core"
+    }
+   ]
+  },
+  "eggplant": {
+   "food": true,
+   "name": "Eggplant",
+   "fdcId": 169228,
+   "ndbNumber": "11209",
+   "dataType": "SR Legacy",
+   "description": "Eggplant, raw",
+   "per100g": {
+    "kcal": 25,
+    "proteinG": 0.98,
+    "fatG": 0.18,
+    "carbG": 5.88,
+    "fiberG": 3,
+    "vitARaeUg": 1,
+    "vitCMg": 2.2,
+    "calciumMg": 9,
+    "ironMg": 0.23
+   },
+   "ediblePortion": 0.81,
+   "refuseNote": "SR Legacy refuse 19%: Ends, parings and trimmings",
+   "harvestForm": "whole fresh fruit"
+  },
+  "potato": {
+   "food": true,
+   "name": "Potato",
+   "fdcId": 170026,
+   "ndbNumber": "11352",
+   "dataType": "SR Legacy",
+   "description": "Potatoes, flesh and skin, raw",
+   "per100g": {
+    "kcal": 77,
+    "proteinG": 2.05,
+    "fatG": 0.09,
+    "carbG": 17.49,
+    "fiberG": 2.1,
+    "vitARaeUg": 0,
+    "vitCMg": 19.7,
+    "calciumMg": 12,
+    "ironMg": 0.81
+   },
+   "ediblePortion": 0.75,
+   "refuseNote": "SR Legacy refuse 25%: Parings and trimmings",
+   "harvestForm": "whole fresh tubers",
+   "notes": [
+    "SR Legacy lists 25% refuse (\"Parings and trimmings\") even for the flesh-and-skin entry; if eaten skin-on, actual waste is lower. Value reported as published."
+   ]
+  },
+  "sweet-potato": {
+   "food": true,
+   "name": "Sweet potato",
+   "fdcId": 168482,
+   "ndbNumber": "11507",
+   "dataType": "SR Legacy",
+   "description": "Sweet potato, raw, unprepared (Includes foods for USDA's Food Distribution Program)",
+   "per100g": {
+    "kcal": 86,
+    "proteinG": 1.57,
+    "fatG": 0.05,
+    "carbG": 20.12,
+    "fiberG": 3,
+    "vitARaeUg": 709,
+    "vitCMg": 2.4,
+    "calciumMg": 30,
+    "ironMg": 0.61
+   },
+   "ediblePortion": 0.72,
+   "refuseNote": "SR Legacy refuse 28%: Parings and trimmings",
+   "harvestForm": "whole fresh roots"
+  },
+  "lettuce": {
+   "food": true,
+   "name": "Lettuce",
+   "fdcId": 169249,
+   "ndbNumber": "11253",
+   "dataType": "SR Legacy",
+   "description": "Lettuce, green leaf, raw",
+   "per100g": {
+    "kcal": 15,
+    "proteinG": 1.36,
+    "fatG": 0.15,
+    "carbG": 2.87,
+    "fiberG": 1.3,
+    "vitARaeUg": 370,
+    "vitCMg": 9.2,
+    "calciumMg": 36,
+    "ironMg": 0.86
+   },
+   "ediblePortion": 0.64,
+   "refuseNote": "SR Legacy refuse 36%: Outer leaves, core and trimmings",
+   "harvestForm": "whole fresh heads/leaves as cut",
+   "notes": [
+    "Green leaf lettuce used. Romaine (169247, 6% refuse), butterhead (168429, 26%), red leaf (168431, 20%), iceberg (169248, 5%) are also in SR Legacy."
+   ],
+   "alternates": [
+    {
+     "label": "romaine",
+     "fdcId": 169247,
+     "dataType": "SR Legacy",
+     "description": "Lettuce, cos or romaine, raw",
+     "per100g": {
+      "kcal": 17,
+      "proteinG": 1.23,
+      "fatG": 0.3,
+      "carbG": 3.29,
+      "fiberG": 2.1,
+      "vitARaeUg": 436,
+      "vitCMg": 4,
+      "calciumMg": 33,
+      "ironMg": 0.97
+     },
+     "refusePct": 6.0,
+     "refuseDescription": "Core"
+    },
+    {
+     "label": "butterhead",
+     "fdcId": 168429,
+     "dataType": "SR Legacy",
+     "description": "Lettuce, butterhead (includes boston and bibb types), raw",
+     "per100g": {
+      "kcal": 13,
+      "proteinG": 1.35,
+      "fatG": 0.22,
+      "carbG": 2.23,
+      "fiberG": 1.1,
+      "vitARaeUg": 166,
+      "vitCMg": 3.7,
+      "calciumMg": 35,
+      "ironMg": 1.24
+     },
+     "refusePct": 26.0,
+     "refuseDescription": "Outer leaves and core"
+    },
+    {
+     "label": "red leaf",
+     "fdcId": 168431,
+     "dataType": "SR Legacy",
+     "description": "Lettuce, red leaf, raw",
+     "per100g": {
+      "kcal": 13,
+      "proteinG": 1.33,
+      "fatG": 0.22,
+      "carbG": 2.26,
+      "fiberG": 0.9,
+      "vitARaeUg": 375,
+      "vitCMg": 3.7,
+      "calciumMg": 33,
+      "ironMg": 1.2
+     },
+     "refusePct": 20.0,
+     "refuseDescription": "Core and damaged outer leaves"
+    }
+   ]
+  },
+  "spinach": {
+   "food": true,
+   "name": "Spinach",
+   "fdcId": 168462,
+   "ndbNumber": "11457",
+   "dataType": "SR Legacy",
+   "description": "Spinach, raw",
+   "per100g": {
+    "kcal": 23,
+    "proteinG": 2.86,
+    "fatG": 0.39,
+    "carbG": 3.63,
+    "fiberG": 2.2,
+    "vitARaeUg": 469,
+    "vitCMg": 28.1,
+    "calciumMg": 99,
+    "ironMg": 2.71
+   },
+   "ediblePortion": 0.72,
+   "refuseNote": "SR Legacy refuse 28%: Large stems and roots",
+   "harvestForm": "fresh cut leaves with stems"
+  },
+  "kale": {
+   "food": true,
+   "name": "Kale",
+   "fdcId": 168421,
+   "ndbNumber": "11233",
+   "dataType": "SR Legacy",
+   "description": "Kale, raw",
+   "per100g": {
+    "kcal": 35,
+    "proteinG": 2.92,
+    "fatG": 1.49,
+    "carbG": 4.42,
+    "fiberG": 4.1,
+    "vitARaeUg": 241,
+    "vitCMg": 93.4,
+    "calciumMg": 254,
+    "ironMg": 1.6
+   },
+   "ediblePortion": 0.72,
+   "refuseNote": "SR Legacy refuse 28%: Stem ends, tough stems and tough midrib parts",
+   "harvestForm": "fresh leaves with stems",
+   "notes": [
+    "SR Legacy as distributed in FDC (fdc_id 168421, CSV publication 2019-04-01) differs from the SR28 ASCII release for kale (SR28: 49 kcal, protein 4.28 g, fat 0.93 g, carb 8.75 g, fiber 3.6 g, RAE 500 ug, vit C 120 mg, Ca 150 mg, Fe 1.47 mg). FDC values used."
+   ]
+  },
+  "collards": {
+   "food": true,
+   "name": "Collards",
+   "fdcId": 170406,
+   "ndbNumber": "11161",
+   "dataType": "SR Legacy",
+   "description": "Collards, raw",
+   "per100g": {
+    "kcal": 32,
+    "proteinG": 3.02,
+    "fatG": 0.61,
+    "carbG": 5.42,
+    "fiberG": 4,
+    "vitARaeUg": 251,
+    "vitCMg": 35.3,
+    "calciumMg": 232,
+    "ironMg": 0.47
+   },
+   "ediblePortion": 0.57,
+   "refuseNote": "SR Legacy refuse 43%: Stems",
+   "harvestForm": "fresh leaves with stems"
+  },
+  "cabbage": {
+   "food": true,
+   "name": "Cabbage",
+   "fdcId": 169975,
+   "ndbNumber": "11109",
+   "dataType": "SR Legacy",
+   "description": "Cabbage, raw",
+   "per100g": {
+    "kcal": 25,
+    "proteinG": 1.28,
+    "fatG": 0.1,
+    "carbG": 5.8,
+    "fiberG": 2.5,
+    "vitARaeUg": 5,
+    "vitCMg": 36.6,
+    "calciumMg": 40,
+    "ironMg": 0.47
+   },
+   "ediblePortion": 0.8,
+   "refuseNote": "SR Legacy refuse 20%: Outer leaves and core",
+   "harvestForm": "whole fresh heads (trimmed)"
+  },
+  "broccoli": {
+   "food": true,
+   "name": "Broccoli",
+   "fdcId": 170379,
+   "ndbNumber": "11090",
+   "dataType": "SR Legacy",
+   "description": "Broccoli, raw",
+   "per100g": {
+    "kcal": 34,
+    "proteinG": 2.82,
+    "fatG": 0.37,
+    "carbG": 6.64,
+    "fiberG": 2.6,
+    "vitARaeUg": 31,
+    "vitCMg": 89.2,
+    "calciumMg": 47,
+    "ironMg": 0.73
+   },
+   "ediblePortion": 0.61,
+   "refuseNote": "SR Legacy refuse 39%: Leaves and tough stalks with trimmings",
+   "harvestForm": "fresh heads with stalk as cut"
+  },
+  "cauliflower": {
+   "food": true,
+   "name": "Cauliflower",
+   "fdcId": 169986,
+   "ndbNumber": "11135",
+   "dataType": "SR Legacy",
+   "description": "Cauliflower, raw",
+   "per100g": {
+    "kcal": 25,
+    "proteinG": 1.92,
+    "fatG": 0.28,
+    "carbG": 4.97,
+    "fiberG": 2,
+    "vitARaeUg": 0,
+    "vitCMg": 48.2,
+    "calciumMg": 22,
+    "ironMg": 0.42
+   },
+   "ediblePortion": 0.39,
+   "refuseNote": "SR Legacy refuse 61%: Leaf stalks, cores and trimmings",
+   "harvestForm": "whole fresh heads with leaves"
+  },
+  "brussels-sprouts": {
+   "food": true,
+   "name": "Brussels sprouts",
+   "fdcId": 170383,
+   "ndbNumber": "11098",
+   "dataType": "SR Legacy",
+   "description": "Brussels sprouts, raw",
+   "per100g": {
+    "kcal": 43,
+    "proteinG": 3.38,
+    "fatG": 0.3,
+    "carbG": 8.95,
+    "fiberG": 3.8,
+    "vitARaeUg": 38,
+    "vitCMg": 85,
+    "calciumMg": 42,
+    "ironMg": 1.4
+   },
+   "ediblePortion": 0.9,
+   "refuseNote": "SR Legacy refuse 10%: Outer leaves",
+   "harvestForm": "fresh sprouts picked from stalk"
+  },
+  "kohlrabi": {
+   "food": true,
+   "name": "Kohlrabi",
+   "fdcId": 168424,
+   "ndbNumber": "11241",
+   "dataType": "SR Legacy",
+   "description": "Kohlrabi, raw",
+   "per100g": {
+    "kcal": 27,
+    "proteinG": 1.7,
+    "fatG": 0.1,
+    "carbG": 6.2,
+    "fiberG": 3.6,
+    "vitARaeUg": 2,
+    "vitCMg": 62,
+    "calciumMg": 24,
+    "ironMg": 0.4
+   },
+   "ediblePortion": 0.46,
+   "refuseNote": "SR Legacy refuse 54%: Leaves, stems and parings",
+   "harvestForm": "fresh bulbs with leaves and stems",
+   "notes": [
+    "SR refuse 54% includes leaves; if yield figure is trimmed bulbs only, edible fraction is higher."
+   ]
+  },
+  "swiss-chard": {
+   "food": true,
+   "name": "Swiss chard",
+   "fdcId": 169991,
+   "ndbNumber": "11147",
+   "dataType": "SR Legacy",
+   "description": "Chard, swiss, raw",
+   "per100g": {
+    "kcal": 19,
+    "proteinG": 1.8,
+    "fatG": 0.2,
+    "carbG": 3.74,
+    "fiberG": 1.6,
+    "vitARaeUg": 306,
+    "vitCMg": 30,
+    "calciumMg": 51,
+    "ironMg": 1.8
+   },
+   "ediblePortion": 0.92,
+   "refuseNote": "SR Legacy refuse 8%: Tough stems and damaged leaves",
+   "harvestForm": "fresh leaves with stems"
+  },
+  "beet": {
+   "food": true,
+   "name": "Beet",
+   "fdcId": 169145,
+   "ndbNumber": "11080",
+   "dataType": "SR Legacy",
+   "description": "Beets, raw",
+   "per100g": {
+    "kcal": 43,
+    "proteinG": 1.61,
+    "fatG": 0.17,
+    "carbG": 9.56,
+    "fiberG": 2.8,
+    "vitARaeUg": 2,
+    "vitCMg": 4.9,
+    "calciumMg": 16,
+    "ironMg": 0.8
+   },
+   "ediblePortion": 0.67,
+   "refuseNote": "SR Legacy refuse 33%: Parings and part tops",
+   "harvestForm": "fresh roots with part tops",
+   "notes": [
+    "Nutrients are for the root. Beet greens are also edible: alternate given."
+   ],
+   "alternates": [
+    {
+     "label": "beet greens",
+     "fdcId": 170375,
+     "dataType": "SR Legacy",
+     "description": "Beet greens, raw",
+     "per100g": {
+      "kcal": 22,
+      "proteinG": 2.2,
+      "fatG": 0.13,
+      "carbG": 4.33,
+      "fiberG": 3.7,
+      "vitARaeUg": 316,
+      "vitCMg": 30,
+      "calciumMg": 117,
+      "ironMg": 2.57
+     },
+     "refusePct": 44.0,
+     "refuseDescription": "Stems, bruised and old leaves"
+    }
+   ]
+  },
+  "carrot": {
+   "food": true,
+   "name": "Carrot",
+   "fdcId": 170393,
+   "ndbNumber": "11124",
+   "dataType": "SR Legacy",
+   "description": "Carrots, raw",
+   "per100g": {
+    "kcal": 41,
+    "proteinG": 0.93,
+    "fatG": 0.24,
+    "carbG": 9.58,
+    "fiberG": 2.8,
+    "vitARaeUg": 835,
+    "vitCMg": 5.9,
+    "calciumMg": 33,
+    "ironMg": 0.3
+   },
+   "ediblePortion": 0.89,
+   "refuseNote": "SR Legacy refuse 11%: Crown, tops and scrapings",
+   "harvestForm": "fresh roots"
+  },
+  "radish": {
+   "food": true,
+   "name": "Radish",
+   "fdcId": 169276,
+   "ndbNumber": "11429",
+   "dataType": "SR Legacy",
+   "description": "Radishes, raw",
+   "per100g": {
+    "kcal": 16,
+    "proteinG": 0.68,
+    "fatG": 0.1,
+    "carbG": 3.4,
+    "fiberG": 1.6,
+    "vitARaeUg": 0,
+    "vitCMg": 14.8,
+    "calciumMg": 25,
+    "ironMg": 0.34
+   },
+   "ediblePortion": 0.9,
+   "refuseNote": "SR Legacy refuse 10%: Stem ends, rootlets and trimmings",
+   "harvestForm": "fresh roots"
+  },
+  "turnip": {
+   "food": true,
+   "name": "Turnip",
+   "fdcId": 170465,
+   "ndbNumber": "11564",
+   "dataType": "SR Legacy",
+   "description": "Turnips, raw",
+   "per100g": {
+    "kcal": 28,
+    "proteinG": 0.9,
+    "fatG": 0.1,
+    "carbG": 6.43,
+    "fiberG": 1.8,
+    "vitARaeUg": 0,
+    "vitCMg": 21,
+    "calciumMg": 30,
+    "ironMg": 0.3
+   },
+   "ediblePortion": 0.81,
+   "refuseNote": "SR Legacy refuse 19%: Parings",
+   "harvestForm": "fresh roots",
+   "notes": [
+    "Nutrients are for the root. Turnip greens alternate given."
+   ],
+   "alternates": [
+    {
+     "label": "turnip greens",
+     "fdcId": 170061,
+     "dataType": "SR Legacy",
+     "description": "Turnip greens, raw",
+     "per100g": {
+      "kcal": 32,
+      "proteinG": 1.5,
+      "fatG": 0.3,
+      "carbG": 7.13,
+      "fiberG": 3.2,
+      "vitARaeUg": 579,
+      "vitCMg": 60,
+      "calciumMg": 190,
+      "ironMg": 1.1
+     },
+     "refusePct": 30.0,
+     "refuseDescription": "Root crown, tough stems and discarded leaves"
+    }
+   ]
+  },
+  "parsnip": {
+   "food": true,
+   "name": "Parsnip",
+   "fdcId": 170417,
+   "ndbNumber": "11298",
+   "dataType": "SR Legacy",
+   "description": "Parsnips, raw",
+   "per100g": {
+    "kcal": 75,
+    "proteinG": 1.2,
+    "fatG": 0.3,
+    "carbG": 17.99,
+    "fiberG": 4.9,
+    "vitARaeUg": 0,
+    "vitCMg": 17,
+    "calciumMg": 36,
+    "ironMg": 0.59
+   },
+   "ediblePortion": 0.85,
+   "refuseNote": "SR Legacy refuse 15%: Parings",
+   "harvestForm": "fresh roots"
+  },
+  "onion": {
+   "food": true,
+   "name": "Onion (bulb)",
+   "fdcId": 170000,
+   "ndbNumber": "11282",
+   "dataType": "SR Legacy",
+   "description": "Onions, raw",
+   "per100g": {
+    "kcal": 40,
+    "proteinG": 1.1,
+    "fatG": 0.1,
+    "carbG": 9.34,
+    "fiberG": 1.7,
+    "vitARaeUg": 0,
+    "vitCMg": 7.4,
+    "calciumMg": 23,
+    "ironMg": 0.21
+   },
+   "ediblePortion": 0.9,
+   "refuseNote": "SR Legacy refuse 10%: Stem ends, sprouts and defects",
+   "harvestForm": "fresh/cured bulbs"
+  },
+  "garlic": {
+   "food": true,
+   "name": "Garlic",
+   "fdcId": 169230,
+   "ndbNumber": "11215",
+   "dataType": "SR Legacy",
+   "description": "Garlic, raw",
+   "per100g": {
+    "kcal": 149,
+    "proteinG": 6.36,
+    "fatG": 0.5,
+    "carbG": 33.06,
+    "fiberG": 2.1,
+    "vitARaeUg": 0,
+    "vitCMg": 31.2,
+    "calciumMg": 181,
+    "ironMg": 1.7
+   },
+   "ediblePortion": 0.87,
+   "refuseNote": "SR Legacy refuse 13%: Knob and skin",
+   "harvestForm": "whole cured bulbs (heads)"
+  },
+  "leek": {
+   "food": true,
+   "name": "Leek",
+   "fdcId": 169246,
+   "ndbNumber": "11246",
+   "dataType": "SR Legacy",
+   "description": "Leeks, (bulb and lower leaf-portion), raw",
+   "per100g": {
+    "kcal": 61,
+    "proteinG": 1.5,
+    "fatG": 0.3,
+    "carbG": 14.15,
+    "fiberG": 1.8,
+    "vitARaeUg": 83,
+    "vitCMg": 12,
+    "calciumMg": 59,
+    "ironMg": 2.1
+   },
+   "ediblePortion": 0.44,
+   "refuseNote": "SR Legacy refuse 56%: Tops, root end and skin",
+   "harvestForm": "whole fresh plants",
+   "notes": [
+    "SR refuse 56% (tops, root end and skin); nutrients are for bulb and lower leaf portion."
+   ]
+  },
+  "scallion": {
+   "food": true,
+   "name": "Green onion",
+   "fdcId": 170005,
+   "ndbNumber": "11291",
+   "dataType": "SR Legacy",
+   "description": "Onions, spring or scallions (includes tops and bulb), raw",
+   "per100g": {
+    "kcal": 32,
+    "proteinG": 1.83,
+    "fatG": 0.19,
+    "carbG": 7.34,
+    "fiberG": 2.6,
+    "vitARaeUg": 50,
+    "vitCMg": 18.8,
+    "calciumMg": 72,
+    "ironMg": 1.48
+   },
+   "ediblePortion": 0.96,
+   "refuseNote": "SR Legacy refuse 4%: Rootlets",
+   "harvestForm": "whole fresh plants (bulb and tops)"
+  },
+  "pea": {
+   "food": true,
+   "name": "Garden pea",
+   "fdcId": 170419,
+   "ndbNumber": "11304",
+   "dataType": "SR Legacy",
+   "description": "Peas, green, raw",
+   "per100g": {
+    "kcal": 81,
+    "proteinG": 5.42,
+    "fatG": 0.4,
+    "carbG": 14.45,
+    "fiberG": 5.7,
+    "vitARaeUg": 38,
+    "vitCMg": 40,
+    "calciumMg": 25,
+    "ironMg": 1.47
+   },
+   "ediblePortion": 0.38,
+   "refuseNote": "SR Legacy refuse 62%: Pods and inedible peas",
+   "harvestForm": "fresh pods (shelling peas, weighed in pod)",
+   "notes": [
+    "Assumes shelling peas weighed in the pod (refuse 62% = pods). For snap/snow peas eaten whole use alternate (6% refuse)."
+   ],
+   "alternates": [
+    {
+     "label": "edible-podded (snap/snow) peas",
+     "fdcId": 170010,
+     "dataType": "SR Legacy",
+     "description": "Peas, edible-podded, raw",
+     "per100g": {
+      "kcal": 42,
+      "proteinG": 2.8,
+      "fatG": 0.2,
+      "carbG": 7.55,
+      "fiberG": 2.6,
+      "vitARaeUg": 54,
+      "vitCMg": 60,
+      "calciumMg": 43,
+      "ironMg": 2.08
+     },
+     "refusePct": 6.0,
+     "refuseDescription": "Ends and strings"
+    }
+   ]
+  },
+  "bean-bush": {
+   "food": true,
+   "name": "Snap bean (bush)",
+   "fdcId": 169961,
+   "ndbNumber": "11052",
+   "dataType": "SR Legacy",
+   "description": "Beans, snap, green, raw",
+   "per100g": {
+    "kcal": 31,
+    "proteinG": 1.83,
+    "fatG": 0.22,
+    "carbG": 6.97,
+    "fiberG": 2.7,
+    "vitARaeUg": 35,
+    "vitCMg": 12.2,
+    "calciumMg": 37,
+    "ironMg": 1.03
+   },
+   "ediblePortion": 0.88,
+   "refuseNote": "SR Legacy refuse 12%: Ends, strings, trimmings",
+   "harvestForm": "fresh green pods"
+  },
+  "bean-pole": {
+   "food": true,
+   "name": "Snap bean (pole)",
+   "fdcId": 169961,
+   "ndbNumber": "11052",
+   "dataType": "SR Legacy",
+   "description": "Beans, snap, green, raw",
+   "per100g": {
+    "kcal": 31,
+    "proteinG": 1.83,
+    "fatG": 0.22,
+    "carbG": 6.97,
+    "fiberG": 2.7,
+    "vitARaeUg": 35,
+    "vitCMg": 12.2,
+    "calciumMg": 37,
+    "ironMg": 1.03
+   },
+   "ediblePortion": 0.88,
+   "refuseNote": "SR Legacy refuse 12%: Ends, strings, trimmings",
+   "harvestForm": "fresh green pods"
+  },
+  "bean-dry": {
+   "food": true,
+   "name": "Dry bean",
+   "fdcId": 175193,
+   "ndbNumber": "16027",
+   "dataType": "SR Legacy",
+   "description": "Beans, kidney, all types, mature seeds, raw",
+   "per100g": {
+    "kcal": 333,
+    "proteinG": 23.58,
+    "fatG": 0.83,
+    "carbG": 60.01,
+    "fiberG": 24.9,
+    "vitARaeUg": 0,
+    "vitCMg": 4.5,
+    "calciumMg": 143,
+    "ironMg": 8.2
+   },
+   "ediblePortion": 1.0,
+   "refuseNote": "SR Legacy refuse 0% (no refuse description)",
+   "harvestForm": "dry shelled beans",
+   "notes": [
+    "Kidney beans (all types) used as the representative dry Phaseolus bean. Refuse 0 applies to shelled dry seed; the yield is assumed to be shelled dry beans."
+   ],
+   "alternates": [
+    {
+     "label": "black beans",
+     "fdcId": 173734,
+     "dataType": "SR Legacy",
+     "description": "Beans, black, mature seeds, raw",
+     "per100g": {
+      "kcal": 341,
+      "proteinG": 21.6,
+      "fatG": 1.42,
+      "carbG": 62.36,
+      "fiberG": 15.5,
+      "vitARaeUg": 0,
+      "vitCMg": 0,
+      "calciumMg": 123,
+      "ironMg": 5.02
+     },
+     "refusePct": 0.0,
+     "refuseDescription": null
+    },
+    {
+     "label": "pinto beans",
+     "fdcId": 175199,
+     "dataType": "SR Legacy",
+     "description": "Beans, pinto, mature seeds, raw (Includes foods for USDA's Food Distribution Program)",
+     "per100g": {
+      "kcal": 347,
+      "proteinG": 21.42,
+      "fatG": 1.23,
+      "carbG": 62.55,
+      "fiberG": 15.5,
+      "vitARaeUg": 0,
+      "vitCMg": 6.3,
+      "calciumMg": 113,
+      "ironMg": 5.07
+     },
+     "refusePct": 0.0,
+     "refuseDescription": null
+    },
+    {
+     "label": "navy beans",
+     "fdcId": 173745,
+     "dataType": "SR Legacy",
+     "description": "Beans, navy, mature seeds, raw",
+     "per100g": {
+      "kcal": 337,
+      "proteinG": 22.33,
+      "fatG": 1.5,
+      "carbG": 60.75,
+      "fiberG": 15.3,
+      "vitARaeUg": 0,
+      "vitCMg": null,
+      "calciumMg": 147,
+      "ironMg": 5.49
+     },
+     "refusePct": 0.0,
+     "refuseDescription": null
+    }
+   ]
+  },
+  "bean-lima": {
+   "food": true,
+   "name": "Lima bean",
+   "fdcId": 168396,
+   "ndbNumber": "11031",
+   "dataType": "SR Legacy",
+   "description": "Lima beans, immature seeds, raw",
+   "per100g": {
+    "kcal": 113,
+    "proteinG": 6.84,
+    "fatG": 0.86,
+    "carbG": 20.17,
+    "fiberG": 4.9,
+    "vitARaeUg": 10,
+    "vitCMg": 23.4,
+    "calciumMg": 34,
+    "ironMg": 3.14
+   },
+   "ediblePortion": 0.44,
+   "refuseNote": "SR Legacy refuse 56%: Pods and imperfect beans",
+   "harvestForm": "fresh green pods (immature seed, weighed in pod)",
+   "notes": [
+    "Assumes green limas weighed in the pod (refuse 56% = pods and imperfect beans). If grown to dry seed use alternate."
+   ],
+   "alternates": [
+    {
+     "label": "lima beans, large, mature (dry) seeds",
+     "fdcId": 174252,
+     "dataType": "SR Legacy",
+     "description": "Lima beans, large, mature seeds, raw",
+     "per100g": {
+      "kcal": 338,
+      "proteinG": 21.46,
+      "fatG": 0.69,
+      "carbG": 63.38,
+      "fiberG": 19,
+      "vitARaeUg": 0,
+      "vitCMg": 0,
+      "calciumMg": 81,
+      "ironMg": 7.51
+     },
+     "refusePct": 0.0,
+     "refuseDescription": null
+    }
+   ]
+  },
+  "cucumber": {
+   "food": true,
+   "name": "Cucumber",
+   "fdcId": 168409,
+   "ndbNumber": "11205",
+   "dataType": "SR Legacy",
+   "description": "Cucumber, with peel, raw",
+   "per100g": {
+    "kcal": 15,
+    "proteinG": 0.65,
+    "fatG": 0.11,
+    "carbG": 3.63,
+    "fiberG": 0.5,
+    "vitARaeUg": 5,
+    "vitCMg": 2.8,
+    "calciumMg": 16,
+    "ironMg": 0.28
+   },
+   "ediblePortion": 0.97,
+   "refuseNote": "SR Legacy refuse 3%: Ends",
+   "harvestForm": "whole fresh fruit"
+  },
+  "squash-summer": {
+   "food": true,
+   "name": "Summer squash / zucchini",
+   "fdcId": 169291,
+   "ndbNumber": "11477",
+   "dataType": "SR Legacy",
+   "description": "Squash, summer, zucchini, includes skin, raw",
+   "per100g": {
+    "kcal": 17,
+    "proteinG": 1.21,
+    "fatG": 0.32,
+    "carbG": 3.11,
+    "fiberG": 1,
+    "vitARaeUg": 10,
+    "vitCMg": 17.9,
+    "calciumMg": 16,
+    "ironMg": 0.37
+   },
+   "ediblePortion": 0.95,
+   "refuseNote": "SR Legacy refuse 5%: Ends",
+   "harvestForm": "whole fresh fruit",
+   "alternates": [
+    {
+     "label": "summer squash, all varieties",
+     "fdcId": 170487,
+     "dataType": "SR Legacy",
+     "description": "Squash, summer, all varieties, raw",
+     "per100g": {
+      "kcal": 16,
+      "proteinG": 1.21,
+      "fatG": 0.18,
+      "carbG": 3.35,
+      "fiberG": 1.1,
+      "vitARaeUg": 10,
+      "vitCMg": 17,
+      "calciumMg": 15,
+      "ironMg": 0.35
+     },
+     "refusePct": 5.0,
+     "refuseDescription": "Ends"
+    }
+   ]
+  },
+  "squash-winter": {
+   "food": true,
+   "name": "Winter squash",
+   "fdcId": 170489,
+   "ndbNumber": "11643",
+   "dataType": "SR Legacy",
+   "description": "Squash, winter, all varieties, raw",
+   "per100g": {
+    "kcal": 34,
+    "proteinG": 0.95,
+    "fatG": 0.13,
+    "carbG": 8.59,
+    "fiberG": 1.5,
+    "vitARaeUg": 68,
+    "vitCMg": 12.3,
+    "calciumMg": 28,
+    "ironMg": 0.58
+   },
+   "ediblePortion": 0.71,
+   "refuseNote": "SR Legacy refuse 29%: Seeds, rind and stem",
+   "harvestForm": "whole mature fruit",
+   "alternates": [
+    {
+     "label": "butternut",
+     "fdcId": 169295,
+     "dataType": "SR Legacy",
+     "description": "Squash, winter, butternut, raw",
+     "per100g": {
+      "kcal": 45,
+      "proteinG": 1,
+      "fatG": 0.1,
+      "carbG": 11.69,
+      "fiberG": 2,
+      "vitARaeUg": 532,
+      "vitCMg": 21,
+      "calciumMg": 48,
+      "ironMg": 0.7
+     },
+     "refusePct": 16.0,
+     "refuseDescription": "Seeds, rind and trimmings"
+    },
+    {
+     "label": "acorn",
+     "fdcId": 168472,
+     "dataType": "SR Legacy",
+     "description": "Squash, winter, acorn, raw",
+     "per100g": {
+      "kcal": 40,
+      "proteinG": 0.8,
+      "fatG": 0.1,
+      "carbG": 10.42,
+      "fiberG": 1.5,
+      "vitARaeUg": 18,
+      "vitCMg": 11,
+      "calciumMg": 33,
+      "ironMg": 0.7
+     },
+     "refusePct": 24.0,
+     "refuseDescription": "Rind"
+    },
+    {
+     "label": "hubbard",
+     "fdcId": 168475,
+     "dataType": "SR Legacy",
+     "description": "Squash, winter, hubbard, raw",
+     "per100g": {
+      "kcal": 40,
+      "proteinG": 2,
+      "fatG": 0.5,
+      "carbG": 8.7,
+      "fiberG": 3.9,
+      "vitARaeUg": 68,
+      "vitCMg": 11,
+      "calciumMg": 14,
+      "ironMg": 0.4
+     },
+     "refusePct": 36.0,
+     "refuseDescription": "Seeds, rind, trimmings and cutting loss"
+    },
+    {
+     "label": "spaghetti",
+     "fdcId": 169298,
+     "dataType": "SR Legacy",
+     "description": "Squash, winter, spaghetti, raw",
+     "per100g": {
+      "kcal": 31,
+      "proteinG": 0.64,
+      "fatG": 0.57,
+      "carbG": 6.91,
+      "fiberG": 1.5,
+      "vitARaeUg": 6,
+      "vitCMg": 2.1,
+      "calciumMg": 23,
+      "ironMg": 0.31
+     },
+     "refusePct": 29.0,
+     "refuseDescription": "Rind and seeds"
+    }
+   ]
+  },
+  "pumpkin": {
+   "food": true,
+   "name": "Pumpkin",
+   "fdcId": 168448,
+   "ndbNumber": "11422",
+   "dataType": "SR Legacy",
+   "description": "Pumpkin, raw",
+   "per100g": {
+    "kcal": 26,
+    "proteinG": 1,
+    "fatG": 0.1,
+    "carbG": 6.5,
+    "fiberG": 0.5,
+    "vitARaeUg": 426,
+    "vitCMg": 9,
+    "calciumMg": 21,
+    "ironMg": 0.8
+   },
+   "ediblePortion": 0.7,
+   "refuseNote": "SR Legacy refuse 30%: Seeds, rind and stem",
+   "harvestForm": "whole mature fruit"
+  },
+  "watermelon": {
+   "food": true,
+   "name": "Watermelon",
+   "fdcId": 167765,
+   "ndbNumber": "09326",
+   "dataType": "SR Legacy",
+   "description": "Watermelon, raw",
+   "per100g": {
+    "kcal": 30,
+    "proteinG": 0.61,
+    "fatG": 0.15,
+    "carbG": 7.55,
+    "fiberG": 0.4,
+    "vitARaeUg": 28,
+    "vitCMg": 8.1,
+    "calciumMg": 7,
+    "ironMg": 0.24
+   },
+   "ediblePortion": 0.52,
+   "refuseNote": "SR Legacy refuse 48%: Rind, seeds, and cutting loss",
+   "harvestForm": "whole fresh fruit"
+  },
+  "muskmelon": {
+   "food": true,
+   "name": "Cantaloupe / muskmelon",
+   "fdcId": 169092,
+   "ndbNumber": "09181",
+   "dataType": "SR Legacy",
+   "description": "Melons, cantaloupe, raw",
+   "per100g": {
+    "kcal": 34,
+    "proteinG": 0.84,
+    "fatG": 0.19,
+    "carbG": 8.16,
+    "fiberG": 0.9,
+    "vitARaeUg": 169,
+    "vitCMg": 36.7,
+    "calciumMg": 9,
+    "ironMg": 0.21
+   },
+   "ediblePortion": 0.51,
+   "refuseNote": "SR Legacy refuse 49%: 9% cavity contents, 1% cutting loss, 39% rind",
+   "harvestForm": "whole fresh fruit"
+  },
+  "corn": {
+   "food": true,
+   "name": "Sweet corn",
+   "fdcId": 169998,
+   "ndbNumber": "11167",
+   "dataType": "SR Legacy",
+   "description": "Corn, sweet, yellow, raw",
+   "per100g": {
+    "kcal": 86,
+    "proteinG": 3.27,
+    "fatG": 1.35,
+    "carbG": 18.7,
+    "fiberG": 2,
+    "vitARaeUg": 9,
+    "vitCMg": 6.8,
+    "calciumMg": 2,
+    "ironMg": 0.52
+   },
+   "ediblePortion": 0.36,
+   "refuseNote": "SR Legacy refuse 64%: 35% husk, silk, trimmings; 29% cob",
+   "harvestForm": "fresh ears in husk",
+   "notes": [
+    "Refuse 64% = 35% husk, silk, trimmings + 29% cob, so it applies to ears in the husk."
+   ]
+  },
+  "okra": {
+   "food": true,
+   "name": "Okra",
+   "fdcId": 169260,
+   "ndbNumber": "11278",
+   "dataType": "SR Legacy",
+   "description": "Okra, raw",
+   "per100g": {
+    "kcal": 33,
+    "proteinG": 1.93,
+    "fatG": 0.19,
+    "carbG": 7.45,
+    "fiberG": 3.2,
+    "vitARaeUg": 36,
+    "vitCMg": 23,
+    "calciumMg": 82,
+    "ironMg": 0.62
+   },
+   "ediblePortion": 0.86,
+   "refuseNote": "SR Legacy refuse 14%: Crown and tips",
+   "harvestForm": "fresh pods"
+  },
+  "celery": {
+   "food": true,
+   "name": "Celery",
+   "fdcId": 169988,
+   "ndbNumber": "11143",
+   "dataType": "SR Legacy",
+   "description": "Celery, raw",
+   "per100g": {
+    "kcal": 14,
+    "proteinG": 0.69,
+    "fatG": 0.17,
+    "carbG": 2.97,
+    "fiberG": 1.6,
+    "vitARaeUg": 22,
+    "vitCMg": 3.1,
+    "calciumMg": 40,
+    "ironMg": 0.2
+   },
+   "ediblePortion": 0.89,
+   "refuseNote": "SR Legacy refuse 11%: Roots and trimmings",
+   "harvestForm": "whole fresh stalks (bunches)",
+   "notes": [
+    "FDC SR Legacy kcal 14 vs SR28 ASCII 16; FDC value used."
+   ]
+  },
+  "arugula": {
+   "food": true,
+   "name": "Arugula",
+   "fdcId": 169387,
+   "ndbNumber": "11959",
+   "dataType": "SR Legacy",
+   "description": "Arugula, raw",
+   "per100g": {
+    "kcal": 25,
+    "proteinG": 2.58,
+    "fatG": 0.66,
+    "carbG": 3.65,
+    "fiberG": 1.6,
+    "vitARaeUg": 119,
+    "vitCMg": 15,
+    "calciumMg": 160,
+    "ironMg": 1.46
+   },
+   "ediblePortion": 0.6,
+   "refuseNote": "SR Legacy refuse 40%: Roots, stems and yellowed leaves",
+   "harvestForm": "fresh leaves as cut"
+  },
+  "bok-choy": {
+   "food": true,
+   "name": "Bok choy",
+   "fdcId": 170390,
+   "ndbNumber": "11116",
+   "dataType": "SR Legacy",
+   "description": "Cabbage, chinese (pak-choi), raw",
+   "per100g": {
+    "kcal": 13,
+    "proteinG": 1.5,
+    "fatG": 0.2,
+    "carbG": 2.18,
+    "fiberG": 1,
+    "vitARaeUg": 223,
+    "vitCMg": 45,
+    "calciumMg": 105,
+    "ironMg": 0.8
+   },
+   "ediblePortion": 0.88,
+   "refuseNote": "SR Legacy refuse 12%: Base and damaged leaves",
+   "harvestForm": "whole fresh heads"
+  },
+  "mustard-greens": {
+   "food": true,
+   "name": "Mustard greens",
+   "fdcId": 169256,
+   "ndbNumber": "11270",
+   "dataType": "SR Legacy",
+   "description": "Mustard greens, raw",
+   "per100g": {
+    "kcal": 27,
+    "proteinG": 2.86,
+    "fatG": 0.42,
+    "carbG": 4.67,
+    "fiberG": 3.2,
+    "vitARaeUg": 151,
+    "vitCMg": 70,
+    "calciumMg": 115,
+    "ironMg": 1.64
+   },
+   "ediblePortion": 0.93,
+   "refuseNote": "SR Legacy refuse 7%: Bases",
+   "harvestForm": "fresh leaves"
+  },
+  "asparagus": {
+   "food": true,
+   "name": "Asparagus",
+   "fdcId": 168389,
+   "ndbNumber": "11011",
+   "dataType": "SR Legacy",
+   "description": "Asparagus, raw",
+   "per100g": {
+    "kcal": 20,
+    "proteinG": 2.2,
+    "fatG": 0.12,
+    "carbG": 3.88,
+    "fiberG": 2.1,
+    "vitARaeUg": 38,
+    "vitCMg": 5.6,
+    "calciumMg": 24,
+    "ironMg": 2.14
+   },
+   "ediblePortion": 0.53,
+   "refuseNote": "SR Legacy refuse 47%: Butt ends",
+   "harvestForm": "fresh spears as cut"
+  },
+  "rhubarb": {
+   "food": true,
+   "name": "Rhubarb",
+   "fdcId": 167758,
+   "ndbNumber": "09307",
+   "dataType": "SR Legacy",
+   "description": "Rhubarb, raw",
+   "per100g": {
+    "kcal": 21,
+    "proteinG": 0.9,
+    "fatG": 0.2,
+    "carbG": 4.54,
+    "fiberG": 1.8,
+    "vitARaeUg": 5,
+    "vitCMg": 8,
+    "calciumMg": 86,
+    "ironMg": 0.22
+   },
+   "ediblePortion": 0.75,
+   "refuseNote": "SR Legacy refuse 25%: 19% ends, 6% leaves",
+   "harvestForm": "fresh stalks as pulled",
+   "notes": [
+    "Leaves are toxic (oxalic acid) and are not food; SR refuse includes 6% leaves."
+   ]
+  },
+  "basil": {
+   "food": true,
+   "name": "Basil",
+   "fdcId": 172232,
+   "ndbNumber": "02044",
+   "dataType": "SR Legacy",
+   "description": "Basil, fresh",
+   "per100g": {
+    "kcal": 23,
+    "proteinG": 3.15,
+    "fatG": 0.64,
+    "carbG": 2.65,
+    "fiberG": 1.6,
+    "vitARaeUg": 264,
+    "vitCMg": 18,
+    "calciumMg": 177,
+    "ironMg": 3.17
+   },
+   "ediblePortion": 0.64,
+   "refuseNote": "SR Legacy refuse 36%: Tough stems, flower heads and trimmings",
+   "harvestForm": "fresh cut stems with leaves"
+  },
+  "parsley": {
+   "food": true,
+   "name": "Parsley",
+   "fdcId": 170416,
+   "ndbNumber": "11297",
+   "dataType": "SR Legacy",
+   "description": "Parsley, fresh",
+   "per100g": {
+    "kcal": 36,
+    "proteinG": 2.97,
+    "fatG": 0.79,
+    "carbG": 6.33,
+    "fiberG": 3.3,
+    "vitARaeUg": 421,
+    "vitCMg": 133,
+    "calciumMg": 138,
+    "ironMg": 6.2
+   },
+   "ediblePortion": 0.95,
+   "refuseNote": "SR Legacy refuse 5%: Tough stems",
+   "harvestForm": "fresh cut stems with leaves"
+  },
+  "cilantro": {
+   "food": true,
+   "name": "Cilantro / coriander",
+   "fdcId": 169997,
+   "ndbNumber": "11165",
+   "dataType": "SR Legacy",
+   "description": "Coriander (cilantro) leaves, raw",
+   "per100g": {
+    "kcal": 23,
+    "proteinG": 2.13,
+    "fatG": 0.52,
+    "carbG": 3.67,
+    "fiberG": 2.8,
+    "vitARaeUg": 337,
+    "vitCMg": 27,
+    "calciumMg": 67,
+    "ironMg": 1.77
+   },
+   "ediblePortion": 0.85,
+   "refuseNote": "SR Legacy refuse 15%: Roots, old and bruised leaves",
+   "harvestForm": "fresh leaves"
+  },
+  "dill": {
+   "food": true,
+   "name": "Dill",
+   "fdcId": 172233,
+   "ndbNumber": "02045",
+   "dataType": "SR Legacy",
+   "description": "Dill weed, fresh",
+   "per100g": {
+    "kcal": 43,
+    "proteinG": 3.46,
+    "fatG": 1.12,
+    "carbG": 7.02,
+    "fiberG": 2.1,
+    "vitARaeUg": 386,
+    "vitCMg": 85,
+    "calciumMg": 208,
+    "ironMg": 6.59
+   },
+   "ediblePortion": 0.59,
+   "refuseNote": "SR Legacy refuse 41%: Tough stems and trimmings",
+   "harvestForm": "fresh cut stems with leaves"
+  },
+  "chives": {
+   "food": true,
+   "name": "Chives",
+   "fdcId": 169994,
+   "ndbNumber": "11156",
+   "dataType": "SR Legacy",
+   "description": "Chives, raw",
+   "per100g": {
+    "kcal": 30,
+    "proteinG": 3.27,
+    "fatG": 0.73,
+    "carbG": 4.35,
+    "fiberG": 2.5,
+    "vitARaeUg": 218,
+    "vitCMg": 58.1,
+    "calciumMg": 92,
+    "ironMg": 1.6
+   },
+   "ediblePortion": 1.0,
+   "refuseNote": "SR Legacy refuse 0% (no refuse description)",
+   "harvestForm": "fresh cut leaves"
+  },
+  "thyme": {
+   "food": true,
+   "name": "Thyme",
+   "fdcId": 173470,
+   "ndbNumber": "02049",
+   "dataType": "SR Legacy",
+   "description": "Thyme, fresh",
+   "per100g": {
+    "kcal": 101,
+    "proteinG": 5.56,
+    "fatG": 1.68,
+    "carbG": 24.45,
+    "fiberG": 14,
+    "vitARaeUg": 238,
+    "vitCMg": 160.1,
+    "calciumMg": 405,
+    "ironMg": 17.45
+   },
+   "ediblePortion": 0.68,
+   "refuseNote": "SR Legacy refuse 32%: Stems",
+   "harvestForm": "fresh cut sprigs"
+  },
+  "rosemary": {
+   "food": true,
+   "name": "Rosemary",
+   "fdcId": 173473,
+   "ndbNumber": "02063",
+   "dataType": "SR Legacy",
+   "description": "Rosemary, fresh",
+   "per100g": {
+    "kcal": 131,
+    "proteinG": 3.31,
+    "fatG": 5.86,
+    "carbG": 20.7,
+    "fiberG": 14.1,
+    "vitARaeUg": 146,
+    "vitCMg": 21.8,
+    "calciumMg": 317,
+    "ironMg": 6.65
+   },
+   "ediblePortion": 0.65,
+   "refuseNote": "SR Legacy refuse 35%: Stems",
+   "harvestForm": "fresh cut sprigs"
+  },
+  "mint": {
+   "food": true,
+   "name": "Mint",
+   "fdcId": 173475,
+   "ndbNumber": "02065",
+   "dataType": "SR Legacy",
+   "description": "Spearmint, fresh",
+   "per100g": {
+    "kcal": 44,
+    "proteinG": 3.29,
+    "fatG": 0.73,
+    "carbG": 8.41,
+    "fiberG": 6.8,
+    "vitARaeUg": 203,
+    "vitCMg": 13.3,
+    "calciumMg": 199,
+    "ironMg": 11.87
+   },
+   "ediblePortion": 0.41,
+   "refuseNote": "SR Legacy refuse 59%: Stems",
+   "harvestForm": "fresh cut stems with leaves",
+   "notes": [
+    "Spearmint used (the usual garden mint). Peppermint alternate given (39% refuse)."
+   ],
+   "alternates": [
+    {
+     "label": "peppermint, fresh",
+     "fdcId": 173474,
+     "dataType": "SR Legacy",
+     "description": "Peppermint, fresh",
+     "per100g": {
+      "kcal": 70,
+      "proteinG": 3.75,
+      "fatG": 0.94,
+      "carbG": 14.89,
+      "fiberG": 8,
+      "vitARaeUg": 212,
+      "vitCMg": 31.8,
+      "calciumMg": 243,
+      "ironMg": 5.08
+     },
+     "refusePct": 39.0,
+     "refuseDescription": "Stems"
+    }
+   ]
+  },
+  "oregano": {
+   "food": true,
+   "name": "Oregano",
+   "fdcId": null,
+   "dataType": null,
+   "description": null,
+   "per100g": {
+    "kcal": null,
+    "proteinG": null,
+    "fatG": null,
+    "carbG": null,
+    "fiberG": null,
+    "vitARaeUg": null,
+    "vitCMg": null,
+    "calciumMg": null,
+    "ironMg": null
+   },
+   "ediblePortion": null,
+   "refuseNote": "No fresh form in SR Legacy, so no refuse value.",
+   "harvestForm": "fresh cut sprigs",
+   "notes": [
+    "SR Legacy has no fresh oregano entry, only the dried spice. Dried values are given as an alternate but must NOT be applied to fresh harvest weight (water content differs greatly)."
+   ],
+   "alternates": [
+    {
+     "label": "oregano, dried",
+     "fdcId": 171328,
+     "dataType": "SR Legacy",
+     "description": "Spices, oregano, dried",
+     "per100g": {
+      "kcal": 265,
+      "proteinG": 9,
+      "fatG": 4.28,
+      "carbG": 68.92,
+      "fiberG": 42.5,
+      "vitARaeUg": 85,
+      "vitCMg": 2.3,
+      "calciumMg": 1597,
+      "ironMg": 36.8
+     },
+     "refusePct": 0.0,
+     "refuseDescription": null
+    }
+   ]
+  },
+  "sage": {
+   "food": true,
+   "name": "Sage",
+   "fdcId": null,
+   "dataType": null,
+   "description": null,
+   "per100g": {
+    "kcal": null,
+    "proteinG": null,
+    "fatG": null,
+    "carbG": null,
+    "fiberG": null,
+    "vitARaeUg": null,
+    "vitCMg": null,
+    "calciumMg": null,
+    "ironMg": null
+   },
+   "ediblePortion": null,
+   "refuseNote": "No fresh form in SR Legacy, so no refuse value.",
+   "harvestForm": "fresh cut sprigs",
+   "notes": [
+    "SR Legacy has no fresh sage entry, only the dried spice. Dried values are given as an alternate but must NOT be applied to fresh harvest weight (water content differs greatly)."
+   ],
+   "alternates": [
+    {
+     "label": "sage, ground (dried)",
+     "fdcId": 170935,
+     "dataType": "SR Legacy",
+     "description": "Spices, sage, ground",
+     "per100g": {
+      "kcal": 315,
+      "proteinG": 10.63,
+      "fatG": 12.75,
+      "carbG": 60.73,
+      "fiberG": 40.3,
+      "vitARaeUg": 295,
+      "vitCMg": 32.4,
+      "calciumMg": 1652,
+      "ironMg": 28.12
+     },
+     "refusePct": 0.0,
+     "refuseDescription": null
+    }
+   ]
+  },
+  "strawberry": {
+   "food": true,
+   "name": "Strawberry",
+   "fdcId": 167762,
+   "ndbNumber": "09316",
+   "dataType": "SR Legacy",
+   "description": "Strawberries, raw",
+   "per100g": {
+    "kcal": 32,
+    "proteinG": 0.67,
+    "fatG": 0.3,
+    "carbG": 7.68,
+    "fiberG": 2,
+    "vitARaeUg": 1,
+    "vitCMg": 58.8,
+    "calciumMg": 16,
+    "ironMg": 0.41
+   },
+   "ediblePortion": 0.94,
+   "refuseNote": "SR Legacy refuse 6%: Caps and stems",
+   "harvestForm": "whole fresh berries with caps"
+  },
+  "blueberry": {
+   "food": true,
+   "name": "Blueberry (northern highbush)",
+   "fdcId": 171711,
+   "ndbNumber": "09050",
+   "dataType": "SR Legacy",
+   "description": "Blueberries, raw",
+   "per100g": {
+    "kcal": 57,
+    "proteinG": 0.74,
+    "fatG": 0.33,
+    "carbG": 14.49,
+    "fiberG": 2.4,
+    "vitARaeUg": 3,
+    "vitCMg": 9.7,
+    "calciumMg": 6,
+    "ironMg": 0.28
+   },
+   "ediblePortion": 0.95,
+   "refuseNote": "SR Legacy refuse 5%: Stems and green or spoiled berries",
+   "harvestForm": "fresh berries"
+  },
+  "blueberry-rabbiteye": {
+   "food": true,
+   "name": "Blueberry (rabbiteye)",
+   "fdcId": 171711,
+   "ndbNumber": "09050",
+   "dataType": "SR Legacy",
+   "description": "Blueberries, raw",
+   "per100g": {
+    "kcal": 57,
+    "proteinG": 0.74,
+    "fatG": 0.33,
+    "carbG": 14.49,
+    "fiberG": 2.4,
+    "vitARaeUg": 3,
+    "vitCMg": 9.7,
+    "calciumMg": 6,
+    "ironMg": 0.28
+   },
+   "ediblePortion": 0.95,
+   "refuseNote": "SR Legacy refuse 5%: Stems and green or spoiled berries",
+   "harvestForm": "fresh berries",
+   "notes": [
+    "SR Legacy has one generic blueberry entry; used for rabbiteye too."
+   ]
+  },
+  "raspberry": {
+   "food": true,
+   "name": "Raspberry (red)",
+   "fdcId": 167755,
+   "ndbNumber": "09302",
+   "dataType": "SR Legacy",
+   "description": "Raspberries, raw",
+   "per100g": {
+    "kcal": 52,
+    "proteinG": 1.2,
+    "fatG": 0.65,
+    "carbG": 11.94,
+    "fiberG": 6.5,
+    "vitARaeUg": 2,
+    "vitCMg": 26.2,
+    "calciumMg": 25,
+    "ironMg": 0.69
+   },
+   "ediblePortion": 0.96,
+   "refuseNote": "SR Legacy refuse 4%: Caps, stems, and spoiled berries",
+   "harvestForm": "fresh berries"
+  },
+  "blackberry": {
+   "food": true,
+   "name": "Blackberry",
+   "fdcId": 173946,
+   "ndbNumber": "09042",
+   "dataType": "SR Legacy",
+   "description": "Blackberries, raw",
+   "per100g": {
+    "kcal": 43,
+    "proteinG": 1.39,
+    "fatG": 0.49,
+    "carbG": 9.61,
+    "fiberG": 5.3,
+    "vitARaeUg": 11,
+    "vitCMg": 21,
+    "calciumMg": 29,
+    "ironMg": 0.62
+   },
+   "ediblePortion": 0.96,
+   "refuseNote": "SR Legacy refuse 4%: Caps and spoiled berries",
+   "harvestForm": "fresh berries"
+  },
+  "grape": {
+   "food": true,
+   "name": "Grape (American/hybrid)",
+   "fdcId": 174682,
+   "ndbNumber": "09131",
+   "dataType": "SR Legacy",
+   "description": "Grapes, american type (slip skin), raw",
+   "per100g": {
+    "kcal": 67,
+    "proteinG": 0.63,
+    "fatG": 0.35,
+    "carbG": 17.15,
+    "fiberG": 0.9,
+    "vitARaeUg": 5,
+    "vitCMg": 4,
+    "calciumMg": 14,
+    "ironMg": 0.29
+   },
+   "ediblePortion": 0.58,
+   "refuseNote": "SR Legacy refuse 42%: 6% seeds, 34% skin, 2% stems",
+   "harvestForm": "fresh clusters",
+   "notes": [
+    "American slip-skin type used (refuse 42%: 6% seeds, 34% skin, 2% stems), matching Vitis labrusca. For seedless/hybrid grapes eaten whole, European-type alternate has 4% refuse."
+   ],
+   "alternates": [
+    {
+     "label": "European type (e.g. Thompson seedless)",
+     "fdcId": 174683,
+     "dataType": "SR Legacy",
+     "description": "Grapes, red or green (European type, such as Thompson seedless), raw",
+     "per100g": {
+      "kcal": 69,
+      "proteinG": 0.72,
+      "fatG": 0.16,
+      "carbG": 18.1,
+      "fiberG": 0.9,
+      "vitARaeUg": 3,
+      "vitCMg": 3.2,
+      "calciumMg": 10,
+      "ironMg": 0.36
+     },
+     "refusePct": 4.0,
+     "refuseDescription": "Stems"
+    }
+   ]
+  },
+  "apple": {
+   "food": true,
+   "name": "Apple",
+   "fdcId": 171688,
+   "ndbNumber": "09003",
+   "dataType": "SR Legacy",
+   "description": "Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)",
+   "per100g": {
+    "kcal": 52,
+    "proteinG": 0.26,
+    "fatG": 0.17,
+    "carbG": 13.81,
+    "fiberG": 2.4,
+    "vitARaeUg": 3,
+    "vitCMg": 4.6,
+    "calciumMg": 6,
+    "ironMg": 0.12
+   },
+   "ediblePortion": 0.9,
+   "refuseNote": "SR Legacy refuse 10%: Core and stem",
+   "harvestForm": "whole fresh fruit"
+  },
+  "pear": {
+   "food": true,
+   "name": "Pear (European)",
+   "fdcId": 169118,
+   "ndbNumber": "09252",
+   "dataType": "SR Legacy",
+   "description": "Pears, raw",
+   "per100g": {
+    "kcal": 57,
+    "proteinG": 0.36,
+    "fatG": 0.14,
+    "carbG": 15.23,
+    "fiberG": 3.1,
+    "vitARaeUg": 1,
+    "vitCMg": 4.3,
+    "calciumMg": 9,
+    "ironMg": 0.18
+   },
+   "ediblePortion": 0.9,
+   "refuseNote": "SR Legacy refuse 10%: Stem, core and seeds",
+   "harvestForm": "whole fresh fruit"
+  },
+  "peach": {
+   "food": true,
+   "name": "Peach",
+   "fdcId": 169928,
+   "ndbNumber": "09236",
+   "dataType": "SR Legacy",
+   "description": "Peaches, yellow, raw",
+   "per100g": {
+    "kcal": 39,
+    "proteinG": 0.91,
+    "fatG": 0.25,
+    "carbG": 9.54,
+    "fiberG": 1.5,
+    "vitARaeUg": 16,
+    "vitCMg": 6.6,
+    "calciumMg": 6,
+    "ironMg": 0.25
+   },
+   "ediblePortion": 0.96,
+   "refuseNote": "SR Legacy refuse 4%: Pit",
+   "harvestForm": "whole fresh fruit"
+  },
+  "plum": {
+   "food": true,
+   "name": "Plum (European)",
+   "fdcId": 169949,
+   "ndbNumber": "09279",
+   "dataType": "SR Legacy",
+   "description": "Plums, raw",
+   "per100g": {
+    "kcal": 46,
+    "proteinG": 0.7,
+    "fatG": 0.28,
+    "carbG": 11.42,
+    "fiberG": 1.4,
+    "vitARaeUg": 17,
+    "vitCMg": 9.5,
+    "calciumMg": 6,
+    "ironMg": 0.17
+   },
+   "ediblePortion": 0.94,
+   "refuseNote": "SR Legacy refuse 6%: Pits",
+   "harvestForm": "whole fresh fruit"
+  },
+  "cherry-sour": {
+   "food": true,
+   "name": "Tart cherry",
+   "fdcId": 173954,
+   "ndbNumber": "09063",
+   "dataType": "SR Legacy",
+   "description": "Cherries, sour, red, raw",
+   "per100g": {
+    "kcal": 50,
+    "proteinG": 1,
+    "fatG": 0.3,
+    "carbG": 12.18,
+    "fiberG": 1.6,
+    "vitARaeUg": 64,
+    "vitCMg": 10,
+    "calciumMg": 16,
+    "ironMg": 0.32
+   },
+   "ediblePortion": 0.9,
+   "refuseNote": "SR Legacy refuse 10%: Pits and stems",
+   "harvestForm": "whole fresh fruit with pits and stems"
+  },
+  "cherry-sweet": {
+   "food": true,
+   "name": "Sweet cherry",
+   "fdcId": 171719,
+   "ndbNumber": "09070",
+   "dataType": "SR Legacy",
+   "description": "Cherries, sweet, raw",
+   "per100g": {
+    "kcal": 63,
+    "proteinG": 1.06,
+    "fatG": 0.2,
+    "carbG": 16.01,
+    "fiberG": 2.1,
+    "vitARaeUg": 3,
+    "vitCMg": 7,
+    "calciumMg": 13,
+    "ironMg": 0.36
+   },
+   "ediblePortion": 0.92,
+   "refuseNote": "SR Legacy refuse 8%: Pits and stems",
+   "harvestForm": "whole fresh fruit with pits and stems"
+  },
+  "fig": {
+   "food": true,
+   "name": "Fig",
+   "fdcId": 173021,
+   "ndbNumber": "09089",
+   "dataType": "SR Legacy",
+   "description": "Figs, raw",
+   "per100g": {
+    "kcal": 74,
+    "proteinG": 0.75,
+    "fatG": 0.3,
+    "carbG": 19.18,
+    "fiberG": 2.9,
+    "vitARaeUg": 7,
+    "vitCMg": 2,
+    "calciumMg": 35,
+    "ironMg": 0.37
+   },
+   "ediblePortion": 0.99,
+   "refuseNote": "SR Legacy refuse 1%: Stems",
+   "harvestForm": "whole fresh fruit"
+  },
+  "persimmon-american": {
+   "food": true,
+   "name": "American persimmon",
+   "fdcId": 169943,
+   "ndbNumber": "09265",
+   "dataType": "SR Legacy",
+   "description": "Persimmons, native, raw",
+   "per100g": {
+    "kcal": 127,
+    "proteinG": 0.8,
+    "fatG": 0.4,
+    "carbG": 33.5,
+    "fiberG": null,
+    "vitARaeUg": null,
+    "vitCMg": 66,
+    "calciumMg": 27,
+    "ironMg": 2.5
+   },
+   "ediblePortion": 0.82,
+   "refuseNote": "SR Legacy refuse 18%: 2% calyx, 16% seeds",
+   "harvestForm": "whole fresh fruit",
+   "notes": [
+    "Not reported in SR Legacy for this food (set to null): fiberG, vitARaeUg."
+   ]
+  },
+  "pawpaw": {
+   "food": true,
+   "name": "Pawpaw",
+   "fdcId": null,
+   "dataType": null,
+   "description": null,
+   "per100g": {
+    "kcal": null,
+    "proteinG": null,
+    "fatG": null,
+    "carbG": null,
+    "fiberG": null,
+    "vitARaeUg": null,
+    "vitCMg": null,
+    "calciumMg": null,
+    "ironMg": null
+   },
+   "ediblePortion": null,
+   "refuseNote": "Not in SR Legacy.",
+   "harvestForm": "whole fresh fruit",
+   "notes": [
+    "Pawpaw (Asimina triloba) is not in SR Legacy or the Foundation Foods releases checked. All values null. A non-USDA source would be needed (e.g. Kentucky State University pawpaw program) and was not used."
+   ]
+  },
+  "hazelnut": {
+   "food": true,
+   "name": "Hazelnut",
+   "fdcId": 170581,
+   "ndbNumber": "12120",
+   "dataType": "SR Legacy",
+   "description": "Nuts, hazelnuts or filberts",
+   "per100g": {
+    "kcal": 628,
+    "proteinG": 14.95,
+    "fatG": 60.75,
+    "carbG": 16.7,
+    "fiberG": 9.7,
+    "vitARaeUg": 1,
+    "vitCMg": 6.3,
+    "calciumMg": 114,
+    "ironMg": 4.7
+   },
+   "ediblePortion": 0.41,
+   "refuseNote": "SR Legacy refuse 59%: Shells",
+   "harvestForm": "dried nuts in shell (husked)",
+   "notes": [
+    "Nutrients are for the kernel; refuse 59% = shells, so edible fraction applies to in-shell weight."
+   ]
+  },
+  "currant": {
+   "food": true,
+   "name": "Currant (red/black)",
+   "fdcId": 173964,
+   "ndbNumber": "09084",
+   "dataType": "SR Legacy",
+   "description": "Currants, red and white, raw",
+   "per100g": {
+    "kcal": 56,
+    "proteinG": 1.4,
+    "fatG": 0.2,
+    "carbG": 13.8,
+    "fiberG": 4.3,
+    "vitARaeUg": 2,
+    "vitCMg": 41,
+    "calciumMg": 33,
+    "ironMg": 1
+   },
+   "ediblePortion": 0.98,
+   "refuseNote": "SR Legacy refuse 2%: Stems",
+   "harvestForm": "fresh berries on strigs",
+   "notes": [
+    "Red/white currant used; black currant alternate given (vitamin C much higher)."
+   ],
+   "alternates": [
+    {
+     "label": "european black currant",
+     "fdcId": 173963,
+     "dataType": "SR Legacy",
+     "description": "Currants, european black, raw",
+     "per100g": {
+      "kcal": 63,
+      "proteinG": 1.4,
+      "fatG": 0.41,
+      "carbG": 15.38,
+      "fiberG": null,
+      "vitARaeUg": 12,
+      "vitCMg": 181,
+      "calciumMg": 55,
+      "ironMg": 1.54
+     },
+     "refusePct": 2.0,
+     "refuseDescription": "Stems"
+    }
+   ]
+  },
+  "elderberry": {
+   "food": true,
+   "name": "Elderberry (American)",
+   "fdcId": 171727,
+   "ndbNumber": "09088",
+   "dataType": "SR Legacy",
+   "description": "Elderberries, raw",
+   "per100g": {
+    "kcal": 73,
+    "proteinG": 0.66,
+    "fatG": 0.5,
+    "carbG": 18.4,
+    "fiberG": 7,
+    "vitARaeUg": 30,
+    "vitCMg": 36,
+    "calciumMg": 38,
+    "ironMg": 1.6
+   },
+   "ediblePortion": 1.0,
+   "refuseNote": "SR Legacy refuse 0% (no refuse description)",
+   "harvestForm": "fresh berries (destemmed)",
+   "notes": [
+    "SR refuse is 0, which implies berries already off the stems; stems, leaves and unripe berries are toxic and must be removed. Raw berries should be cooked before eating."
+   ]
+  },
+  "winter-rye": {
+   "food": false,
+   "name": "Cereal (winter) rye",
+   "harvestForm": null,
+   "notes": [
+    "Grown as a cover crop (no yield in plant list); not counted as food. Grain values given only for reference if ever harvested for grain."
+   ],
+   "alternates": [
+    {
+     "label": "rye grain",
+     "fdcId": 168884,
+     "dataType": "SR Legacy",
+     "description": "Rye grain",
+     "per100g": {
+      "kcal": 338,
+      "proteinG": 10.34,
+      "fatG": 1.63,
+      "carbG": 75.86,
+      "fiberG": 15.1,
+      "vitARaeUg": 1,
+      "vitCMg": 0,
+      "calciumMg": 24,
+      "ironMg": 2.63
+     },
+     "refusePct": 0.0,
+     "refuseDescription": null
+    }
+   ]
+  },
+  "crimson-clover": {
+   "food": false,
+   "name": "Crimson clover",
+   "harvestForm": null,
+   "notes": [
+    "Cover crop; not a human food. No SR Legacy entry."
+   ]
+  },
+  "buckwheat": {
+   "food": false,
+   "name": "Buckwheat",
+   "harvestForm": null,
+   "notes": [
+    "Listed as a cover crop with no yield figure; not counted as food. Whole-grain values given for reference if harvested for groats (hulls not included in SR refuse, which is 0)."
+   ],
+   "alternates": [
+    {
+     "label": "buckwheat (whole grain)",
+     "fdcId": 170286,
+     "dataType": "SR Legacy",
+     "description": "Buckwheat",
+     "per100g": {
+      "kcal": 343,
+      "proteinG": 13.25,
+      "fatG": 3.4,
+      "carbG": 71.5,
+      "fiberG": 10,
+      "vitARaeUg": 0,
+      "vitCMg": 0,
+      "calciumMg": 18,
+      "ironMg": 2.2
+     },
+     "refusePct": 0.0,
+     "refuseDescription": null
+    }
+   ]
+  },
+  "sunflower": {
+   "food": true,
+   "name": "Sunflower",
+   "fdcId": 170562,
+   "ndbNumber": "12036",
+   "dataType": "SR Legacy",
+   "description": "Seeds, sunflower seed kernels, dried",
+   "per100g": {
+    "kcal": 584,
+    "proteinG": 20.78,
+    "fatG": 51.46,
+    "carbG": 20,
+    "fiberG": 8.6,
+    "vitARaeUg": 3,
+    "vitCMg": 1.4,
+    "calciumMg": 78,
+    "ironMg": 5.25
+   },
+   "ediblePortion": 0.54,
+   "refuseNote": "SR Legacy refuse 46%: Hulls",
+   "harvestForm": "dried seeds in hull",
+   "notes": [
+    "Plant list kind is \"flower\" with no yield figure; seeds are edible. Nutrients are for dried kernels; refuse 46% = hulls."
+   ]
+  },
+  "eggs-chicken": {
+   "food": true,
+   "name": "Chicken egg",
+   "fdcId": 171287,
+   "ndbNumber": "01123",
+   "dataType": "SR Legacy",
+   "description": "Egg, whole, raw, fresh",
+   "per100g": {
+    "kcal": 143,
+    "proteinG": 12.56,
+    "fatG": 9.51,
+    "carbG": 0.72,
+    "fiberG": 0,
+    "vitARaeUg": 160,
+    "vitCMg": 0,
+    "calciumMg": 56,
+    "ironMg": 1.75
+   },
+   "ediblePortion": 0.88,
+   "refuseNote": "SR Legacy refuse 12%: Shell",
+   "harvestForm": "whole egg in shell",
+   "notes": [
+    "Per-egg edible weights are from SR Legacy WEIGHT (grams of edible portion, shell excluded)."
+   ],
+   "perEggEdibleG": {
+    "large": 50.0,
+    "extra large": 56.0,
+    "jumbo": 63.0,
+    "medium": 44.0,
+    "small": 38.0
+   }
+  },
+  "eggs-duck": {
+   "food": true,
+   "name": "Duck egg",
+   "fdcId": 172189,
+   "ndbNumber": "01138",
+   "dataType": "SR Legacy",
+   "description": "Egg, duck, whole, fresh, raw",
+   "per100g": {
+    "kcal": 185,
+    "proteinG": 12.81,
+    "fatG": 13.77,
+    "carbG": 1.45,
+    "fiberG": 0,
+    "vitARaeUg": 194,
+    "vitCMg": 0,
+    "calciumMg": 64,
+    "ironMg": 3.85
+   },
+   "ediblePortion": 0.88,
+   "refuseNote": "SR Legacy refuse 12%: Shell",
+   "harvestForm": "whole egg in shell",
+   "perEggEdibleG": {
+    "egg": 70.0
+   }
+  },
+  "chicken-meat": {
+   "food": true,
+   "name": "Chicken meat (broiler)",
+   "fdcId": 171447,
+   "ndbNumber": "05006",
+   "dataType": "SR Legacy",
+   "description": "Chicken, broilers or fryers, meat and skin, raw",
+   "per100g": {
+    "kcal": 215,
+    "proteinG": 18.6,
+    "fatG": 15.06,
+    "carbG": 0,
+    "fiberG": 0,
+    "vitARaeUg": 41,
+    "vitCMg": 1.6,
+    "calciumMg": 11,
+    "ironMg": 0.9
+   },
+   "ediblePortion": 0.68,
+   "refuseNote": "SR Legacy refuse 32%: Bone",
+   "harvestForm": "dressed (ready-to-cook) carcass",
+   "notes": [
+    "Refuse 32% = bone, relative to the broiler carcass (meat, skin, bone). Edible fraction is meat and skin."
+   ],
+   "carcassToEdible": {
+    "meatAndSkin": 0.68,
+    "meatOnly": 0.48,
+    "source": "SR Legacy refuse: 05006 meat and skin 32% (bone); 05011 meat only 52% (32% bone, 12% skin, 8% separable fat)."
+   },
+   "alternates": [
+    {
+     "label": "meat only",
+     "fdcId": 171052,
+     "dataType": "SR Legacy",
+     "description": "Chicken, broilers or fryers, meat only, raw",
+     "per100g": {
+      "kcal": 119,
+      "proteinG": 21.39,
+      "fatG": 3.08,
+      "carbG": 0,
+      "fiberG": 0,
+      "vitARaeUg": 16,
+      "vitCMg": 2.3,
+      "calciumMg": 12,
+      "ironMg": 0.89
+     },
+     "refusePct": 52.0,
+     "refuseDescription": "32% bone, 12% skin, 8% separable fat"
+    }
+   ]
+  },
+  "duck-meat": {
+   "food": true,
+   "name": "Duck meat",
+   "fdcId": 172408,
+   "ndbNumber": "05139",
+   "dataType": "SR Legacy",
+   "description": "Duck, domesticated, meat and skin, raw",
+   "per100g": {
+    "kcal": 404,
+    "proteinG": 11.49,
+    "fatG": 39.34,
+    "carbG": 0,
+    "fiberG": 0,
+    "vitARaeUg": 50,
+    "vitCMg": 2.8,
+    "calciumMg": 11,
+    "ironMg": 2.4
+   },
+   "ediblePortion": 0.72,
+   "refuseNote": "SR Legacy refuse 28%: Bone",
+   "harvestForm": "dressed carcass",
+   "notes": [
+    "Refuse 28% = bone. Meat-only entry has 66% refuse (28% bone, 38% skin and separable fat)."
+   ],
+   "carcassToEdible": {
+    "meatAndSkin": 0.72,
+    "meatOnly": 0.34,
+    "source": "SR Legacy refuse: 05139 (28%), 05141 (66%)."
+   },
+   "alternates": [
+    {
+     "label": "meat only",
+     "fdcId": 172410,
+     "dataType": "SR Legacy",
+     "description": "Duck, domesticated, meat only, raw",
+     "per100g": {
+      "kcal": 135,
+      "proteinG": 18.28,
+      "fatG": 5.95,
+      "carbG": 0.94,
+      "fiberG": 0,
+      "vitARaeUg": 24,
+      "vitCMg": 5.8,
+      "calciumMg": 11,
+      "ironMg": 2.4
+     },
+     "refusePct": 66.0,
+     "refuseDescription": "28% bone, 38% skin and separable fat"
+    }
+   ]
+  },
+  "turkey-meat": {
+   "food": true,
+   "name": "Turkey meat",
+   "fdcId": 171081,
+   "ndbNumber": "05165",
+   "dataType": "SR Legacy",
+   "description": "Turkey, whole, meat and skin, raw",
+   "per100g": {
+    "kcal": 144,
+    "proteinG": 21.64,
+    "fatG": 5.64,
+    "carbG": 0.14,
+    "fiberG": 0,
+    "vitARaeUg": 17,
+    "vitCMg": 0,
+    "calciumMg": 11,
+    "ironMg": 0.86
+   },
+   "ediblePortion": 0.71,
+   "refuseNote": "SR Legacy refuse 29%: Bone and connective tissue 29%",
+   "harvestForm": "dressed whole carcass",
+   "notes": [
+    "Refuse 29% = bone and connective tissue.",
+    "FDC SR Legacy kcal 144 / carb 0.14 vs SR28 ASCII 143 / 0.13; FDC values used."
+   ],
+   "carcassToEdible": {
+    "meatAndSkin": 0.71,
+    "meatOnly": 0.59,
+    "source": "SR Legacy refuse: 05165 (29%), 05167 (41%)."
+   },
+   "alternates": [
+    {
+     "label": "meat only",
+     "fdcId": 171480,
+     "dataType": "SR Legacy",
+     "description": "Turkey, whole, meat only, raw",
+     "per100g": {
+      "kcal": 115,
+      "proteinG": 22.64,
+      "fatG": 1.93,
+      "carbG": 0.14,
+      "fiberG": 0,
+      "vitARaeUg": 9,
+      "vitCMg": 0,
+      "calciumMg": 11,
+      "ironMg": 0.86
+     },
+     "refusePct": 41.0,
+     "refuseDescription": "Bone and connective tissue 29%, Skin and separable fat 11%"
+    }
+   ]
+  },
+  "rabbit-meat": {
+   "food": true,
+   "name": "Rabbit meat",
+   "fdcId": 172521,
+   "ndbNumber": "17177",
+   "dataType": "SR Legacy",
+   "description": "Game meat, rabbit, domesticated, composite of cuts, raw",
+   "per100g": {
+    "kcal": 136,
+    "proteinG": 20.05,
+    "fatG": 5.55,
+    "carbG": 0,
+    "fiberG": 0,
+    "vitARaeUg": 0,
+    "vitCMg": 0,
+    "calciumMg": 13,
+    "ironMg": 1.57
+   },
+   "ediblePortion": null,
+   "refuseNote": "SR Legacy refuse 0% (boneless composite); edible fraction of a carcass not given.",
+   "harvestForm": "meat (boneless weight)",
+   "notes": [
+    "SR refuse is 0 because the composite describes boneless meat; SR Legacy gives no bone fraction for a dressed rabbit carcass, so a carcass-to-meat factor is NOT provided (null)."
+   ],
+   "carcassToEdible": null
+  },
+  "goat-meat": {
+   "food": true,
+   "name": "Goat meat",
+   "fdcId": 175303,
+   "ndbNumber": "17168",
+   "dataType": "SR Legacy",
+   "description": "Game meat, goat, raw",
+   "per100g": {
+    "kcal": 109,
+    "proteinG": 20.6,
+    "fatG": 2.31,
+    "carbG": 0,
+    "fiberG": 0,
+    "vitARaeUg": 0,
+    "vitCMg": 0,
+    "calciumMg": 13,
+    "ironMg": 2.83
+   },
+   "ediblePortion": null,
+   "refuseNote": "SR Legacy refuse 0% (boneless composite); edible fraction of a carcass not given.",
+   "harvestForm": "meat (boneless weight)",
+   "notes": [
+    "SR refuse is 0 (no bone data); carcass-to-meat factor not available in SR Legacy (null)."
+   ],
+   "carcassToEdible": null
+  },
+  "lamb": {
+   "food": true,
+   "name": "Lamb",
+   "fdcId": 172479,
+   "ndbNumber": "17001",
+   "dataType": "SR Legacy",
+   "description": "Lamb, composite of trimmed retail cuts, separable lean and fat, trimmed to 1/4\" fat, choice, raw",
+   "per100g": {
+    "kcal": 267,
+    "proteinG": 16.88,
+    "fatG": 21.59,
+    "carbG": 0,
+    "fiberG": 0,
+    "vitARaeUg": 0,
+    "vitCMg": 0,
+    "calciumMg": 12,
+    "ironMg": 1.57
+   },
+   "ediblePortion": 0.77,
+   "refuseNote": "SR Legacy refuse 23%: Bone",
+   "harvestForm": "retail cuts, bone-in",
+   "notes": [
+    "Composite of trimmed retail cuts, lean and fat, 1/4\" trim, choice. Refuse 23% = bone relative to bone-in retail cuts, not the whole carcass."
+   ]
+  },
+  "pork": {
+   "food": true,
+   "name": "Pork",
+   "fdcId": 168219,
+   "ndbNumber": "10001",
+   "dataType": "SR Legacy",
+   "description": "Pork, fresh, carcass, separable lean and fat, raw",
+   "per100g": {
+    "kcal": 376,
+    "proteinG": 13.91,
+    "fatG": 35.07,
+    "carbG": 0,
+    "fiberG": 0,
+    "vitARaeUg": 2,
+    "vitCMg": 0.4,
+    "calciumMg": 19,
+    "ironMg": 0.69
+   },
+   "ediblePortion": 0.82,
+   "refuseNote": "SR Legacy refuse 18%: Bone and skin",
+   "harvestForm": "carcass (bone-in, skin-on)",
+   "notes": [
+    "Refuse 18% = bone and skin, relative to the carcass."
+   ]
+  },
+  "beef": {
+   "food": true,
+   "name": "Beef",
+   "fdcId": 169430,
+   "ndbNumber": "13001",
+   "dataType": "SR Legacy",
+   "description": "Beef, carcass, separable lean and fat, choice, raw",
+   "per100g": {
+    "kcal": 291,
+    "proteinG": 17.32,
+    "fatG": 24.05,
+    "carbG": 0,
+    "fiberG": 0,
+    "vitARaeUg": 0,
+    "vitCMg": 0,
+    "calciumMg": 8,
+    "ironMg": 1.83
+   },
+   "ediblePortion": 0.81,
+   "refuseNote": "SR Legacy refuse 19%: Bone 19%",
+   "harvestForm": "carcass (bone-in)",
+   "notes": [
+    "Carcass, separable lean and fat, choice. Refuse 19% = bone. Select grade (169431) has 20% bone."
+   ],
+   "alternates": [
+    {
+     "label": "carcass, select grade",
+     "fdcId": 169431,
+     "dataType": "SR Legacy",
+     "description": "Beef, carcass, separable lean and fat, select, raw",
+     "per100g": {
+      "kcal": 278,
+      "proteinG": 17.48,
+      "fatG": 22.55,
+      "carbG": 0,
+      "fiberG": 0,
+      "vitARaeUg": null,
+      "vitCMg": 0,
+      "calciumMg": 8,
+      "ironMg": 1.85
+     },
+     "refusePct": 20.0,
+     "refuseDescription": "Bone 20%"
+    }
+   ]
+  },
+  "goat-milk": {
+   "food": true,
+   "name": "Goat milk",
+   "fdcId": 171278,
+   "ndbNumber": "01106",
+   "dataType": "SR Legacy",
+   "description": "Milk, goat, fluid, with added vitamin D",
+   "per100g": {
+    "kcal": 69,
+    "proteinG": 3.56,
+    "fatG": 4.14,
+    "carbG": 4.45,
+    "fiberG": 0,
+    "vitARaeUg": 57,
+    "vitCMg": 1.3,
+    "calciumMg": 134,
+    "ironMg": 0.05
+   },
+   "ediblePortion": 1.0,
+   "refuseNote": "SR Legacy refuse 0% (no refuse description)",
+   "harvestForm": "fluid milk",
+   "notes": [
+    "Only SR Legacy goat milk entry is \"with added vitamin D\"; vitamin D fortification does not affect the nutrients listed here."
+   ]
+  },
+  "cow-milk": {
+   "food": true,
+   "name": "Cow milk",
+   "fdcId": 171266,
+   "ndbNumber": "01078",
+   "dataType": "SR Legacy",
+   "description": "Milk, producer, fluid, 3.7% milkfat",
+   "per100g": {
+    "kcal": 64,
+    "proteinG": 3.28,
+    "fatG": 3.66,
+    "carbG": 4.65,
+    "fiberG": 0,
+    "vitARaeUg": 33,
+    "vitCMg": 1.5,
+    "calciumMg": 119,
+    "ironMg": 0.05
+   },
+   "ediblePortion": 1.0,
+   "refuseNote": "SR Legacy refuse 0% (no refuse description)",
+   "harvestForm": "fluid milk (farm/producer)",
+   "notes": [
+    "Producer (farm) milk 3.7% fat used, as a homestead would have. Retail whole milk 3.25% alternate given."
+   ],
+   "alternates": [
+    {
+     "label": "whole milk 3.25%, retail with vitamin D",
+     "fdcId": 171265,
+     "dataType": "SR Legacy",
+     "description": "Milk, whole, 3.25% milkfat, with added vitamin D",
+     "per100g": {
+      "kcal": 61,
+      "proteinG": 3.15,
+      "fatG": 3.25,
+      "carbG": 4.8,
+      "fiberG": 0,
+      "vitARaeUg": 46,
+      "vitCMg": 0,
+      "calciumMg": 113,
+      "ironMg": 0.03
+     },
+     "refusePct": 0.0,
+     "refuseDescription": null
+    }
+   ]
+  },
+  "honey": {
+   "food": true,
+   "name": "Honey",
+   "fdcId": 169640,
+   "ndbNumber": "19296",
+   "dataType": "SR Legacy",
+   "description": "Honey",
+   "per100g": {
+    "kcal": 304,
+    "proteinG": 0.3,
+    "fatG": 0,
+    "carbG": 82.4,
+    "fiberG": 0.2,
+    "vitARaeUg": 0,
+    "vitCMg": 0.5,
+    "calciumMg": 6,
+    "ironMg": 0.42
+   },
+   "ediblePortion": 1.0,
+   "refuseNote": "SR Legacy refuse 0% (no refuse description)",
+   "harvestForm": "extracted honey"
+  }
+ },
+ "dri": {
+  "energy": {
+   "source": "Dietary Guidelines for Americans, 2020-2025 (USDA & HHS, 9th ed., Dec 2020), Appendix 2, Tables A2-1, A2-2, A2-3 (pp. 139-141). Values are Estimated Energy Requirements from IOM 2002/2005 EER equations with reference heights and healthy weights (adult reference man 5 ft 10 in, 154 lb; reference woman 5 ft 4 in, 126 lb).",
+   "url": "https://www.dietaryguidelines.gov/sites/default/files/2020-12/Dietary_Guidelines_for_Americans_2020-2025.pdf",
+   "retrievalNote": "Official URL too large for the fetch tool (32 MB) and dietaryguidelines.gov blocked from the shell; read from a byte-identical copy (same 32,157,287-byte size, PDF metadata: Author \"U.S. Department of Agriculture and U.S. Department of Health and Human Services\", created 2020-12-23) at https://github.com/Desso-zx/NutriChat/blob/main/Data/Dietary_Guidelines_for_Americans_2020-2025.pdf, sha256 ceea04ce1a7c13a95a170f3548ed3926ad6dd49599bd730fb58bc9c02711d16e.",
+   "unit": "kcal/day",
+   "activityDefinitions": {
+    "sedentary": "only the physical activity of independent living",
+    "moderatelyActive": "physical activity equivalent to walking about 1.5 to 3 miles per day at 3 to 4 mph, in addition to independent living",
+    "active": "physical activity equivalent to walking more than 3 miles per day at 3 to 4 mph, in addition to independent living"
+   },
+   "toddlers12to23Months": [
+    {
+     "ageMonths": "12",
+     "male": 800,
+     "female": 800
+    },
+    {
+     "ageMonths": "15",
+     "male": 900,
+     "female": 800
+    },
+    {
+     "ageMonths": "18",
+     "male": 1000,
+     "female": 900
+    },
+    {
+     "ageMonths": "21-23",
+     "male": 1000,
+     "female": 1000
+    }
+   ],
+   "byAge": [
+    {
+     "age": "2",
+     "male": {
+      "sedentary": 1000,
+      "moderatelyActive": 1000,
+      "active": 1000
+     },
+     "female": {
+      "sedentary": 1000,
+      "moderatelyActive": 1000,
+      "active": 1000
+     }
+    },
+    {
+     "age": "3",
+     "male": {
+      "sedentary": 1000,
+      "moderatelyActive": 1400,
+      "active": 1400
+     },
+     "female": {
+      "sedentary": 1000,
+      "moderatelyActive": 1200,
+      "active": 1400
+     }
+    },
+    {
+     "age": "4",
+     "male": {
+      "sedentary": 1200,
+      "moderatelyActive": 1400,
+      "active": 1600
+     },
+     "female": {
+      "sedentary": 1200,
+      "moderatelyActive": 1400,
+      "active": 1400
+     }
+    },
+    {
+     "age": "5",
+     "male": {
+      "sedentary": 1200,
+      "moderatelyActive": 1400,
+      "active": 1600
+     },
+     "female": {
+      "sedentary": 1200,
+      "moderatelyActive": 1400,
+      "active": 1600
+     }
+    },
+    {
+     "age": "6",
+     "male": {
+      "sedentary": 1400,
+      "moderatelyActive": 1600,
+      "active": 1800
+     },
+     "female": {
+      "sedentary": 1200,
+      "moderatelyActive": 1400,
+      "active": 1600
+     }
+    },
+    {
+     "age": "7",
+     "male": {
+      "sedentary": 1400,
+      "moderatelyActive": 1600,
+      "active": 1800
+     },
+     "female": {
+      "sedentary": 1200,
+      "moderatelyActive": 1600,
+      "active": 1800
+     }
+    },
+    {
+     "age": "8",
+     "male": {
+      "sedentary": 1400,
+      "moderatelyActive": 1600,
+      "active": 2000
+     },
+     "female": {
+      "sedentary": 1400,
+      "moderatelyActive": 1600,
+      "active": 1800
+     }
+    },
+    {
+     "age": "9",
+     "male": {
+      "sedentary": 1600,
+      "moderatelyActive": 1800,
+      "active": 2000
+     },
+     "female": {
+      "sedentary": 1400,
+      "moderatelyActive": 1600,
+      "active": 1800
+     }
+    },
+    {
+     "age": "10",
+     "male": {
+      "sedentary": 1600,
+      "moderatelyActive": 1800,
+      "active": 2200
+     },
+     "female": {
+      "sedentary": 1400,
+      "moderatelyActive": 1800,
+      "active": 2000
+     }
+    },
+    {
+     "age": "11",
+     "male": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2200
+     },
+     "female": {
+      "sedentary": 1600,
+      "moderatelyActive": 1800,
+      "active": 2000
+     }
+    },
+    {
+     "age": "12",
+     "male": {
+      "sedentary": 1800,
+      "moderatelyActive": 2200,
+      "active": 2400
+     },
+     "female": {
+      "sedentary": 1600,
+      "moderatelyActive": 2000,
+      "active": 2200
+     }
+    },
+    {
+     "age": "13",
+     "male": {
+      "sedentary": 2000,
+      "moderatelyActive": 2200,
+      "active": 2600
+     },
+     "female": {
+      "sedentary": 1600,
+      "moderatelyActive": 2000,
+      "active": 2200
+     }
+    },
+    {
+     "age": "14",
+     "male": {
+      "sedentary": 2000,
+      "moderatelyActive": 2400,
+      "active": 2800
+     },
+     "female": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2400
+     }
+    },
+    {
+     "age": "15",
+     "male": {
+      "sedentary": 2200,
+      "moderatelyActive": 2600,
+      "active": 3000
+     },
+     "female": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2400
+     }
+    },
+    {
+     "age": "16",
+     "male": {
+      "sedentary": 2400,
+      "moderatelyActive": 2800,
+      "active": 3200
+     },
+     "female": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2400
+     }
+    },
+    {
+     "age": "17",
+     "male": {
+      "sedentary": 2400,
+      "moderatelyActive": 2800,
+      "active": 3200
+     },
+     "female": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2400
+     }
+    },
+    {
+     "age": "18",
+     "male": {
+      "sedentary": 2400,
+      "moderatelyActive": 2800,
+      "active": 3200
+     },
+     "female": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2400
+     }
+    },
+    {
+     "age": "19-20",
+     "male": {
+      "sedentary": 2600,
+      "moderatelyActive": 2800,
+      "active": 3000
+     },
+     "female": {
+      "sedentary": 2000,
+      "moderatelyActive": 2200,
+      "active": 2400
+     }
+    },
+    {
+     "age": "21-25",
+     "male": {
+      "sedentary": 2400,
+      "moderatelyActive": 2800,
+      "active": 3000
+     },
+     "female": {
+      "sedentary": 2000,
+      "moderatelyActive": 2200,
+      "active": 2400
+     }
+    },
+    {
+     "age": "26-30",
+     "male": {
+      "sedentary": 2400,
+      "moderatelyActive": 2600,
+      "active": 3000
+     },
+     "female": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2400
+     }
+    },
+    {
+     "age": "31-35",
+     "male": {
+      "sedentary": 2400,
+      "moderatelyActive": 2600,
+      "active": 3000
+     },
+     "female": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2200
+     }
+    },
+    {
+     "age": "36-40",
+     "male": {
+      "sedentary": 2400,
+      "moderatelyActive": 2600,
+      "active": 2800
+     },
+     "female": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2200
+     }
+    },
+    {
+     "age": "41-45",
+     "male": {
+      "sedentary": 2200,
+      "moderatelyActive": 2600,
+      "active": 2800
+     },
+     "female": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2200
+     }
+    },
+    {
+     "age": "46-50",
+     "male": {
+      "sedentary": 2200,
+      "moderatelyActive": 2400,
+      "active": 2800
+     },
+     "female": {
+      "sedentary": 1800,
+      "moderatelyActive": 2000,
+      "active": 2200
+     }
+    },
+    {
+     "age": "51-55",
+     "male": {
+      "sedentary": 2200,
+      "moderatelyActive": 2400,
+      "active": 2800
+     },
+     "female": {
+      "sedentary": 1600,
+      "moderatelyActive": 1800,
+      "active": 2200
+     }
+    },
+    {
+     "age": "56-60",
+     "male": {
+      "sedentary": 2200,
+      "moderatelyActive": 2400,
+      "active": 2600
+     },
+     "female": {
+      "sedentary": 1600,
+      "moderatelyActive": 1800,
+      "active": 2200
+     }
+    },
+    {
+     "age": "61-65",
+     "male": {
+      "sedentary": 2000,
+      "moderatelyActive": 2400,
+      "active": 2600
+     },
+     "female": {
+      "sedentary": 1600,
+      "moderatelyActive": 1800,
+      "active": 2000
+     }
+    },
+    {
+     "age": "66-70",
+     "male": {
+      "sedentary": 2000,
+      "moderatelyActive": 2200,
+      "active": 2600
+     },
+     "female": {
+      "sedentary": 1600,
+      "moderatelyActive": 1800,
+      "active": 2000
+     }
+    },
+    {
+     "age": "71-75",
+     "male": {
+      "sedentary": 2000,
+      "moderatelyActive": 2200,
+      "active": 2600
+     },
+     "female": {
+      "sedentary": 1600,
+      "moderatelyActive": 1800,
+      "active": 2000
+     }
+    },
+    {
+     "age": "76+",
+     "male": {
+      "sedentary": 2000,
+      "moderatelyActive": 2200,
+      "active": 2400
+     },
+     "female": {
+      "sedentary": 1600,
+      "moderatelyActive": 1800,
+      "active": 2000
+     }
+    }
+   ],
+   "byBand": {
+    "1-3": {
+     "male": {
+      "sedentary": {
+       "min": 1000,
+       "max": 1000,
+       "mean": 1000
+      },
+      "moderatelyActive": {
+       "min": 1000,
+       "max": 1400,
+       "mean": 1200
+      },
+      "active": {
+       "min": 1000,
+       "max": 1400,
+       "mean": 1200
+      }
+     },
+     "female": {
+      "sedentary": {
+       "min": 1000,
+       "max": 1000,
+       "mean": 1000
+      },
+      "moderatelyActive": {
+       "min": 1000,
+       "max": 1200,
+       "mean": 1100
+      },
+      "active": {
+       "min": 1000,
+       "max": 1400,
+       "mean": 1200
+      }
+     },
+     "dgaRows": [
+      "2",
+      "3"
+     ],
+     "note": "DGA Table A2-2 starts at age 2; age 1 is in Table A2-1 (toddlers 12-23 months, no activity levels: 800-1,000 kcal). Band values here cover ages 2-3 only."
+    },
+    "4-8": {
+     "male": {
+      "sedentary": {
+       "min": 1200,
+       "max": 1400,
+       "mean": 1320
+      },
+      "moderatelyActive": {
+       "min": 1400,
+       "max": 1600,
+       "mean": 1520
+      },
+      "active": {
+       "min": 1600,
+       "max": 2000,
+       "mean": 1760
+      }
+     },
+     "female": {
+      "sedentary": {
+       "min": 1200,
+       "max": 1400,
+       "mean": 1240
+      },
+      "moderatelyActive": {
+       "min": 1400,
+       "max": 1600,
+       "mean": 1480
+      },
+      "active": {
+       "min": 1400,
+       "max": 1800,
+       "mean": 1640
+      }
+     },
+     "dgaRows": [
+      "4",
+      "5",
+      "6",
+      "7",
+      "8"
+     ]
+    },
+    "9-13": {
+     "male": {
+      "sedentary": {
+       "min": 1600,
+       "max": 2000,
+       "mean": 1760
+      },
+      "moderatelyActive": {
+       "min": 1800,
+       "max": 2200,
+       "mean": 2000
+      },
+      "active": {
+       "min": 2000,
+       "max": 2600,
+       "mean": 2280
+      }
+     },
+     "female": {
+      "sedentary": {
+       "min": 1400,
+       "max": 1600,
+       "mean": 1520
+      },
+      "moderatelyActive": {
+       "min": 1600,
+       "max": 2000,
+       "mean": 1840
+      },
+      "active": {
+       "min": 1800,
+       "max": 2200,
+       "mean": 2040
+      }
+     },
+     "dgaRows": [
+      "9",
+      "10",
+      "11",
+      "12",
+      "13"
+     ]
+    },
+    "14-18": {
+     "male": {
+      "sedentary": {
+       "min": 2000,
+       "max": 2400,
+       "mean": 2280
+      },
+      "moderatelyActive": {
+       "min": 2400,
+       "max": 2800,
+       "mean": 2680
+      },
+      "active": {
+       "min": 2800,
+       "max": 3200,
+       "mean": 3080
+      }
+     },
+     "female": {
+      "sedentary": {
+       "min": 1800,
+       "max": 1800,
+       "mean": 1800
+      },
+      "moderatelyActive": {
+       "min": 2000,
+       "max": 2000,
+       "mean": 2000
+      },
+      "active": {
+       "min": 2400,
+       "max": 2400,
+       "mean": 2400
+      }
+     },
+     "dgaRows": [
+      "14",
+      "15",
+      "16",
+      "17",
+      "18"
+     ]
+    },
+    "19-30": {
+     "male": {
+      "sedentary": {
+       "min": 2400,
+       "max": 2600,
+       "mean": 2467
+      },
+      "moderatelyActive": {
+       "min": 2600,
+       "max": 2800,
+       "mean": 2733
+      },
+      "active": {
+       "min": 3000,
+       "max": 3000,
+       "mean": 3000
+      }
+     },
+     "female": {
+      "sedentary": {
+       "min": 1800,
+       "max": 2000,
+       "mean": 1933
+      },
+      "moderatelyActive": {
+       "min": 2000,
+       "max": 2200,
+       "mean": 2133
+      },
+      "active": {
+       "min": 2400,
+       "max": 2400,
+       "mean": 2400
+      }
+     },
+     "dgaRows": [
+      "19-20",
+      "21-25",
+      "26-30"
+     ]
+    },
+    "31-50": {
+     "male": {
+      "sedentary": {
+       "min": 2200,
+       "max": 2400,
+       "mean": 2300
+      },
+      "moderatelyActive": {
+       "min": 2400,
+       "max": 2600,
+       "mean": 2550
+      },
+      "active": {
+       "min": 2800,
+       "max": 3000,
+       "mean": 2850
+      }
+     },
+     "female": {
+      "sedentary": {
+       "min": 1800,
+       "max": 1800,
+       "mean": 1800
+      },
+      "moderatelyActive": {
+       "min": 2000,
+       "max": 2000,
+       "mean": 2000
+      },
+      "active": {
+       "min": 2200,
+       "max": 2200,
+       "mean": 2200
+      }
+     },
+     "dgaRows": [
+      "31-35",
+      "36-40",
+      "41-45",
+      "46-50"
+     ]
+    },
+    "51-70": {
+     "male": {
+      "sedentary": {
+       "min": 2000,
+       "max": 2200,
+       "mean": 2100
+      },
+      "moderatelyActive": {
+       "min": 2200,
+       "max": 2400,
+       "mean": 2350
+      },
+      "active": {
+       "min": 2600,
+       "max": 2800,
+       "mean": 2650
+      }
+     },
+     "female": {
+      "sedentary": {
+       "min": 1600,
+       "max": 1600,
+       "mean": 1600
+      },
+      "moderatelyActive": {
+       "min": 1800,
+       "max": 1800,
+       "mean": 1800
+      },
+      "active": {
+       "min": 2000,
+       "max": 2200,
+       "mean": 2100
+      }
+     },
+     "dgaRows": [
+      "51-55",
+      "56-60",
+      "61-65",
+      "66-70"
+     ]
+    },
+    "71+": {
+     "male": {
+      "sedentary": {
+       "min": 2000,
+       "max": 2000,
+       "mean": 2000
+      },
+      "moderatelyActive": {
+       "min": 2200,
+       "max": 2200,
+       "mean": 2200
+      },
+      "active": {
+       "min": 2400,
+       "max": 2600,
+       "mean": 2500
+      }
+     },
+     "female": {
+      "sedentary": {
+       "min": 1600,
+       "max": 1600,
+       "mean": 1600
+      },
+      "moderatelyActive": {
+       "min": 1800,
+       "max": 1800,
+       "mean": 1800
+      },
+      "active": {
+       "min": 2000,
+       "max": 2000,
+       "mean": 2000
+      }
+     },
+     "dgaRows": [
+      "71-75",
+      "76+"
+     ]
+    }
+   },
+   "bandNote": "byBand min/max/mean are computed from the DGA byAge rows that fall inside each DRI age band; mean is rounded to the nearest kcal and is a derived figure, not a DGA number.",
+   "pregnancyLactationDelta": {
+    "pregnancy1stTrimester": 0,
+    "pregnancy2ndTrimester": 340,
+    "pregnancy3rdTrimester": 452,
+    "lactationFirst6Months": 330,
+    "lactationSecond6Months": 400,
+    "note": "Table A2-3: change vs prepregnancy needs, for women with a healthy prepregnancy weight."
+   }
+  },
+  "rda": {
+   "source": "National Academies Food and Nutrition Board DRI summary tables, as reproduced in Dietary Reference Intakes for Sodium and Potassium (NASEM 2019), Appendix J, NCBI Bookshelf NBK545442.",
+   "urls": {
+    "vitamins": "https://www.ncbi.nlm.nih.gov/books/NBK545442/table/appJ_tab2/",
+    "elements": "https://www.ncbi.nlm.nih.gov/books/NBK545442/table/appJ_tab3/",
+    "macronutrients": "https://www.ncbi.nlm.nih.gov/books/NBK545442/table/appJ_tab4/"
+   },
+   "notes": [
+    "Protein, vitamin A, vitamin C, calcium and iron are RDAs; total fiber is an AI (Adequate Intake).",
+    "Vitamin A as RAE: 1 RAE = 1 ug retinol, 12 ug beta-carotene, 24 ug alpha-carotene or 24 ug beta-cryptoxanthin.",
+    "Protein RDA is based on g/kg of reference body weight (0.8 g/kg for adults).",
+    "Children 1-3 and 4-8 values apply to both sexes."
+   ],
+   "units": {
+    "proteinG": "g/day",
+    "vitARaeUg": "ug RAE/day",
+    "vitCMg": "mg/day",
+    "calciumMg": "mg/day",
+    "ironMg": "mg/day",
+    "fiberG": "g/day (AI)"
+   },
+   "byBand": {
+    "1-3": {
+     "male": {
+      "proteinG": 13,
+      "vitARaeUg": 300,
+      "vitCMg": 15,
+      "calciumMg": 700,
+      "ironMg": 7,
+      "fiberG": 19
+     },
+     "female": {
+      "proteinG": 13,
+      "vitARaeUg": 300,
+      "vitCMg": 15,
+      "calciumMg": 700,
+      "ironMg": 7,
+      "fiberG": 19
+     }
+    },
+    "4-8": {
+     "male": {
+      "proteinG": 19,
+      "vitARaeUg": 400,
+      "vitCMg": 25,
+      "calciumMg": 1000,
+      "ironMg": 10,
+      "fiberG": 25
+     },
+     "female": {
+      "proteinG": 19,
+      "vitARaeUg": 400,
+      "vitCMg": 25,
+      "calciumMg": 1000,
+      "ironMg": 10,
+      "fiberG": 25
+     }
+    },
+    "9-13": {
+     "male": {
+      "proteinG": 34,
+      "vitARaeUg": 600,
+      "vitCMg": 45,
+      "calciumMg": 1300,
+      "ironMg": 8,
+      "fiberG": 31
+     },
+     "female": {
+      "proteinG": 34,
+      "vitARaeUg": 600,
+      "vitCMg": 45,
+      "calciumMg": 1300,
+      "ironMg": 8,
+      "fiberG": 26
+     }
+    },
+    "14-18": {
+     "male": {
+      "proteinG": 52,
+      "vitARaeUg": 900,
+      "vitCMg": 75,
+      "calciumMg": 1300,
+      "ironMg": 11,
+      "fiberG": 38
+     },
+     "female": {
+      "proteinG": 46,
+      "vitARaeUg": 700,
+      "vitCMg": 65,
+      "calciumMg": 1300,
+      "ironMg": 15,
+      "fiberG": 26
+     }
+    },
+    "19-30": {
+     "male": {
+      "proteinG": 56,
+      "vitARaeUg": 900,
+      "vitCMg": 90,
+      "calciumMg": 1000,
+      "ironMg": 8,
+      "fiberG": 38
+     },
+     "female": {
+      "proteinG": 46,
+      "vitARaeUg": 700,
+      "vitCMg": 75,
+      "calciumMg": 1000,
+      "ironMg": 18,
+      "fiberG": 25
+     }
+    },
+    "31-50": {
+     "male": {
+      "proteinG": 56,
+      "vitARaeUg": 900,
+      "vitCMg": 90,
+      "calciumMg": 1000,
+      "ironMg": 8,
+      "fiberG": 38
+     },
+     "female": {
+      "proteinG": 46,
+      "vitARaeUg": 700,
+      "vitCMg": 75,
+      "calciumMg": 1000,
+      "ironMg": 18,
+      "fiberG": 25
+     }
+    },
+    "51-70": {
+     "male": {
+      "proteinG": 56,
+      "vitARaeUg": 900,
+      "vitCMg": 90,
+      "calciumMg": 1000,
+      "ironMg": 8,
+      "fiberG": 30
+     },
+     "female": {
+      "proteinG": 46,
+      "vitARaeUg": 700,
+      "vitCMg": 75,
+      "calciumMg": 1200,
+      "ironMg": 8,
+      "fiberG": 21
+     }
+    },
+    "71+": {
+     "male": {
+      "proteinG": 56,
+      "vitARaeUg": 900,
+      "vitCMg": 90,
+      "calciumMg": 1200,
+      "ironMg": 8,
+      "fiberG": 30
+     },
+     "female": {
+      "proteinG": 46,
+      "vitARaeUg": 700,
+      "vitCMg": 75,
+      "calciumMg": 1200,
+      "ironMg": 8,
+      "fiberG": 21
+     }
+    }
+   },
+   "pregnancy": {
+    "14-18": {
+     "proteinG": 71,
+     "vitARaeUg": 750,
+     "vitCMg": 80,
+     "calciumMg": 1300,
+     "ironMg": 27,
+     "fiberG": 28
+    },
+    "19-30": {
+     "proteinG": 71,
+     "vitARaeUg": 770,
+     "vitCMg": 85,
+     "calciumMg": 1000,
+     "ironMg": 27,
+     "fiberG": 28
+    },
+    "31-50": {
+     "proteinG": 71,
+     "vitARaeUg": 770,
+     "vitCMg": 85,
+     "calciumMg": 1000,
+     "ironMg": 27,
+     "fiberG": 28
+    }
+   },
+   "lactation": {
+    "14-18": {
+     "proteinG": 71,
+     "vitARaeUg": 1200,
+     "vitCMg": 115,
+     "calciumMg": 1300,
+     "ironMg": 10,
+     "fiberG": 29
+    },
+    "19-30": {
+     "proteinG": 71,
+     "vitARaeUg": 1300,
+     "vitCMg": 120,
+     "calciumMg": 1000,
+     "ironMg": 9,
+     "fiberG": 29
+    },
+    "31-50": {
+     "proteinG": 71,
+     "vitARaeUg": 1300,
+     "vitCMg": 120,
+     "calciumMg": 1000,
+     "ironMg": 9,
+     "fiberG": 29
+    }
+   }
+  }
+ }
+}

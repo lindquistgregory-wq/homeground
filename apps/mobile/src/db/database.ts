@@ -150,6 +150,45 @@ const MIGRATIONS: string[] = [
     sensor_id TEXT NOT NULL
   ) WITHOUT ROWID;
   `,
+  // 5 — Phase 5 AI planner. Goals and tasks sync; the conversation, plans and drafts stay on this device.
+  `
+  CREATE TABLE IF NOT EXISTS planner_goals (
+    parcel_id TEXT PRIMARY KEY,
+    goals TEXT NOT NULL,                -- JSON HomesteadGoals
+    updated_hlc TEXT NOT NULL,
+    deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS planner_messages (
+    id TEXT PRIMARY KEY,
+    parcel_id TEXT NOT NULL,
+    role TEXT NOT NULL,                 -- 'user' | 'assistant'
+    text TEXT NOT NULL,
+    meta TEXT,                          -- JSON: tool calls, model, safety, unverified figures
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS planner_messages_parcel ON planner_messages(parcel_id, created_at);
+  CREATE TABLE IF NOT EXISTS planner_drafts (
+    id TEXT PRIMARY KEY,
+    parcel_id TEXT NOT NULL,
+    kind TEXT NOT NULL,                 -- 'design' | 'tasks'
+    payload TEXT NOT NULL,              -- JSON DesignDraft or TaskDraft[]
+    status TEXT NOT NULL,               -- 'pending' | 'approved' | 'rejected'
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS tasks (
+    id TEXT PRIMARY KEY,
+    parcel_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    due TEXT,
+    category TEXT NOT NULL,
+    notes TEXT,
+    done INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_hlc TEXT NOT NULL,
+    deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS tasks_parcel ON tasks(parcel_id);
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -205,7 +244,7 @@ export class SqliteHttpCache implements KeyValueCache {
 export async function maxStoredHlc(): Promise<string | undefined> {
   const db = await getDb();
   const r = await db.getFirstAsync<{ m: string | null }>(
-    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs UNION ALL SELECT MAX(updated_hlc) FROM plantings UNION ALL SELECT MAX(updated_hlc) FROM sensors UNION ALL SELECT MAX(updated_hlc) FROM sensor_days)',
+    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs UNION ALL SELECT MAX(updated_hlc) FROM plantings UNION ALL SELECT MAX(updated_hlc) FROM sensors UNION ALL SELECT MAX(updated_hlc) FROM sensor_days UNION ALL SELECT MAX(updated_hlc) FROM planner_goals UNION ALL SELECT MAX(updated_hlc) FROM tasks)',
   );
   return r?.m ?? undefined;
 }
@@ -214,6 +253,6 @@ export async function maxStoredHlc(): Promise<string | undefined> {
 export async function deleteAllLocalData(): Promise<void> {
   const db = await getDb();
   await db.execAsync(
-    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings; DELETE FROM sensors; DELETE FROM readings; DELETE FROM sensor_days; DELETE FROM ble_aliases;',
+    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings; DELETE FROM sensors; DELETE FROM readings; DELETE FROM sensor_days; DELETE FROM ble_aliases; DELETE FROM planner_goals; DELETE FROM planner_messages; DELETE FROM planner_drafts; DELETE FROM tasks;',
   );
 }

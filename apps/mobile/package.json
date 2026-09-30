@@ -14,6 +14,7 @@
     "@maplibre/maplibre-react-native": "^11.4.0",
     "@plotwright/core": "workspace:*",
     "@plotwright/data": "workspace:*",
+    "@plotwright/ondevice-llm": "workspace:*",
     "@plotwright/providers": "workspace:*",
     "@plotwright/shade-native": "workspace:*",
     "@plotwright/user-sync": "workspace:*",

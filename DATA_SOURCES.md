@@ -59,3 +59,16 @@ Regrid and other commercial parcel APIs · Open-Meteo (free tier is non-commerci
 ## Coming in later phases (verify terms when they're added)
 
 NOAA CPC outlooks · NLCD · USDA PLANTS · AdMob + UMP (Phase 6, consent-gated).
+
+## Bundled knowledge and on-device AI (Phase 5)
+
+Nothing here is contacted over the network. The datasets ship inside the app, and the AI models are part of the phone's operating system.
+
+| Item | Used for | License / terms | Notes |
+|---|---|---|---|
+| USDA FoodData Central, SR Legacy (`packages/data/knowledge/nutrition.json`) | Calories and nutrients per 100 g, edible portions (crops and animal products) | Public domain (CC0) | Values from the SR Legacy CSV release (2019-04-02) cross-checked against SR28; each food keeps its FDC id |
+| Dietary Guidelines for Americans 2020–2025, Appendix 2 | Calorie needs by age, sex and activity | Public domain | |
+| National Academies DRI summary tables (NCBI NBK545442) | Protein, vitamin A, vitamin C, calcium, iron, fibre targets | Facts, cited | |
+| Homestead profiles (`packages/data/knowledge/homestead.json`) | Livestock, enterprises, infrastructure, food preservation | Facts with citations (extension, USDA, SARE/PASA, NCHFP); no text copied | Every entry has source URLs and years; pre-2016 figures flagged `oldData`, pre-2020 prices `oldPrice`; unknowns are `null`. A few costs are from commercial cost guides and say so |
+| Apple Foundation Models (iOS 26+) | Planner conversation and tool calls | Free with the OS; Apple acceptable-use requirements | On-device only. **Private Cloud Compute is not used**: it has per-user quotas and an iCloud+ upsell |
+| ML Kit GenAI Prompt API (Gemini Nano) | Planner conversation on supported Android phones | Free; ML Kit GenAI Additional Terms + Generative AI Prohibited Use Policy | **Beta**. Terms: users 18+, app must not target minors, foreground only. No key or Firebase project |

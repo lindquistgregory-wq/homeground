@@ -63,7 +63,8 @@ export type Feature =
   | 'sensors.greenhouseAlerts'
   | 'sensors.localNetwork'
   | 'planner.full'
-  | 'planner.income';
+  | 'planner.income'
+  | 'planner.multiYear'; // budgets and years 2–5 of the phased plan
 
 const FREE_FEATURES: Feature[] = ['layers.core'];
 const GROWER_FEATURES: Feature[] = [
@@ -90,6 +91,7 @@ const PRO_ONLY: Feature[] = [
   'sensors.greenhouseAlerts',
   'sensors.localNetwork',
   'planner.income',
+  'planner.multiYear',
 ];
 
 export const TIER_FEATURES: Record<Tier, ReadonlySet<Feature>> = {

@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["OnDeviceLlmModule"] },
+  "android": { "modules": ["app.plotwright.ondevicellm.OnDeviceLlmModule"] }
+}

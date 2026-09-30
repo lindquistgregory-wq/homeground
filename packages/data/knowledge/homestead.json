@@ -1,0 +1,1788 @@
+{
+ "retrieved": "2026-09-29",
+ "conventions": {
+  "ranges": "[low, high]; a single sourced value is given as [v, v]",
+  "derived": "Values marked derived:true are simple arithmetic on the cited source figures (method in note); nothing is estimated beyond the sources",
+  "nulls": "null means no acceptable source was found in this pass; see the note",
+  "oldFlag": "oldData:true when the underlying figure is from before 2016 (or undated); prices flagged oldPrice:true when the price year is before 2020"
+ },
+ "livestock": {
+  "laying_hens": {
+   "unit": "per hen",
+   "minGroupSize": null,
+   "minGroupSizeNote": "Chickens are flock animals, but no cited extension minimum was found; do not quote a number.",
+   "starterFlockSize": [
+    10,
+    10
+   ],
+   "starterFlockNote": "University of Maryland backyard budget uses 10 hens. Penn State suggests 50 to 100 hens for a beginning egg business.",
+   "spaceIndoorSqFt": [
+    1.5,
+    5
+   ],
+   "spaceIndoorNote": "1.5 sq ft is the minimum in Penn State's commercial small-scale guide. Backyard guidance is 3 to 4 (extension.org) or 3 to 5 (UMN).",
+   "spaceOutdoorSqFt": [
+    10,
+    10
+   ],
+   "spaceOutdoorNote": "extension.org backyard guideline. The source notes that little peer-reviewed research exists on backyard space.",
+   "pastureAcresPerHead": null,
+   "feedLbPerYear": [
+    90,
+    156
+   ],
+   "feedNote": "UMN: a 6-lb hen eats about 3 lb a week (about 156 lb a year). Penn State organic budget: 90 lb per bird over 52 production weeks. UMD: 4.5 lb of feed per dozen eggs.",
+   "waterGalPerDay": null,
+   "waterNote": "No extension per-hen figure found (the NDSU water table omits poultry). Provide continuous access.",
+   "production": {
+    "eggsPerYear": [
+     255,
+     312
+    ],
+    "eggsNote": "UMN: about 6 eggs a week at peak (about 312 a year). Low end derived from UMD's 70% average hen-day rate x 365 = 255.",
+    "derived": true,
+    "ageDecline": "UF/IFAS: production peaks at about 90% 6-8 weeks after lay begins (18-22 weeks of age) and falls to about 65% after 12 months of lay. Many hens decline significantly after 2-3 years. Molt comes after 50-60 weeks of lay. UMN: laying starts around 6 months, is highest in the first two years, and hens live 5-10 years.",
+    "lightHoursForLay": [
+     14,
+     16
+    ],
+    "lightNote": "UF: about 14 h. Penn State: never exceed 16 h."
+   },
+   "laborHoursPerWeek": [
+    2.3,
+    3.5
+   ],
+   "laborNote": "UMD: 20 min a day for 10 hens (2.3 h/wk) and 0.5 h a day for 100 hens (3.5 h/wk). Penn State egg business: 180-200 h a year.",
+   "startupCostUSD": [
+    735,
+    1950
+   ],
+   "startupNote": "UMD 10-hen budget: housing $500, heater $50, feeder and waterer $75, storage $50, 10 chicks at $6 = $735. UMD 100-hen budget: $1,950 for housing and equipment only. HomeGuide (2024-26): small DIY coop $250-500, prefab $800-4,000+.",
+   "annualCostUSD": [
+    586,
+    586
+   ],
+   "annualNote": "UMD 10-hen flock, 3-year average of $1,759 total (feed at $15 per 50 lb). Cost per dozen: $3.37 for 10 hens and $2.07 for 100 hens, excluding labor.",
+   "priceYear": null,
+   "priceYearNote": "UMD fact sheet FS-2025-0783 (2025). The UMD 100-hen budget page is undated.",
+   "regulatory": [
+    "No rooster is needed for eggs (UMN does not list one as necessary). Roosters and flock size are often limited by municipal zoning; check local code.",
+    "Penn State egg sales guidance: keep eggs at 45°F or below within 24 h of lay. It cites a threshold for flocks under 3,000 laying hens that sell within 5 days of lay. State egg-handler licensing varies."
+   ],
+   "climate": "UF: heat depresses feed intake, egg production and egg size. Supplemental light is needed in short days.",
+   "predators": "UMN: raccoons, rats, owls, hawks, cats.",
+   "welfare": "Nest boxes: one per 4-5 hens (UMN). Continuous fresh water, layer feed with at least 16% protein and 3.5% calcium (Penn State).",
+   "manureN": null,
+   "sources": [
+    {
+     "title": "Raising chickens for eggs (UMN Extension)",
+     "url": "https://extension.umn.edu/small-scale-poultry/raising-chickens-eggs",
+     "year": 2025
+    },
+    {
+     "title": "Small-Scale Egg Production (Organic and Conventional), Penn State",
+     "url": "https://extension.psu.edu/small-scale-egg-production-organic-and-conventional",
+     "year": 2021
+    },
+    {
+     "title": "Space allowances in housing for small and backyard poultry flocks (extension.org)",
+     "url": "https://poultry.extension.org/articles/getting-started-with-small-and-backyard-poultry/housing-for-small-and-backyard-poultry-flocks/space-allowances-in-housing-for-small-and-backyard-poultry-flocks/",
+     "year": null
+    },
+    {
+     "title": "Backyard Layer Flock Economics FS-2025-0783 (UMD)",
+     "url": "https://extension.umd.edu/resource/backyard-layer-flock-economics-how-much-does-it-cost-you-produce-dozen-eggs-fs-2025-0783",
+     "year": 2025
+    },
+    {
+     "title": "Small Flock Layer Budget - 100 (UMD, Dale M. Johnson)",
+     "url": "https://extension.umd.edu/resource/small-flock-layer-budget-100-dale-m-johnson",
+     "year": null
+    },
+    {
+     "title": "PS029 Factors Affecting Egg Production in Backyard Chicken Flocks (UF/IFAS)",
+     "url": "https://ask.ifas.ufl.edu/publication/PS029",
+     "year": 2025
+    },
+    {
+     "title": "Chicken coop cost (HomeGuide; commercial cost guide)",
+     "url": "https://homeguide.com/costs/chicken-coop-cost",
+     "year": 2026
+    }
+   ]
+  },
+  "meat_chickens": {
+   "unit": "per bird (Cornish cross broiler), per grow-out",
+   "minGroupSize": null,
+   "starterFlockSize": [
+    100,
+    100
+   ],
+   "starterFlockNote": "The Missouri small-scale budget runs 100 birds per batch and 7 batches a year. A household may raise far fewer. No household-size source was found.",
+   "spaceIndoorSqFt": [
+    1.5,
+    4
+   ],
+   "spaceIndoorNote": "Penn State pasture: 1.5 sq ft per bird (a 10x12 ft Salatin tractor holds 80 birds). extension.org confinement: 3-4 sq ft.",
+   "spaceOutdoorSqFt": null,
+   "spaceOutdoorNote": "extension.org: outdoor access is not necessary for commercial strains, which are less likely to use it.",
+   "pastureAcresPerHead": null,
+   "feedLbPerGrowOut": [
+    7.3,
+    15
+   ],
+   "feedNote": "Penn State: about 15 lb per bird to harvest weight. Missouri G742 budget implies about 7.3 lb per bird. These conflict; prefer the Penn State figure for planning.",
+   "growOutDays": [
+    42,
+    56
+   ],
+   "growOutNote": "Penn State: 6-8 weeks. Slow-growing breeds take 8-9 weeks.",
+   "waterGalPerGrowOut": [
+    3.6,
+    3.6
+   ],
+   "waterNote": "Penn State: about 3.6 gal per bird over the whole grow-out, not per day.",
+   "production": {
+    "liveWeightLb": [
+     5.25,
+     6.5
+    ],
+    "dressedWeightLb": [
+     4,
+     4.55
+    ],
+    "dressingPct": [
+     70,
+     75
+    ],
+    "note": "Penn State: 5.25 lb live gives a 4 lb carcass (75% dressing) at about 6 weeks. Missouri: 6.5 lb live at 70% gives 4.55 lb."
+   },
+   "laborHoursPerWeek": [
+    8.8,
+    8.8
+   ],
+   "laborNote": "Missouri G742: 8.8 h/wk and 220.5 h a year for 100-bird batches, 7 batches a year.",
+   "startupCostUSD": [
+    4719,
+    4719
+   ],
+   "startupNote": "Missouri G742 small-scale mobile pen system, including on-farm processing equipment.",
+   "annualCostUSD": null,
+   "costPerBirdUSD": [
+    24.47,
+    24.47
+   ],
+   "costPerBirdNote": "Missouri G742 small-scale variable cost per bird, including on-farm processing at $4.27 per bird.",
+   "priceYear": null,
+   "priceYearNote": "The G742 page gives no year.",
+   "regulatory": [
+    "USDA PPIA exemptions: Producer/Grower 1,000-bird limit and 20,000-bird limit (including PGPR and small enterprise). Birds must be healthy and processed under sanitary conditions. Containers must carry the producer name, address and 'Exempt P.L. 90-492'. No interstate sales. Only one exemption per operation. States may be stricter (ACES 2022)."
+   ],
+   "climate": "Fast-growing broilers are heat-sensitive. No numeric threshold was sourced.",
+   "predators": "Pasture pens and tractors protect against predators. No specific source.",
+   "welfare": "Cornish cross grow very fast. Penn State notes slow-growing alternatives (Freedom Ranger and others, 8-9 wk, 67-69% dressing).",
+   "manureN": null,
+   "sources": [
+    {
+     "title": "A Quick Guide to Raising Pastured Broilers (Penn State)",
+     "url": "https://extension.psu.edu/a-quick-guide-to-raising-pastured-broilers",
+     "year": 2025
+    },
+    {
+     "title": "Mobile Poultry for Meat Planning Budget G742 (MU Extension)",
+     "url": "https://extension.missouri.edu/publications/g742",
+     "year": null
+    },
+    {
+     "title": "Space allowances for small and backyard poultry (extension.org)",
+     "url": "https://poultry.extension.org/articles/getting-started-with-small-and-backyard-poultry/housing-for-small-and-backyard-poultry-flocks/space-allowances-in-housing-for-small-and-backyard-poultry-flocks/",
+     "year": null
+    },
+    {
+     "title": "Exemptions from USDA Inspection for Small-Scale Poultry Processors (Alabama Extension)",
+     "url": "https://www.aces.edu/blog/topics/farming/exemptions-from-usda-inspection-for-small-scale-poultry-processors/",
+     "year": 2022
+    }
+   ]
+  },
+  "ducks_layers": {
+   "unit": "per duck",
+   "minGroupSize": null,
+   "starterFlockSize": null,
+   "spaceIndoorSqFt": [
+    5,
+    5
+   ],
+   "spaceOutdoorSqFt": null,
+   "spaceOutdoorNote": "extension.org gives no outdoor recommendation for ducks.",
+   "pastureAcresPerHead": null,
+   "feedLbPerYear": [
+    91,
+    91
+   ],
+   "derived": true,
+   "feedNote": "extension.org: laying ducks eat about 120 g (0.25 lb) a day; x 365 = about 91 lb. Ducklings eat about 27.6 lb to 20 weeks. Ducks use 20-30% more feed per dozen eggs than chickens.",
+   "waterGalPerDay": null,
+   "production": {
+    "eggsPerYear": [
+     300,
+     350
+    ],
+    "eggsNote": "extension.org: commercial laying ducks 300-350. Oklahoma State breeds site: some Khaki Campbell strains average about 300. Duck eggs weigh 32-34 oz a dozen.",
+    "ageDecline": null
+   },
+   "laborHoursPerWeek": null,
+   "startupCostUSD": null,
+   "annualCostUSD": null,
+   "regulatory": [
+    "Zoning for poultry usually applies to ducks too; check local code. Egg-sale rules are the same as for chickens (state egg law)."
+   ],
+   "climate": "Oklahoma State: Khaki Campbells lay well without artificial light.",
+   "predators": null,
+   "welfare": null,
+   "manureN": null,
+   "sources": [
+    {
+     "title": "Feeding ducks for egg production in small flocks (extension.org)",
+     "url": "https://poultry.extension.org/articles/feeds-and-feeding-of-poultry/feeding-ducks-for-egg-production-kept-in-small-flocks/",
+     "year": null
+    },
+    {
+     "title": "Khaki Campbell Ducks (Oklahoma State University Breeds of Livestock)",
+     "url": "https://breeds.okstate.edu/poultry/ducks/khaki-campbell-ducks",
+     "year": null
+    },
+    {
+     "title": "Space allowances for small and backyard poultry (extension.org)",
+     "url": "https://poultry.extension.org/articles/getting-started-with-small-and-backyard-poultry/housing-for-small-and-backyard-poultry-flocks/space-allowances-in-housing-for-small-and-backyard-poultry-flocks/",
+     "year": null
+    }
+   ]
+  },
+  "meat_rabbits": {
+   "unit": "per breeding doe",
+   "minGroupSize": null,
+   "starterFlockSize": [
+    4,
+    5
+   ],
+   "starterFlockNote": "UMaine and Texas A&M: 4-5 breeding does and 1 buck for family production.",
+   "spaceIndoorSqFt": [
+    6.25,
+    6.25
+   ],
+   "derived": true,
+   "spaceIndoorNote": "Doe cage 30x30x18 in (6.25 sq ft). Buck cage 30x24 or 24x24 in. Nest box 10x16x8 in.",
+   "spaceOutdoorSqFt": null,
+   "pastureAcresPerHead": null,
+   "feedLbPerYear": [
+    175,
+    175
+   ],
+   "feedNote": "UMaine budget: about 175 lb per doe per year, including her litters to fryer weight as budgeted. Free-choice feeding.",
+   "waterGalPerDay": null,
+   "production": {
+    "littersPerYear": [
+     6,
+     8
+    ],
+    "kitsPerLitter": [
+     7,
+     8
+    ],
+    "fryersPerDoePerYear": [
+     30,
+     30
+    ],
+    "fryerLiveWeightLb": [
+     4,
+     4.5
+    ],
+    "fryerAgeWeeks": [
+     8,
+     10
+    ],
+    "dressedWeightLb": null,
+    "note": "Dressing percent was not found in the fetched extension sources."
+   },
+   "laborHoursPerWeek": [
+    1.5,
+    1.5
+   ],
+   "laborNote": "UMaine: about 20 h per breeding doe per year. 4 does = 80 h a year, about 15 min a day. Weekly figure derived (80/52).",
+   "startupCostUSD": null,
+   "annualCostUSD": [
+    195,
+    195
+   ],
+   "annualNote": "UMaine: annual operating cost per doe $195, return over costs $67.50 per doe (Jan 2014 prices). Texas A&M: feed $74 per doe (1995 prices).",
+   "priceYear": 2014,
+   "oldPrice": true,
+   "regulatory": [
+    "Texas A&M (1995) says Texas did not require inspection of rabbit processing. Rabbit meat sale rules vary by state; verify with the state agriculture department."
+   ],
+   "climate": "Heat: buck fertility drops after several days above 85°F. Housing should be at least 10°F cooler than outside (Texas A&M).",
+   "predators": null,
+   "welfare": null,
+   "manureN": null,
+   "sources": [
+    {
+     "title": "Bulletin #1044 Backyard Production of Meat Rabbits in Maine",
+     "url": "https://extension.umaine.edu/publications/1044e/",
+     "year": 2014
+    },
+    {
+     "title": "Backyard Production of Meat Rabbits in Texas (Texas A&M AgriLife)",
+     "url": "https://agrilifeextension.tamu.edu/wp-content/uploads/2025/03/Backyard-Productions-of-Meat-Rabbits-in-Texas.pdf",
+     "year": 1995,
+     "oldData": true
+    }
+   ]
+  },
+  "dairy_goats": {
+   "unit": "per doe",
+   "minGroupSize": null,
+   "minGroupSizeNote": "MSU Extension calls goats herd animals but gives no minimum number.",
+   "starterFlockSize": null,
+   "spaceIndoorSqFt": [
+    9,
+    12
+   ],
+   "spaceIndoorNote": "MSU Extension: 9 sq ft of open barn area per animal. Penn State meat-goat shelter: 10-12 sq ft per doe.",
+   "spaceOutdoorSqFt": null,
+   "pastureAcresPerHead": [
+    0.17,
+    0.17
+   ],
+   "derived": true,
+   "pastureNote": "MSU: an acre can support up to 6 goats under optimal conditions. The number varies strongly with rainfall, forage quality and browse.",
+   "feedLbPerYear": null,
+   "feedNote": "Penn State: grain at 1 lb per 2.5-3 lb of milk. Forage is most of the diet. No annual hay tonnage was sourced.",
+   "waterGalPerDay": [
+    0.3,
+    3
+   ],
+   "waterNote": "MSU: 0.3-0.5 gal a day, up to 3 gal a day when lactating.",
+   "production": {
+    "milkLbPerLactation": [
+     795,
+     2715
+    ],
+    "lactationDays": [
+     284,
+     284
+    ],
+    "note": "Penn State: varies by breed. Peak comes 4-6 weeks after kidding."
+   },
+   "laborHoursPerWeek": null,
+   "laborNote": "Penn State 50-doe commercial budget: about 15 h per doe per year (750 h total). Per-doe hours at household scale will be much higher because daily milking takes the same time for 1 or 50 does.",
+   "startupCostUSD": null,
+   "startupNote": "Penn State commercial (50 does): does $150-200 each, buildings and fencing $15,000-20,000, milking equipment $20,000-30,000. Not representative of a 2-doe household.",
+   "annualCostUSD": null,
+   "priceYear": 2022,
+   "regulatory": [
+    "Raw milk sale is state law and varies: May 2025 chart lists retail sales legal in about 13 states, on-farm only in about 16, herdshare only in a few, and prohibited or unaddressed in others. Verify with the state.",
+    "Penn State (2022) states raw milk sale is prohibited in Pennsylvania. The 2025 chart lists PA as a retail-legal (licensed) state. These sources conflict; treat as 'licensed permit required' and verify.",
+    "Grade A dairy rules: cool milk below 40°F immediately after milking (Penn State)."
+   ],
+   "climate": null,
+   "predators": "MSU: coyotes are the common predator. Guardian dog breeds such as Great Pyrenees, Anatolian and Kangal.",
+   "welfare": "MSU: quarantine new animals at least 40 days. Goats can live 10+ years.",
+   "manureN": null,
+   "sources": [
+    {
+     "title": "Dairy Goat Production (Penn State Agricultural Alternatives)",
+     "url": "https://extension.psu.edu/dairy-goat-production",
+     "year": 2022
+    },
+    {
+     "title": "What to know before bringing home goats (Mississippi State Extension)",
+     "url": "https://extension.msstate.edu/news/feature-story/2023/what-know-bringing-home-goats",
+     "year": 2025
+    },
+    {
+     "title": "Updated Raw Milk Sales by State Chart (as of May 1, 2025), Food Safety News",
+     "url": "https://www.foodsafetynews.com/files/2025/05/Updated-Raw-Milk-Sales-by-State-Chart-as-of-May-1-2025.pdf",
+     "year": 2025
+    }
+   ]
+  },
+  "meat_goats": {
+   "unit": "per doe",
+   "minGroupSize": null,
+   "starterFlockSize": [
+    25,
+    25
+   ],
+   "starterFlockNote": "NCAT and Penn State small commercial unit: 25 does and 1 buck. One buck can serve 25-50 does. No household-scale source was found.",
+   "spaceIndoorSqFt": [
+    10,
+    12
+   ],
+   "spaceOutdoorSqFt": null,
+   "pastureAcresPerHead": [
+    0.14,
+    2
+   ],
+   "derived": true,
+   "pastureNote": "Penn State: about 6-7 does per acre (0.14-0.17 acre each) on good pasture. NCAT: 0.5-1 goat per acre for brush maintenance (1-2 acres each). Depends on rainfall and forage.",
+   "feedLbPerYear": null,
+   "feedNote": "NCAT example: winter supplement 5 lb of dry matter a day for 120 days. Add 20% for hay waste.",
+   "waterGalPerDay": [
+    0.3,
+    3
+   ],
+   "waterNote": "MSU Extension figure for goats in general.",
+   "production": {
+    "kidsPerDoe": [
+     1.9,
+     2.3
+    ],
+    "kidsNote": "Penn State under good management. NCAT budgets use a 144-180% kid crop with 10% death loss.",
+    "marketWeightLb": [
+     48,
+     60
+    ],
+    "marketAgeMonths": [
+     6,
+     9
+    ],
+    "dressedWeightLb": null
+   },
+   "laborHoursPerWeek": null,
+   "laborNote": "NCAT citing an Oklahoma State budget: about 2 h per head per year plus 0.9-2 h of machinery labor.",
+   "startupCostUSD": [
+    27500,
+    33200
+   ],
+   "startupNote": "Penn State, 25 does + 1 buck, including fencing and equipment.",
+   "annualCostUSD": [
+    59,
+    98
+   ],
+   "annualNote": "NCAT: total cost per doe per year (operating $40-78 plus fixed $19-33). 2006-2009 data.",
+   "priceYear": 2023,
+   "oldPriceFields": [
+    "annualCostUSD"
+   ],
+   "regulatory": [
+    "Penn State cites state manure and nutrient-management rules (PA Clean Streams Law, Act 38)."
+   ],
+   "climate": null,
+   "predators": "NCAT: guardian dogs. Fencing: 5-6 strand high-tensile electric or 47-in woven wire with 10-12 in vertical spacing, at least 4,000 V.",
+   "welfare": null,
+   "manureN": null,
+   "sources": [
+    {
+     "title": "Meat Goat Production (Penn State Agricultural Alternatives)",
+     "url": "https://extension.psu.edu/meat-goat-production",
+     "year": 2023
+    },
+    {
+     "title": "Meat Goats: Sustainable Production (ATTRA/NCAT)",
+     "url": "https://www.ncat.org/publication/meat-goats-sustainable-production/",
+     "year": 2009,
+     "oldData": true
+    },
+    {
+     "title": "What to know before bringing home goats (MSU Extension)",
+     "url": "https://extension.msstate.edu/news/feature-story/2023/what-know-bringing-home-goats",
+     "year": 2025
+    }
+   ]
+  },
+  "sheep": {
+   "unit": "per ewe",
+   "minGroupSize": null,
+   "starterFlockSize": null,
+   "spaceIndoorSqFt": [
+    15,
+    15
+   ],
+   "spaceIndoorNote": "UMaine: about 15 sq ft per ewe. Cornell: a 900 sq ft barn holds up to 60 ewes with lambs.",
+   "spaceOutdoorSqFt": null,
+   "pastureAcresPerHead": [
+    0.5,
+    0.5
+   ],
+   "pastureNote": "Cornell Small Farms: start with no more than 2 ewes per acre. Stocking depends on pasture improvement, climate, soil and rotation.",
+   "feedLbPerYear": [
+    1500,
+    1500
+   ],
+   "feedNote": "UMaine: about 3/4 ton of hay equivalent per ewe per year (1,500 lb), about half from grazing.",
+   "waterGalPerDay": [
+    1,
+    3
+   ],
+   "waterNote": "NDSU (2026): pregnant ewes 1-2 gal, lactating ewes 2-3 gal, feeder lambs 1-1.5 gal a day. Intake rises with temperature.",
+   "production": {
+    "lambsPerEwe": null,
+    "lambsNote": "UMaine: from under 1 to over 3 lambs per ewe a year.",
+    "marketLambLiveWeightLb": [
+     100,
+     110
+    ],
+    "dressedWeightLb": null,
+    "fleeceLbPerYear": null
+   },
+   "laborHoursPerWeek": null,
+   "startupCostUSD": null,
+   "annualCostUSD": null,
+   "regulatory": [],
+   "climate": null,
+   "predators": null,
+   "welfare": "UMaine: copper is toxic to sheep at lower levels than to other livestock, so do not use goat or cattle minerals.",
+   "manureN": null,
+   "sources": [
+    {
+     "title": "Bulletin #2186 Are You Thinking of Raising Sheep? (UMaine)",
+     "url": "https://extension.umaine.edu/publications/2186e/",
+     "year": 2006,
+     "oldData": true
+    },
+    {
+     "title": "How to Get Started with Sheep (Cornell Small Farms)",
+     "url": "https://smallfarms.cornell.edu/2010/07/how-to-get-started-with-sheep/",
+     "year": 2010,
+     "oldData": true
+    },
+    {
+     "title": "Livestock Water Requirements AS1763 (NDSU)",
+     "url": "https://www.ndsu.edu/agriculture/extension/publications/livestock-water-requirements",
+     "year": 2026
+    }
+   ]
+  },
+  "feeder_pigs": {
+   "unit": "per pig, one grow-out (feeder about 50 lb to market)",
+   "minGroupSize": null,
+   "starterFlockSize": null,
+   "spaceIndoorSqFt": [
+    8,
+    8
+   ],
+   "spaceOutdoorSqFt": null,
+   "pastureAcresPerHead": [
+    0.03,
+    0.07
+   ],
+   "derived": true,
+   "pastureNote": "Oregon State: 15-34 growing-finishing pigs per acre. Depends on soil, rainfall and rotation.",
+   "feedLbPerGrowOut": [
+    500,
+    690
+   ],
+   "derived_feed": true,
+   "feedNote": "Derived: Oregon State feed conversion of 2.5-3 lb feed per lb gain x (250-280 lb finish minus 50 lb start). Not stated directly by the source.",
+   "growOutDays": [
+    100,
+    153
+   ],
+   "growOutNote": "Derived from Oregon State's 1.5-2 lb/day gain over 200-230 lb of gain. Penn State describes about a May-to-November season. Oregon State: harvest at about 6 months of age.",
+   "waterGalPerDay": [
+    2,
+    3
+   ],
+   "waterNote": "NDSU: finishing pigs of 100-250 lb.",
+   "production": {
+    "finishLiveWeightLb": [
+     250,
+     280
+    ],
+    "hangingWeightLb": [
+     169,
+     175
+    ],
+    "takeHomeMeatLb": [
+     125,
+     125
+    ],
+    "note": "UW-Madison example: 250 lb live at 70% dressing = 175 lb hot carcass, 169 lb chilled, about 125 lb retail cuts (67% cutting yield). Dressing is 70-75%. Bone-in cutting yield 74%, boneless 65%."
+   },
+   "laborHoursPerWeek": null,
+   "startupCostUSD": null,
+   "annualCostUSD": null,
+   "regulatory": [
+    "Selling pork by the cut needs USDA- or state-inspected slaughter. Custom-exempt processing is for the owner's own use. No source was fetched for this; verify with the state."
+   ],
+   "climate": "Oregon State: a 50-lb pig is comfortable at 70-82°F and pigs over 215 lb at 50-75°F. Penn State: pigs over 150 lb need cooling above about 70°F. Provide shade and a wallow.",
+   "predators": null,
+   "welfare": "Penn State: electric wire at ground level stops rooting under fences. Constant fresh water.",
+   "manureN": null,
+   "sources": [
+    {
+     "title": "Raising Small Groups of Pigs (Penn State)",
+     "url": "https://extension.psu.edu/raising-small-groups-of-pigs",
+     "year": 2026
+    },
+    {
+     "title": "Care and Management of New Feeder Pigs EM 9271 (Oregon State)",
+     "url": "https://extension.oregonstate.edu/catalog/em-9271-care-management-new-feeder-pigs",
+     "year": 2019
+    },
+    {
+     "title": "How much meat should a hog yield? (UW-Madison Extension)",
+     "url": "https://livestock.extension.wisc.edu/articles/how-much-meat-should-a-hog-yield/",
+     "year": 2020
+    },
+    {
+     "title": "Livestock Water Requirements AS1763 (NDSU)",
+     "url": "https://www.ndsu.edu/agriculture/extension/publications/livestock-water-requirements",
+     "year": 2026
+    }
+   ]
+  },
+  "honeybees": {
+   "unit": "per hive (colony)",
+   "minGroupSize": null,
+   "starterFlockSize": null,
+   "spaceIndoorSqFt": null,
+   "spaceOutdoorSqFt": null,
+   "pastureAcresPerHead": null,
+   "feedLbPerYear": null,
+   "waterGalPerDay": null,
+   "production": {
+    "honeyLbPerHivePerYear": [
+     48,
+     60
+    ],
+    "honeyNote": "USDA NASS: 48.0 lb per colony in 2025 and 51.7 lb in 2024 (operations with 5+ colonies). Penn State budget assumes 60 lb. First-year colonies often produce little surplus, though that was not sourced numerically.",
+    "honeyPriceUSDPerLb": {
+     "allChannels2025": 3.05,
+     "retail2025": 7.15
+    }
+   },
+   "laborHoursPerWeek": null,
+   "startupCostUSD": [
+    710,
+    710
+   ],
+   "startupNote": "Penn State (2012): $7,097.50 for 10 hives, including $2,000 facility adaptation. Equipment only is about $510 per hive.",
+   "annualCostUSD": [
+    179,
+    179
+   ],
+   "annualNote": "Penn State (2012): $1,791.55 per year for 10 colonies.",
+   "priceYear": 2012,
+   "oldPrice": true,
+   "regulatory": [
+    "Apiary registration is required in some states, for example Pennsylvania (Penn State), Maryland, Illinois and Washington (state agency pages). Rules vary; check the state agriculture department."
+   ],
+   "climate": null,
+   "predators": null,
+   "welfare": null,
+   "manureN": null,
+   "sources": [
+    {
+     "title": "Agricultural Alternatives: Beekeeping (Penn State)",
+     "url": "https://pollinators.psu.edu/assets/uploads/documents/Beekeeping-Honey-Bees.pdf",
+     "year": 2012,
+     "oldData": true
+    },
+    {
+     "title": "Honey (USDA NASS, March 2026)",
+     "url": "https://www.nass.usda.gov/Publications/Todays_Reports/reports/hony0326.pdf",
+     "year": 2026
+    },
+    {
+     "title": "Apiary Application for Registration of Honey Bee Colonies (Maryland)",
+     "url": "https://onestop.md.gov/licenses/apiary-application-for-registration-of-honey-bee-colonies-651c414b84a71202415c4b5e",
+     "year": null
+    },
+    {
+     "title": "Registration of Honeybee Colonies (Illinois)",
+     "url": "https://www.illinois.gov/services/service.registration-honeybee-colonies.html",
+     "year": null
+    },
+    {
+     "title": "Apiary Registration (Washington State Dept. of Agriculture)",
+     "url": "https://agr.wa.gov/services/licenses-permits-and-certificates/summary-descriptions/apiary-registration",
+     "year": null
+    }
+   ]
+  },
+  "turkeys": {
+   "unit": "per bird (Broad Breasted White), per grow-out",
+   "minGroupSize": null,
+   "starterFlockSize": null,
+   "spaceIndoorSqFt": [
+    3,
+    6
+   ],
+   "spaceIndoorNote": "Penn State: brooding 1-1.5 sq ft, growing 2-3, finishing 3-4. extension.org backyard: 6 sq ft.",
+   "spaceOutdoorSqFt": [
+    20,
+    20
+   ],
+   "pastureAcresPerHead": [
+    0.004,
+    0.004
+   ],
+   "derived": true,
+   "pastureNote": "Penn State range stocking: 250 birds per acre.",
+   "feedLbPerGrowOut": [
+    105,
+    105
+   ],
+   "feedNote": "MSU Extension (1978): about 105 lb per bird to 24 weeks. Modern strains reach market sooner (Penn State 14-17 wk), so actual feed may be lower. Old figure.",
+   "growOutDays": [
+    98,
+    119
+   ],
+   "growOutNote": "Penn State: hens 14 wk (about 20 lb live), toms 17 wk (about 36 lb live).",
+   "waterGalPerDay": null,
+   "production": {
+    "liveWeightLb": [
+     20,
+     36
+    ],
+    "dressedWeightLb": [
+     14.5,
+     24
+    ],
+    "dressedNote": "MSU 1978: tom 25-30 lb live gives 19-24 lb dressed; hen 16-20 lb live gives about 14.5 lb dressed. Old data."
+   },
+   "laborHoursPerWeek": null,
+   "startupCostUSD": null,
+   "annualCostUSD": null,
+   "regulatory": [
+    "The same USDA PPIA poultry exemptions (1,000 / 20,000 bird limits) apply to turkeys."
+   ],
+   "climate": null,
+   "predators": null,
+   "welfare": "Penn State: MG and blackhead can be serious for turkeys raised with chickens or on ground chickens used within 3-5 years.",
+   "manureN": null,
+   "sources": [
+    {
+     "title": "Small-Flock Turkey Production (Penn State)",
+     "url": "https://extension.psu.edu/small-flock-turkey-production",
+     "year": 2021
+    },
+    {
+     "title": "E1259 Want to Raise a Few Turkeys? (Michigan State)",
+     "url": "https://sanweb.lib.msu.edu/DMC/extension_publications/e1259/e1259.pdf",
+     "year": 1978,
+     "oldData": true
+    },
+    {
+     "title": "Space allowances for small and backyard poultry (extension.org)",
+     "url": "https://poultry.extension.org/articles/getting-started-with-small-and-backyard-poultry/housing-for-small-and-backyard-poultry-flocks/space-allowances-in-housing-for-small-and-backyard-poultry-flocks/",
+     "year": null
+    }
+   ]
+  }
+ },
+ "enterprises": {
+  "eggs_small_flock": {
+   "scale": "100 hens, 2-year flock (UMD budget)",
+   "landNeededAcres": null,
+   "startupCostUSD": [
+    1950,
+    1950
+   ],
+   "startupNote": "Housing $1,500, feeders and waterers $250, brooding and misc $200. Excludes land and stock.",
+   "weeklyLaborHours": [
+    3.5,
+    3.8
+   ],
+   "laborNote": "UMD: 0.5 h a day. Penn State egg business: 180-200 h a year.",
+   "grossRevenueUSDPerYear": [
+    8421,
+    8421
+   ],
+   "derived": true,
+   "revenueNote": "UMD: $16,842 over 2 years (3,208 dozen at $5 plus 80 stewing hens at $10), halved.",
+   "netIncomeUSDPerYear": [
+    5098,
+    5098
+   ],
+   "netNote": "UMD: $10,197 income over cash expenses in 2 years, halved. Excludes labor. $27.94 per labor hour. Cost per dozen $2.07.",
+   "seasonality": "Lay drops in short days and during molt without supplemental light (UF, UMN).",
+   "marketChannels": [
+    "farm stand",
+    "farmers market",
+    "direct to customers"
+   ],
+   "keySkills": [
+    "flock health",
+    "egg handling and refrigeration",
+    "record keeping"
+   ],
+   "regulatory": [
+    "Keep eggs at 45°F or below within 24 h of lay (Penn State). State egg-handler licensing and grading and labeling rules vary. Sales tax varies."
+   ],
+   "risks": [
+    "predator loss",
+    "disease (for example avian influenza)",
+    "feed price swings",
+    "20% mortality assumed over 2 years (UMD)"
+   ],
+   "sources": [
+    {
+     "title": "Small Flock Layer Budget - 100 (UMD)",
+     "url": "https://extension.umd.edu/resource/small-flock-layer-budget-100-dale-m-johnson",
+     "year": null
+    },
+    {
+     "title": "Small-Scale Egg Production (Penn State)",
+     "url": "https://extension.psu.edu/small-scale-egg-production-organic-and-conventional",
+     "year": 2021
+    }
+   ]
+  },
+  "market_garden_per_acre": {
+   "scale": "Direct-market vegetable farms with under 3 acres in production (PASA benchmark study of 39 farms, tax years 2017-2019)",
+   "landNeededAcres": [
+    1,
+    1
+   ],
+   "startupCostUSD": null,
+   "startupNote": "No benchmark startup figure was found. One component: Penn State drip plus plastic mulch for 1 acre is about $9,850 (2016).",
+   "weeklyLaborHours": [
+    45,
+    55
+   ],
+   "laborNote": "PASA: half of farmers worked over 45 h/wk and a quarter over 55 h/wk (whole farm, in season).",
+   "grossRevenueUSDPerAcre": [
+    27032,
+    56193
+   ],
+   "revenueNote": "PASA, farms under 3 acres: 25th-75th percentile. Median $46,413, 10th-90th percentile $19,882-64,820.",
+   "netMarginPct": [
+    -4,
+    12
+   ],
+   "netNote": "PASA, farms under 3 acres: 25th-75th percentile net margin, median 3%. Net income median $1,844 (IQR $77-6,435). Most direct-market vegetable farmers do not earn a middle-class income.",
+   "seasonality": "Main season. Season extension with a high tunnel.",
+   "marketChannels": [
+    "farmers market",
+    "CSA",
+    "farm stand",
+    "restaurants",
+    "wholesale"
+   ],
+   "keySkills": [
+    "crop planning and succession",
+    "soil fertility",
+    "IPM",
+    "marketing",
+    "labor management"
+   ],
+   "regulatory": [
+    "FSMA Produce Safety Rule exemptions depend on sales volume (not sourced here). Sales tax. Liability insurance for markets."
+   ],
+   "risks": [
+    "weather",
+    "pests",
+    "labor",
+    "thin margins"
+   ],
+   "sources": [
+    {
+     "title": "Financial Benchmarks for Direct-Market Vegetable Farms 2021 Report (PASA / SARE)",
+     "url": "https://pasafarming.org/wp-content/uploads/2021/08/financial-benchmarks-for-direct-market-veg-farms_2021-report.pdf",
+     "year": 2021
+    },
+    {
+     "title": "Drip Irrigation for Vegetable Production (Penn State)",
+     "url": "https://extension.psu.edu/drip-irrigation-for-vegetable-production",
+     "year": 2016
+    }
+   ]
+  },
+  "market_garden_quarter_acre": {
+   "scale": "0.25 acre, scaled linearly from the PASA per-acre figures for farms under 3 acres",
+   "landNeededAcres": [
+    0.25,
+    0.25
+   ],
+   "startupCostUSD": null,
+   "weeklyLaborHours": null,
+   "grossRevenueUSD": [
+    6758,
+    14048
+   ],
+   "derived": true,
+   "revenueNote": "PASA 25th-75th percentile per acre x 0.25. Linear scaling is an assumption. No quarter-acre study was found.",
+   "netMarginPct": [
+    -4,
+    12
+   ],
+   "seasonality": "As market_garden_per_acre.",
+   "marketChannels": [
+    "farmers market",
+    "CSA",
+    "farm stand"
+   ],
+   "keySkills": [
+    "intensive bed management",
+    "succession planting"
+   ],
+   "regulatory": [
+    "As market_garden_per_acre."
+   ],
+   "risks": [
+    "The linear scale-down may overstate or understate results"
+   ],
+   "sources": [
+    {
+     "title": "Financial Benchmarks for Direct-Market Vegetable Farms 2021 Report (PASA / SARE)",
+     "url": "https://pasafarming.org/wp-content/uploads/2021/08/financial-benchmarks-for-direct-market-veg-farms_2021-report.pdf",
+     "year": 2021
+    }
+   ]
+  },
+  "microgreens": {
+   "scale": "10x20 trays on a shelf system, 8 sq ft of infrastructure (MU budget)",
+   "landNeededAcres": [
+    0,
+    0
+   ],
+   "startupCostUSD": [
+    4384,
+    4384
+   ],
+   "weeklyLaborHours": null,
+   "laborNote": "MU: 15 min per tray.",
+   "yieldOzPerTray": [
+    8,
+    15
+   ],
+   "grossRevenueUSDPerTray": [
+    32,
+    60
+   ],
+   "revenueNote": "MU assumes $4.00/oz. Cycle 8-13.5 days, 27-46 cycles a year per position.",
+   "netIncomeUSDPerTray": [
+    5.84,
+    19.45
+   ],
+   "netNote": "MU: income over total costs per tray. Operating cost per tray $23.93-39.26. Packaging, labels and marketing ($16.30-24.30) are the largest costs.",
+   "seasonality": "Year-round indoors.",
+   "marketChannels": [
+    "restaurants",
+    "farmers market",
+    "grocery",
+    "subscriptions"
+   ],
+   "keySkills": [
+    "seeding density",
+    "sanitation",
+    "consistent supply for restaurant accounts"
+   ],
+   "regulatory": [
+    "The MU budget has no regulatory notes. Microgreens are produce; state and local sale and food safety rules apply. Verify."
+   ],
+   "risks": [
+    "mold and damping off",
+    "narrow buyer base",
+    "packaging cost"
+   ],
+   "sources": [
+    {
+     "title": "Microgreens Planning Budget G693 (MU Extension)",
+     "url": "https://extension.missouri.edu/media/wysiwyg/Extensiondata/Pub/pdf/agguides/agecon/g00693.pdf",
+     "year": 2024
+    }
+   ]
+  },
+  "cut_flowers": {
+   "scale": "Field-grown specialty cut flowers, 0.5-2 acres (the preferred emerging scale per Virginia Tech)",
+   "landNeededAcres": [
+    0.5,
+    2
+   ],
+   "startupCostUSD": null,
+   "weeklyLaborHours": null,
+   "laborNote": "Virginia Tech: extremely labor- and time-intensive. Harvest is the biggest labor load.",
+   "grossRevenueUSDPerAcre": [
+    25000,
+    35000
+   ],
+   "revenueNote": "Virginia Tech citing a Growing for Market editor's estimate. Secondary estimate, not a budget.",
+   "netIncomeUSD": null,
+   "netNote": "University of Tennessee cut-flower budgets (quarter-acre representative farm, 1,000 sq ft per crop) are at arec.tennessee.edu/budgets. Figures not extracted.",
+   "seasonality": "Spring to fall. Spring and fall shoulder seasons bring higher prices.",
+   "marketChannels": [
+    "farmers market",
+    "florists",
+    "wholesalers",
+    "retailers",
+    "subscriptions",
+    "events"
+   ],
+   "keySkills": [
+    "postharvest handling (cooler)",
+    "succession",
+    "10-stem bunch standard"
+   ],
+   "regulatory": [
+    "Sales tax. Wholesale buyers pay 30-45 days out."
+   ],
+   "risks": [
+    "local market saturation above about 10 acres",
+    "weather",
+    "perishability"
+   ],
+   "sources": [
+    {
+     "title": "Getting Started in the Production of Field-Grown Specialty Cut Flowers 426-618 (Virginia Tech)",
+     "url": "https://www.pubs.ext.vt.edu/426/426-618/426-618.html",
+     "year": 2025
+    },
+    {
+     "title": "TN Cut Flower Project Overview 2026 (UT/UK handout)",
+     "url": "https://ccd.uky.edu/sites/default/files/2026-01/tn-cut-flower-project-overview-2026-ky-fruit-veggie-conference-handout.pdf",
+     "year": 2026
+    }
+   ]
+  },
+  "nursery_plants": {
+   "scale": "Container or pot-in-pot woody nursery (Tennessee)",
+   "landNeededAcres": [
+    5,
+    10
+   ],
+   "landNote": "UT: container production is typically 5-10 acres. Balled-and-burlapped field production must be over 10 acres to cash-flow. No small-scale bedding-plant source was found.",
+   "startupCostUSD": null,
+   "startupNote": "UT: pot-in-pot about $20,000 per acre from bare ground, or $15-25 per 10-gal pot position.",
+   "weeklyLaborHours": null,
+   "grossRevenueUSD": null,
+   "netIncomeUSD": null,
+   "seasonality": "Spring peak for retail. Shade trees are about 5-year crops.",
+   "marketChannels": [
+    "wholesale",
+    "re-wholesale",
+    "retail"
+   ],
+   "keySkills": [
+    "propagation",
+    "irrigation (about 27,000 gal per acre per day for containers)",
+    "pest management"
+   ],
+   "regulatory": [
+    "State nursery certification and inspection is required. Example: Tennessee $200/yr, with the plant certificate traveling with each wholesale shipment."
+   ],
+   "risks": [
+    "freeze, drought, flood, wind",
+    "pests and disease",
+    "theft",
+    "buyer default"
+   ],
+   "sources": [
+    {
+     "title": "Getting Started in the Nursery Business (Univ. of Tennessee)",
+     "url": "https://plantsciences.tennessee.edu/wp-content/uploads/sites/25/2021/10/Getting_Started_in_Nursery.pdf",
+     "year": 2021
+    }
+   ]
+  },
+  "honey": {
+   "scale": "10 established colonies (Penn State budget)",
+   "landNeededAcres": null,
+   "startupCostUSD": [
+    7097.5,
+    7097.5
+   ],
+   "weeklyLaborHours": null,
+   "grossRevenueUSD": [
+    4870,
+    4870
+   ],
+   "revenueNote": "Penn State (2012): includes pollination income. 600 lb honey at $5/lb retail. Wholesale was $1.50-2.00/lb then. NASS 2025: all-channel $3.05/lb, retail $7.15/lb.",
+   "netIncomeUSD": [
+    3078,
+    3078
+   ],
+   "seasonality": "Summer to fall harvest.",
+   "marketChannels": [
+    "retail direct",
+    "farmers market",
+    "wholesale",
+    "pollination services"
+   ],
+   "keySkills": [
+    "colony health and varroa management",
+    "overwintering",
+    "extraction"
+   ],
+   "regulatory": [
+    "State apiary registration in some states. Honey labeling. Many states have cottage-food or honey-specific exemptions (not sourced here)."
+   ],
+   "risks": [
+    "colony losses",
+    "yield variability (NASS yield fell 7% in 2025)"
+   ],
+   "sources": [
+    {
+     "title": "Agricultural Alternatives: Beekeeping (Penn State)",
+     "url": "https://pollinators.psu.edu/assets/uploads/documents/Beekeeping-Honey-Bees.pdf",
+     "year": 2012,
+     "oldData": true
+    },
+    {
+     "title": "Honey (USDA NASS, March 2026)",
+     "url": "https://www.nass.usda.gov/Publications/Todays_Reports/reports/hony0326.pdf",
+     "year": 2026
+    }
+   ]
+  },
+  "mushrooms_shiitake_logs": {
+   "scale": "About 100 logs to test and 500-1,000 logs commercially (Cornell, Virginia Tech)",
+   "landNeededAcres": null,
+   "landNote": "Shaded woodlot or laying yard. No area figure was sourced.",
+   "startupCostUSDPerLog": [
+    12.06,
+    12.06
+   ],
+   "startupNote": "Cornell 2019: about $12.06 per log including labor (spawn $0.75, wax $0.31). Virginia Tech budget: $1,626 for 500 logs.",
+   "weeklyLaborHours": null,
+   "laborNote": "Cornell 2019: about 60 min per log per year. Virginia Tech: 40 h to drill and inoculate 500 logs.",
+   "yieldLbPerLogLifetime": [
+    3.4,
+    4
+   ],
+   "derived": true,
+   "yieldNote": "Cornell: 1/4-1/2 lb per soaking and about 4 lb total. Virginia Tech 500-log budget: 1,690 lb over 4 years (about 3.4 lb per log), peaking in years 2-3. First fruiting 6-18 months after inoculation.",
+   "priceUSDPerLb": [
+    10,
+    18
+   ],
+   "priceNote": "Cornell 2019: growers get $12-18, wholesale $10-12. Virginia Tech (2012 data): retail $10-20, wholesale $4-8.",
+   "grossRevenueUSD": [
+    10000,
+    10000
+   ],
+   "revenueNote": "Derived: Virginia Tech 500-log budget peak year of 800 lb x $12.50.",
+   "netIncomeUSD": null,
+   "seasonality": "Cornell: about June to October in the Northeast (20-50 lb/wk from 500-1,000 logs).",
+   "marketChannels": [
+    "farmers market",
+    "restaurants",
+    "CSA add-on"
+   ],
+   "keySkills": [
+    "log sourcing (oak)",
+    "inoculation",
+    "soak/force scheduling"
+   ],
+   "regulatory": [
+    "State rules for selling cultivated mushrooms vary. Not sourced."
+   ],
+   "risks": [
+    "contamination",
+    "drought",
+    "labor intensity"
+   ],
+   "sources": [
+    {
+     "title": "Economic Report for Log-Grown Shiitake Mushrooms (Cornell Small Farms)",
+     "url": "https://smallfarms.cornell.edu/2022/02/economic-report-for-log-grown-shiitake-mushrooms-2019",
+     "year": 2019
+    },
+    {
+     "title": "The Basics of Hardwood-Log Shiitake Mushroom Production and Marketing ANR-102 (Virginia Tech)",
+     "url": "https://www.pubs.ext.vt.edu/ANR/ANR-102/ANR-102.html",
+     "year": 2025
+    }
+   ]
+  },
+  "mushrooms_oyster_indoor": {
+   "scale": "Indoor grow room, sawdust or straw blocks",
+   "landNeededAcres": [
+    0,
+    0
+   ],
+   "startupCostUSD": null,
+   "weeklyLaborHours": null,
+   "yieldLbPerLbSubstrate": [
+    0,
+    1.4
+   ],
+   "yieldNote": "University of Illinois trials (2015-2016): fresh yield per lb of substrate varied widely by strain and season. Cornell: halve the sawdust-block yield estimates for straw.",
+   "netIncomeUSDPerSqFtPerYear": [
+    1,
+    3
+   ],
+   "netNote": "Cornell Small Farms indoor production page.",
+   "priceUSDPerLb": null,
+   "priceNote": "The only extension price found was $1.91-3.74/lb for 2000-2016 wholesale (Illinois). Too old for direct-market use.",
+   "seasonality": "Year-round with climate control (65-75°F; incubation 4-8 weeks at 65-70°F).",
+   "marketChannels": [
+    "restaurants",
+    "farmers market",
+    "grocery"
+   ],
+   "keySkills": [
+    "sterile or pasteurized substrate handling",
+    "humidity and CO2 control"
+   ],
+   "regulatory": [
+    "Not sourced. Verify state food-safety rules for fresh mushrooms."
+   ],
+   "risks": [
+    "contamination",
+    "spore load for growers"
+   ],
+   "sources": [
+    {
+     "title": "Indoor Production (Cornell Small Farms Program)",
+     "url": "https://smallfarms.cornell.edu/resources/indoor-production/",
+     "year": null
+    },
+    {
+     "title": "Small-scale Production of Oyster Mushroom (D.K. Lee, J. Shafer)",
+     "url": "https://ag.missouristate.edu/StateFruit/_Files/mushroom_DKLeeJShafer.pdf",
+     "year": 2018
+    }
+   ]
+  },
+  "value_added_cottage_food": {
+   "scale": "Home-kitchen cottage food business (jams, baked goods)",
+   "landNeededAcres": [
+    0,
+    0
+   ],
+   "startupCostUSD": [
+    500,
+    500
+   ],
+   "startupNote": "IJ 2017 survey median startup capital (775 producers in 22 states).",
+   "weeklyLaborHours": [
+    15,
+    15
+   ],
+   "laborNote": "IJ 2017 average.",
+   "grossRevenueUSD": [
+    2000,
+    2000
+   ],
+   "revenueNote": "IJ 2017 median annual sales.",
+   "netIncomeUSD": [
+    500,
+    500
+   ],
+   "netNote": "IJ 2017 median annual profit.",
+   "seasonality": "Follows farmers market season.",
+   "marketChannels": [
+    "farmers market",
+    "roadside stand",
+    "community events",
+    "home sales (state-dependent)",
+    "online (banned in 8 states per IJ 2022)"
+   ],
+   "keySkills": [
+    "tested recipes (NCHFP for canned goods)",
+    "labeling",
+    "pricing"
+   ],
+   "regulatory": [
+    "Cottage food law varies by state (IJ 2022): 25 states cap annual sales ($3,000 to $250,000), 19 limit the allowed food list, 8 ban online sales, 15 ban mail delivery, and 6 plus DC require extensive licensing and inspection.",
+    "Low-acid or non-approved foods usually need a licensed kitchen or processor license. Sales tax. Product liability insurance is advisable."
+   ],
+   "risks": [
+    "regulatory limits",
+    "low margins",
+    "food safety liability"
+   ],
+   "sources": [
+    {
+     "title": "Flour Power: cottage foods survey (Institute for Justice)",
+     "url": "https://ij.org/report/cottage-foods-survey/",
+     "year": 2017
+    },
+    {
+     "title": "New Report Grades Each State's Laws for Homemade Food Sales (Institute for Justice, Baking Bad)",
+     "url": "https://ij.org/press-release/new-report-grades-each-states-laws-for-homemade-food-sales/",
+     "year": 2022
+    }
+   ]
+  },
+  "agritourism": {
+   "scale": "U-pick, farm stays, events; any farm reporting agritourism income",
+   "landNeededAcres": null,
+   "startupCostUSD": null,
+   "weeklyLaborHours": null,
+   "grossRevenueUSDPerFarm": [
+    44004,
+    44004
+   ],
+   "revenueNote": "2022 Census of Agriculture national average agritourism income per farm reporting it (via UGA factsheet). Georgia average $41,849. The average is skewed by large operations. US total $1.26B in 2022, up 12.4% real from 2017 (ERS).",
+   "netIncomeUSD": null,
+   "seasonality": "Fall peak for pumpkins and corn mazes. U-pick follows crop season.",
+   "marketChannels": [
+    "on-farm visitors",
+    "event bookings",
+    "online farm-stay platforms"
+   ],
+   "keySkills": [
+    "hospitality",
+    "risk management",
+    "marketing"
+   ],
+   "regulatory": [
+    "Many states have agritourism limited-liability statutes. Protection usually requires posted warning signs (for example Minnesota 604A.40).",
+    "Insurance: farm property, general liability, product liability, event liability, livestock coverage. UMN notes coverage is not cheap. Get written confirmation of which activities are covered.",
+    "Zoning and health permits for lodging and food service vary locally."
+   ],
+   "risks": [
+    "visitor injury liability",
+    "weather",
+    "neighbor and zoning conflicts"
+   ],
+   "sources": [
+    {
+     "title": "2022 Census of Agriculture: majority of U.S. counties generate some agritourism income (USDA ERS)",
+     "url": "https://www.ers.usda.gov/data-products/charts-of-note/chart-detail?chartId=110552",
+     "year": 2024
+    },
+    {
+     "title": "Agritourism and Direct Marketing census factsheet AGECON24-01-14 (UGA)",
+     "url": "https://agecon.uga.edu/content/dam/caes-subsite/ag-econ/documents/extension/census-factsheets/AGECON24-01-14_agritourismdirectmarketing.pdf",
+     "year": 2024
+    },
+    {
+     "title": "Insurance and liability considerations for agritourism (UMN Extension)",
+     "url": "https://blog-fruit-vegetable-ipm.extension.umn.edu/2023/05/insurance-and-liability-considerations.html",
+     "year": 2023
+    }
+   ]
+  },
+  "meat_birds_pastured_broilers": {
+   "scale": "100 birds per batch, 7 batches a year = 700 birds (MU small-scale budget)",
+   "landNeededAcres": null,
+   "startupCostUSD": [
+    4719,
+    4719
+   ],
+   "weeklyLaborHours": [
+    8.8,
+    8.8
+   ],
+   "grossRevenueUSDPerBird": [
+    18.25,
+    18.25
+   ],
+   "revenueNote": "MU: 4.55 lb dressed at $4.00/lb. That price is below current direct-market prices; recompute with local prices.",
+   "netIncomeUSDPerBird": [
+    -7.61,
+    -0.63
+   ],
+   "netNote": "MU budget shows a loss at both scales: -$7.61 per bird for 700/yr and -$0.63 per bird for 4,900/yr at $4/lb. Small scale does not pay at that price.",
+   "seasonality": "Pasture season, spring to fall.",
+   "marketChannels": [
+    "direct (whole birds)",
+    "farmers market",
+    "CSA"
+   ],
+   "keySkills": [
+    "brooding",
+    "pasture pen moves",
+    "on-farm slaughter"
+   ],
+   "regulatory": [
+    "USDA PPIA Producer/Grower 1,000-bird and 20,000-bird exemptions. No interstate sales. Label 'Exempt P.L. 90-492'. State rules may be stricter (ACES 2022). Penn State has guidance on marketing exempt poultry."
+   ],
+   "risks": [
+    "heat stress",
+    "predators",
+    "processing capacity",
+    "price"
+   ],
+   "sources": [
+    {
+     "title": "Mobile Poultry for Meat Planning Budget G742 (MU Extension)",
+     "url": "https://extension.missouri.edu/publications/g742",
+     "year": null
+    },
+    {
+     "title": "A Quick Guide to Raising Pastured Broilers (Penn State)",
+     "url": "https://extension.psu.edu/a-quick-guide-to-raising-pastured-broilers",
+     "year": 2025
+    },
+    {
+     "title": "Exemptions from USDA Inspection for Small-Scale Poultry Processors (Alabama Extension)",
+     "url": "https://www.aces.edu/blog/topics/farming/exemptions-from-usda-inspection-for-small-scale-poultry-processors/",
+     "year": 2022
+    },
+    {
+     "title": "Marketing poultry slaughtered under USDA exemption (Penn State)",
+     "url": "https://extension.psu.edu/marketing-poultry-slaughtered-under-usda-exemption",
+     "year": null
+    }
+   ]
+  }
+ },
+ "infrastructure": {
+  "raised_bed_4x8": {
+   "costUSD": null,
+   "note": "No extension or reliable cost source was retrieved in this pass. Leave unsourced.",
+   "sources": []
+  },
+  "drip_irrigation": {
+   "costUSDPer1000SqFt": [
+    500,
+    1000
+   ],
+   "derived": true,
+   "note": "HomeGuide (2025): DIY installation $0.50-1.00/sq ft, professional $1.50-4.50/sq ft ($1,500-4,500 per 1,000 sq ft), farm field above-ground $500-3,000/acre. Penn State (2016): drip tape $1.50-2.50 per 100 ft; a full 1-acre system with pump, filters and mulch about $9,850.",
+   "year": 2025,
+   "sources": [
+    {
+     "title": "Drip irrigation system cost (HomeGuide; commercial cost guide)",
+     "url": "https://homeguide.com/costs/drip-irrigation-system-cost",
+     "year": 2025
+    },
+    {
+     "title": "Drip Irrigation for Vegetable Production (Penn State)",
+     "url": "https://extension.psu.edu/drip-irrigation-for-vegetable-production",
+     "year": 2016
+    }
+   ]
+  },
+  "deer_fence": {
+   "costUSDPerLinearFt": [
+    1.5,
+    1.5
+   ],
+   "note": "Purdue FNR-486 (2014): 7.5-ft polypropylene mesh, about $1.50/ft materials, lasts 6-8 years, cuts browse 60-98%. Heavy-duty mesh costs about twice as much per foot. Old price.",
+   "year": 2014,
+   "oldPrice": true,
+   "sources": [
+    {
+     "title": "FNR-486-W deer exclusion fencing (Purdue Extension)",
+     "url": "https://www.extension.purdue.edu/extmedia/FNR/FNR-486-W.pdf",
+     "year": 2014
+    }
+   ]
+  },
+  "livestock_fence": {
+   "costUSDPerLinearFt": {
+    "woven_wire_plus_barbed": [
+     4.09,
+     4.09
+    ],
+    "barbed_5_strand": [
+     3.55,
+     3.55
+    ],
+    "high_tensile_6_wire": [
+     2.86,
+     2.86
+    ],
+    "electric_polywire_interior": [
+     0.81,
+     0.81
+    ]
+   },
+   "note": "MU Extension G1193, prices as of January 2024: 1,320-ft perimeter, gently rolling ground, one gate and one stream crossing, materials plus labor. Short runs and many corners cost more per foot.",
+   "year": 2024,
+   "sources": [
+    {
+     "title": "Fence construction cost G1193 (MU Extension)",
+     "url": "https://extension.missouri.edu/publications/g1193",
+     "year": 2024
+    },
+    {
+     "title": "Estimated Costs for Livestock Fencing B1-75 (Iowa State Ag Decision Maker)",
+     "url": "https://www.extension.iastate.edu/agdm/livestock/html/b1-75.html",
+     "year": 2024
+    }
+   ]
+  },
+  "high_tunnel": {
+   "costUSDPerSqFt": [
+    2,
+    7
+   ],
+   "note": "Purdue Veg Crops Hotline (2016): high tunnels $2-7/sq ft, heated greenhouses $7-30/sq ft. Arkansas FSA-6147: a 30x96 ft self-built tunnel cost $1.30/sq ft at fall-2009 prices (very old). NRCS EQIP practice 325 (High Tunnel System) offers cost-share. The tunnel must be kept for the 5-year practice life. A vendor guide (2026) cites typical EQIP payment rates of about $5-12/sq ft depending on state and producer status; confirm with the local NRCS office.",
+   "year": 2016,
+   "oldPrice": true,
+   "sources": [
+    {
+     "title": "Cost Considerations Prior to the Purchase of a High Tunnel or Greenhouse (Purdue)",
+     "url": "https://vegcropshotline.org/article/cost-considerations-prior-to-the-purchase-of-a-high-tunnel-or-greenhouse/",
+     "year": 2016
+    },
+    {
+     "title": "FSA-6147 Cost of Constructing a Metal Hoop High Tunnel (Univ. of Arkansas)",
+     "url": "https://www.uaex.uada.edu/publications/pdf/FSA-6147.pdf",
+     "year": 2010,
+     "oldData": true
+    },
+    {
+     "title": "High Tunnel System Practice 325 fact sheet (USDA NRCS)",
+     "url": "https://www.nrcs.usda.gov/sites/default/files/2025-04/High_Tunnel_System_%20Practice_325-FS_0.pdf",
+     "year": 2025
+    },
+    {
+     "title": "NRCS High Tunnel Grant guide (CT Greenhouse; vendor, secondary)",
+     "url": "https://ctgreenhouse.com/field-notes/nrcs-high-tunnel-grant-the-complete-guide-for-growers-2026/",
+     "year": 2026
+    }
+   ]
+  },
+  "chicken_coop_small": {
+   "costUSD": [
+    250,
+    1500
+   ],
+   "note": "HomeGuide (2024-26): DIY A-frame $250-500 materials, tractor $300-700, walk-in custom $700-1,500+, prefab all-in-one $800-4,000+. UMD budgets: housing $500 for 10 hens, $1,500 for 100 hens.",
+   "year": 2025,
+   "sources": [
+    {
+     "title": "Chicken coop cost (HomeGuide; commercial cost guide)",
+     "url": "https://homeguide.com/costs/chicken-coop-cost",
+     "year": 2026
+    },
+    {
+     "title": "Backyard Layer Flock Economics FS-2025-0783 (UMD)",
+     "url": "https://extension.umd.edu/resource/backyard-layer-flock-economics-how-much-does-it-cost-you-produce-dozen-eggs-fs-2025-0783",
+     "year": 2025
+    }
+   ]
+  },
+  "rainwater_catchment": {
+   "costUSDPerGallonStorage": [
+    1.5,
+    7
+   ],
+   "note": "HomeGuide (2026): installed cost per gallon of storage. Polyethylene cisterns $800-6,000, concrete $1,100-6,800, fiberglass $5,000-9,000, steel $2,000-12,000 (tanks up to 5,000 gal). Rain barrels $80-1,700. Some states restrict or regulate rainwater harvesting (not sourced here).",
+   "year": 2026,
+   "sources": [
+    {
+     "title": "Rainwater harvesting system cost (HomeGuide; commercial cost guide)",
+     "url": "https://homeguide.com/costs/rainwater-system-cost",
+     "year": 2026
+    }
+   ]
+  },
+  "root_cellar": {
+   "costUSD": [
+    500,
+    55000
+   ],
+   "note": "Angi (2026): small DIY $500 or less, prefab $1,000+, garage-floor type $3,000-9,000, basement $10,000-25,000, below-ground professional $10,000-55,000. 40 sq ft $3,000-5,000, 80 sq ft $5,000-10,000.",
+   "year": 2026,
+   "sources": [
+    {
+     "title": "Cost to build a root cellar (Angi; commercial cost guide)",
+     "url": "https://www.angi.com/articles/cost-to-build-root-cellar.htm",
+     "year": 2026
+    }
+   ]
+  },
+  "chest_freezer": {
+   "costUSD": null,
+   "note": "No sourced purchase-price or kWh figure was retrieved. See ENERGY STAR product finder for model energy use.",
+   "sources": [
+    {
+     "title": "Freezers (ENERGY STAR)",
+     "url": "https://www.energystar.gov/products/freezers",
+     "year": null
+    }
+   ]
+  },
+  "well_and_pump": {
+   "costUSD": [
+    6000,
+    16000
+   ],
+   "highlyVariable": true,
+   "note": "HomeGuide (2025/26): a 200-ft residential well is $6,000-16,000 all-in. Drilling alone $20-30/ft, complete $30-80+/ft, pump $400-2,500. Varies hugely with depth, geology and region. Get local driller quotes and check state well permits.",
+   "year": 2025,
+   "sources": [
+    {
+     "title": "Well drilling cost (HomeGuide; commercial cost guide)",
+     "url": "https://homeguide.com/costs/well-drilling-cost",
+     "year": 2025
+    }
+   ]
+  }
+ },
+ "preservation": {
+  "safetyNote": "NCHFP: use only up-to-date, research-tested recipes such as the USDA Complete Guide to Home Canning (2015 revision) and So Easy to Preserve. If a tested recipe was not followed, all jars, sealed or not, may be unsafe and should be discarded. Low-acid foods must be pressure canned; acid foods (fruits, acidified tomatoes, jams and jellies, pickles) may be processed in a boiling-water canner.",
+  "canning": {
+   "shelfLifeMonths": [
+    12,
+    12
+   ],
+   "note": "NCHFP: for best quality, can no more than you will use within a year. Store at 50-70°F. Avoid above 95°F, hot pipes and direct sun.",
+   "suits": [
+    "fruits",
+    "jams and jellies",
+    "pickles",
+    "tomatoes (acidified)",
+    "low-acid vegetables, meats, beans (pressure canner only)"
+   ],
+   "sources": [
+    {
+     "title": "Storing Home Canned Foods (NCHFP)",
+     "url": "https://nchfp.uga.edu/how/can/general-information/storing-home-canned-foods/",
+     "year": null
+    },
+    {
+     "title": "Ensuring High-Quality Canned Foods (NCHFP)",
+     "url": "https://nchfp.uga.edu/how/can/general-information/ensuring-high-quality-canned-foods/",
+     "year": null
+    }
+   ]
+  },
+  "freezing": {
+   "shelfLifeMonths": {
+    "fruits_vegetables": [
+     8,
+     12
+    ],
+    "poultry": [
+     6,
+     9
+    ],
+    "fish": [
+     3,
+     6
+    ],
+    "ground_meat": [
+     3,
+     4
+    ],
+    "cured_processed_meat": [
+     1,
+     2
+    ]
+   },
+   "note": "NCHFP, at 0°F or below. These are quality limits; food stays safe longer. Blanch vegetables first and use moisture-vapor-resistant packaging.",
+   "suits": [
+    "most vegetables (blanched)",
+    "fruits",
+    "meat and poultry",
+    "berries"
+   ],
+   "sources": [
+    {
+     "title": "How long can I store frozen foods? (NCHFP)",
+     "url": "https://nchfp.uga.edu/how/freeze/freeze-general-information/how-long-can-i-store-frozen-foods/",
+     "year": null
+    }
+   ]
+  },
+  "dehydrating": {
+   "shelfLifeMonths": [
+    4,
+    12
+   ],
+   "note": "NCHFP: dried fruits last about 1 year at 60°F and 6 months at 80°F. Vegetables last about half as long as fruits. Store cool, dry and dark, in glass so moisture is visible.",
+   "suits": [
+    "fruits",
+    "herbs",
+    "vegetables (shorter life)",
+    "jerky (follow tested method)"
+   ],
+   "sources": [
+    {
+     "title": "Packaging and storing dried foods (NCHFP)",
+     "url": "https://nchfp.uga.edu/how/dry/drying-general/packaging-and-storing-dried-foods",
+     "year": null
+    }
+   ]
+  },
+  "root_cellar": {
+   "shelfLifeMonths": {
+    "carrots": [
+     5,
+     5
+    ],
+    "cabbage": [
+     4,
+     4
+    ],
+    "potatoes": [
+     8,
+     8
+    ],
+    "onions": [
+     8,
+     8
+    ],
+    "winter_squash": [
+     3,
+     3
+    ],
+    "green_tomatoes": [
+     2,
+     2
+    ]
+   },
+   "note": "UAF (2020) at stated conditions. Groups: cold and very moist (32-40°F, 90-95% RH): beets, carrots, radishes, turnips, parsnips, kohlrabi, cabbage. Cold and moist: potatoes (38-40°F, 80-90%). Cool and dry: onions, garlic (32-35°F, 60-70%). Warm and dry: winter squash, pumpkins (50-55°F, 60-75%). Sweet potatoes: 50°F+, 80-90% (MU). Store apples apart from vegetables (MU).",
+   "suits": [
+    "root crops",
+    "cabbage",
+    "potatoes",
+    "onions and garlic",
+    "winter squash",
+    "apples"
+   ],
+   "sources": [
+    {
+     "title": "Vegetable Storage in Root Cellars (UAF Cooperative Extension)",
+     "url": "https://www.uaf.edu/ces/publications/database/food/vegetable-storage.php",
+     "year": 2020
+    },
+    {
+     "title": "Home Storage of Fruits and Vegetables in Root Cellars MP562 (MU Extension)",
+     "url": "https://extension.missouri.edu/publications/mp562",
+     "year": null
+    }
+   ]
+  },
+  "curing": {
+   "shelfLifeMonths": {
+    "winter_squash_acorn": [
+     1.2,
+     1.9
+    ],
+    "winter_squash_butternut": [
+     2,
+     3
+    ],
+    "winter_squash_hubbard": [
+     5,
+     6
+    ],
+    "sweet_potatoes": [
+     4,
+     6
+    ],
+    "onions": [
+     5,
+     8
+    ],
+    "garlic": [
+     6,
+     7
+    ],
+    "potatoes": [
+     5,
+     8
+    ]
+   },
+   "note": "Iowa State (2025). Winter squash: cure at 80-85°F, 80-85% RH (not acorn types), store at 50-55°F (acorn lasts 5-8 weeks). Sweet potatoes: home cure 10-14 days warm and shaded, store at 55-60°F, 85-90% RH. Onions: cure 2-3 weeks warm, dry and ventilated, store at 32-40°F, 65-70% RH. Garlic: cure warm and dry, store the same way. Potatoes: cure at 50-60°F, 85-90% RH for 2 weeks, store at 40°F, 90-95% RH, in the dark.",
+   "suits": [
+    "winter squash",
+    "pumpkins",
+    "sweet potatoes",
+    "onions",
+    "garlic",
+    "potatoes"
+   ],
+   "sources": [
+    {
+     "title": "Storing Winter Storage Vegetables (Iowa State Yard and Garden)",
+     "url": "https://yardandgarden.extension.iastate.edu/how-to/storing-winter-storage-vegetables",
+     "year": 2025
+    }
+   ]
+  }
+ }
+}
