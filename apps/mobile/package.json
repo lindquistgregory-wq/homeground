@@ -1,0 +1,41 @@
+{
+  "name": "@plotwright/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "typecheck": "tsc --noEmit",
+    "doctor": "npx expo-doctor"
+  },
+  "dependencies": {
+    "@plotwright/core": "workspace:*",
+    "@plotwright/data": "workspace:*",
+    "@plotwright/providers": "workspace:*",
+    "@plotwright/user-sync": "workspace:*",
+    "@maplibre/maplibre-react-native": "^11.4.0",
+    "expo": "~55.0.0",
+    "expo-crypto": "*",
+    "expo-dev-client": "*",
+    "expo-document-picker": "*",
+    "expo-file-system": "*",
+    "expo-location": "*",
+    "expo-router": "*",
+    "expo-sqlite": "*",
+    "expo-status-bar": "*",
+    "fflate": "^0.8.2",
+    "proj4": "^2.15.0",
+    "react": "*",
+    "react-native": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-screens": "*",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/proj4": "^2.5.5",
+    "@types/react": "*",
+    "typescript": "^5.9.0"
+  }
+}

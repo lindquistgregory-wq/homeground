@@ -1,0 +1,21 @@
+{
+  "name": "plotwright",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "tsx --test \"packages/*/src/**/*.test.ts\" \"scripts/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check:licenses": "tsx scripts/check-licenses.ts",
+    "check": "pnpm typecheck && pnpm test && pnpm check:licenses",
+    "build:zones": "tsx scripts/build-zone-table.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-28",
+  "notes": "Seed registry of free public parcel services. Only allow-listed fields (parcel id, acreage) are ever requested; owner and mailing fields are never downloaded. Extend by PR or via in-app contributions (stored on-device only).",
+  "endpoints": [
+    {
+      "id": "ny-statewide-public",
+      "name": "New York State Tax Parcels (public counties)",
+      "coverage": { "stateFips": "36" },
+      "url": "https://gisservices.its.ny.gov/arcgis/rest/services/NYS_Tax_Parcels_Public/MapServer/1",
+      "idField": "PRINT_KEY",
+      "acresField": "ACRES",
+      "attribution": "Contributing counties, NYS ITS Geospatial Services and NYS ORPTS",
+      "license": "Public web service; 2025 data for the 38 counties that authorized sharing. Check NYS terms before redistribution.",
+      "displayOnly": true,
+      "verifiedAt": "2026-09-28"
+    },
+    {
+      "id": "wi-statewide-v12",
+      "name": "Wisconsin Statewide Parcels (V12)",
+      "coverage": { "stateFips": "55" },
+      "url": "https://services3.arcgis.com/n6uYoouQZW75n5WI/arcgis/rest/services/Wisconsin_Statewide_Parcels_DB/FeatureServer/0",
+      "idField": "PARCELID",
+      "acresField": "GISACRES",
+      "attribution": "Wisconsin Statewide Parcel Map Database Project (V12), Wisconsin State Cartographer's Office",
+      "license": "Public web service from the Wisconsin State Cartographer's Office. Check its terms before redistribution.",
+      "displayOnly": true,
+      "verifiedAt": "2026-09-28"
+    }
+  ]
+}

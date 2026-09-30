@@ -1,0 +1,12 @@
+{
+  "name": "@plotwright/providers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@plotwright/core": "workspace:*",
+    "@plotwright/data": "workspace:*"
+  }
+}
