@@ -177,9 +177,16 @@ export class StoreBillingAdapter implements BillingAdapter {
     await this.connect();
     this.listen();
     const sub = !isOneTime(plan.productId);
+    if (sub && Platform.OS === 'android' && this.lastRecords.length === 0) {
+      // Plan changes need the current subscription's token; without a store answer, don't risk a second subscription.
+      const c = await this.check();
+      if (!c.ok) return 'failed';
+    }
     // Android: replace the current subscription instead of starting a second one alongside it.
     const change = sub ? planChange(activeSubscription(this.lastRecords), plan.productId) : undefined;
-    const done = new Promise<PurchaseOutcome>((resolve) => this.pending.set(plan.productId, resolve));
+    let resolveDone!: (o: PurchaseOutcome) => void;
+    const done = new Promise<PurchaseOutcome>((resolve) => { resolveDone = resolve; });
+    this.pending.set(plan.productId, resolveDone);
     try {
       await this.iap.requestPurchase({
         type: sub ? 'subs' : 'in-app',
@@ -194,17 +201,24 @@ export class StoreBillingAdapter implements BillingAdapter {
         },
       });
     } catch (e) {
-      this.pending.delete(plan.productId);
+      if (this.pending.get(plan.productId) === resolveDone) this.pending.delete(plan.productId);
       return (e as { code?: string }).code === this.iap.ErrorCode.UserCancelled ? 'cancelled' : 'failed';
     }
     // Never leave the paywall waiting forever (Ask to Buy, a lost event): after 10 minutes, ask the store.
-    const timeout = new Promise<PurchaseOutcome>((resolve) => setTimeout(async () => {
-      if (!this.pending.has(plan.productId)) return;
-      this.pending.delete(plan.productId);
-      const c = await this.check();
-      resolve(c.ok && c.records.some((r) => r.productId === plan.productId) ? 'purchased' : 'pending');
-    }, 10 * 60_000));
-    return Promise.race([done, timeout]);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<PurchaseOutcome>((resolve) => {
+      timer = setTimeout(async () => {
+        if (this.pending.get(plan.productId) !== resolveDone) return; // settled, or replaced by a newer attempt
+        this.pending.delete(plan.productId);
+        const c = await this.check();
+        resolve(c.ok && c.records.some((r) => r.productId === plan.productId) ? 'purchased' : 'pending');
+      }, 10 * 60_000);
+    });
+    try {
+      return await Promise.race([done, timeout]);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /** The product the user subscribes to now (for the manage-subscription link). */
