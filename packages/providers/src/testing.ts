@@ -36,7 +36,14 @@ export function fakeFetch(routes: Route[]): { fetch: FetchLike; calls: RecordedC
       return { ok: false, status, headers: { get: (h) => route.headers?.[h.toLowerCase()] ?? null }, text: async () => '' };
     }
     const status = route.status ?? 200;
-    const raw = typeof route.body === 'function' ? (route.body as (u: string, b?: string) => unknown)(url, init.body) : route.body;
+    const raw = typeof route.body === 'function' ? (route.body as (u: string, b?: string, h?: Record<string, string>) => unknown)(url, init.body, init.headers) : route.body;
+    if (raw instanceof Uint8Array) {
+      // Honour Range headers like S3 does.
+      const m = /bytes=(\d+)-(\d+)/.exec(init.headers.Range ?? '');
+      const part = m ? raw.subarray(Number(m[1]), Number(m[2]) + 1) : raw;
+      const st = m ? 206 : status;
+      return { ok: true, status: st, headers: { get: () => null }, text: async () => '', arrayBuffer: async () => part.slice().buffer };
+    }
     const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
     return { ok: status < 400, status, headers: { get: (h) => route.headers?.[h.toLowerCase()] ?? null }, text: async () => text };
   };

@@ -35,6 +35,10 @@ const store: LocalStore = {
       if (!r) return undefined;
       return { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r };
     }
+    if (collection === 'designs') {
+      const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM designs WHERE id = ?', id);
+      return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
+    }
     if (collection === 'siteProfiles') {
       const r = await db.getFirstAsync<{ profile: string; updated_hlc: string }>('SELECT profile, updated_hlc FROM site_profiles WHERE parcel_id = ?', id);
       return r ? { collection, id, hlc: r.updated_hlc, deleted: false, data: JSON.parse(r.profile) } : undefined;
@@ -66,6 +70,15 @@ const store: LocalStore = {
            updated_hlc = excluded.updated_hlc, deleted = 0`,
         rec.id, String(d.name), String(d.geometry), String(d.boundary_source), (d.boundary_meta as string | null) ?? null,
         (d.county_fips as string | null) ?? null, (d.zip as string | null) ?? null, Number(d.area_m2), String(d.created_at), rec.hlc,
+      );
+    } else if (rec.collection === 'designs') {
+      const d = (rec.data ?? {}) as Record<string, unknown>;
+      await db.runAsync(
+        `INSERT INTO designs (id, parcel_id, name, objects, created_at, updated_at, updated_hlc, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET name = excluded.name, objects = excluded.objects, updated_at = excluded.updated_at,
+           updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
+        rec.id, String(d.parcel_id ?? ''), String(d.name ?? ''), String(d.objects ?? '[]'), String(d.created_at ?? new Date().toISOString()),
+        String(d.updated_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
       );
     } else if (rec.collection === 'siteProfiles' && rec.data) {
       const parent = await db.getFirstAsync<{ deleted: number }>('SELECT deleted FROM parcels WHERE id = ?', rec.id);

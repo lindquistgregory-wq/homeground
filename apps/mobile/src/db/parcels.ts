@@ -3,6 +3,7 @@ import type { ParcelEndpoint } from '@plotwright/data';
 import type { SiteProfile } from '@plotwright/providers';
 import { getDb } from './database';
 import { clock, newId } from '../services/identity';
+import { deleteDesignsForParcel } from './designs';
 
 export type BoundarySource = 'county' | 'drawn' | 'walked' | 'imported';
 
@@ -99,6 +100,7 @@ export async function deleteParcel(id: string): Promise<void> {
   await db.runAsync('DELETE FROM site_profiles WHERE parcel_id = ?', id);
   await db.runAsync("DELETE FROM sync_pending WHERE collection = 'siteProfiles' AND id = ?", id);
   await markPending('parcels', id, hlc);
+  await deleteDesignsForParcel(id);
 }
 
 export async function getSiteProfile(parcelId: string): Promise<SiteProfile | undefined> {

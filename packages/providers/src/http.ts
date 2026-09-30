@@ -12,6 +12,7 @@ export interface FetchResponseLike {
   status: number;
   headers: { get(name: string): string | null };
   text(): Promise<string>;
+  arrayBuffer?(): Promise<ArrayBuffer>;
 }
 export type FetchLike = (
   url: string,
@@ -208,12 +209,45 @@ export class HttpClient {
     }
   }
 
-  private async fetchWithRetry(url: string, method: string, opts: RequestOptions): Promise<string> {
+  /**
+   * Binary GET, optionally a byte range (for Cloud-Optimized GeoTIFFs). Cached as base64 when `ttlMs`
+   * is set. A server that ignores Range and answers 200 is rejected rather than downloading the file.
+   */
+  async bytes(url: string, opts: RequestOptions & { range?: [number, number] } = {}): Promise<HttpResult<Uint8Array>> {
+    const key = opts.cacheKey ?? `BYTES ${url} ${opts.range ? opts.range.join('+') : ''}`;
+    const ttl = opts.ttlMs ?? 0;
+    const cached = ttl > 0 && this.cache ? await this.cache.get(key) : undefined;
+    if (cached && cached.expiresAt > this.now() && !this.ignoreFreshCache)
+      return { data: fromBase64(cached.value), fromCache: true, stale: false, storedAt: cached.storedAt };
+    const headers = { ...opts.headers, Accept: '*/*', ...(opts.range ? { Range: `bytes=${opts.range[0]}-${opts.range[0] + opts.range[1] - 1}` } : {}) };
+    try {
+      const data = await this.fetchWithRetry(url, 'GET', { ...opts, headers }, async (res) => {
+        if (opts.range && res.status === 200) throw new HttpError(`${hostOf(url)} ignored the byte-range request`, 200, false, url);
+        if (!res.arrayBuffer) throw new HttpError('Binary responses are not supported by this fetch', null, false, url);
+        return new Uint8Array(await res.arrayBuffer());
+      });
+      if (ttl > 0 && this.cache) {
+        const storedAt = this.now();
+        await this.cache.set(key, { value: toBase64(data), storedAt, expiresAt: storedAt + ttl });
+      }
+      return { data, fromCache: false, stale: false, storedAt: this.now() };
+    } catch (err) {
+      if (cached) return { data: fromBase64(cached.value), fromCache: true, stale: true, storedAt: cached.storedAt };
+      throw err;
+    }
+  }
+
+  private async fetchWithRetry<T = string>(
+    url: string,
+    method: string,
+    opts: RequestOptions,
+    read: (res: FetchResponseLike) => Promise<T> = (res) => res.text() as Promise<T>,
+  ): Promise<T> {
     const attempts = opts.maxAttempts ?? 3;
     let lastErr: HttpError | undefined;
     for (let attempt = 1; attempt <= attempts; attempt++) {
       try {
-        return await this.fetchOnce(url, method, opts);
+        return await this.fetchOnce(url, method, opts, read);
       } catch (e) {
         lastErr = e instanceof HttpError ? e : new HttpError(String((e as Error)?.message ?? e), null, true, url);
         if (!lastErr.retryable || attempt === attempts) break;
@@ -224,7 +258,7 @@ export class HttpClient {
     throw lastErr!;
   }
 
-  private async fetchOnce(url: string, method: string, opts: RequestOptions): Promise<string> {
+  private async fetchOnce<T>(url: string, method: string, opts: RequestOptions, read: (res: FetchResponseLike) => Promise<T>): Promise<T> {
     const host = hostOf(url);
     const release = await this.acquire(host);
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : undefined;
@@ -246,7 +280,7 @@ export class HttpClient {
         if (ra && /^\d+$/.test(ra)) err.retryAfterMs = Math.min(60_000, Number(ra) * 1000);
         throw err;
       }
-      return await res.text();
+      return await read(res);
     } finally {
       if (timer) clearTimeout(timer);
       release();
@@ -293,3 +327,26 @@ export const TTL = {
   geocode: 90 * DAY,
   forecast: 1 * HOUR,
 } as const;
+
+// ---------------- base64 (no Buffer/atob dependency) ----------------
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+export function toBase64(b: Uint8Array): string {
+  let out = '';
+  for (let i = 0; i < b.length; i += 3) {
+    const n = (b[i]! << 16) | ((b[i + 1] ?? 0) << 8) | (b[i + 2] ?? 0);
+    out += B64[(n >> 18) & 63]! + B64[(n >> 12) & 63]! + (i + 1 < b.length ? B64[(n >> 6) & 63]! : '=') + (i + 2 < b.length ? B64[n & 63]! : '=');
+  }
+  return out;
+}
+export function fromBase64(s: string): Uint8Array {
+  const clean = s.replace(/[^A-Za-z0-9+/]/g, '');
+  const out = new Uint8Array(Math.floor((clean.length * 3) / 4));
+  let o = 0;
+  for (let i = 0; i < clean.length; i += 4) {
+    const n = (B64.indexOf(clean[i]!) << 18) | (B64.indexOf(clean[i + 1] ?? 'A') << 12) | (Math.max(0, B64.indexOf(clean[i + 2] ?? 'A')) << 6) | Math.max(0, B64.indexOf(clean[i + 3] ?? 'A'));
+    if (o < out.length) out[o++] = (n >> 16) & 255;
+    if (o < out.length) out[o++] = (n >> 8) & 255;
+    if (o < out.length) out[o++] = n & 255;
+  }
+  return out;
+}

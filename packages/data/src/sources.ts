@@ -108,6 +108,32 @@ export const DATA_SOURCES: DataSource[] = [
     caveat: 'Only parcel id and acreage are requested. Owner fields are never downloaded.',
   },
   {
+    id: '3dep-imageserver', name: '3DEP Elevation ImageServer', provider: 'USGS',
+    use: 'Bare-earth elevation grids around the parcel (shade, slope, contours, frost pockets)',
+    hosts: ['elevation.nationalmap.gov'], license: 'Public domain (U.S. Government work)', commercialUse: true,
+    attribution: 'USGS 3D Elevation Program', url: 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer', reviewed: '2026-09-28',
+  },
+  {
+    id: 'tnm-access', name: 'TNM Access API', provider: 'USGS',
+    use: 'Checks whether 1 m lidar elevation exists at the parcel', hosts: ['tnmaccess.nationalmap.gov'],
+    license: 'Public domain (U.S. Government work)', commercialUse: true, attribution: 'USGS The National Map',
+    url: 'https://tnmaccess.nationalmap.gov/api/v1/docs', reviewed: '2026-09-28',
+  },
+  {
+    id: 'meta-wri-chm', name: 'High Resolution Canopy Height Maps v2', provider: 'Meta & World Resources Institute (AWS Open Data)',
+    use: 'Tree heights for shade modelling', hosts: ['dataforgood-fb-data.s3.amazonaws.com'],
+    license: 'CC BY 4.0', commercialUse: true, attribution: 'Meta and World Resources Institute (WRI). High Resolution Canopy Height Maps v2.',
+    policy: 'Byte-range reads of only the tiles over the parcel; cached 180 days',
+    url: 'https://registry.opendata.aws/dataforgood-fb-forestsv2/', reviewed: '2026-09-28',
+  },
+  {
+    id: 'nasa-power', name: 'NASA POWER', provider: 'NASA Langley Research Center',
+    use: 'Monthly solar radiation for insolation and solar-array estimates', hosts: ['power.larc.nasa.gov'],
+    license: 'NASA open data; acknowledgement requested', commercialUse: true,
+    attribution: 'Data from the NASA Langley Research Center POWER Project, funded through the NASA Earth Science Directorate Applied Science Program.',
+    policy: 'One request per 0.5° grid cell, cached 1 year', url: 'https://power.larc.nasa.gov/', reviewed: '2026-09-28',
+  },
+  {
     id: 'static-host', name: 'Plotwright registry (GitHub Pages)', provider: 'This project',
     use: 'Refreshable parcel-endpoint registry (static JSON)', hosts: ['lindquistgregory-wq.github.io'],
     license: 'Project-owned', commercialUse: true, attribution: '', url: 'https://pages.github.com/', reviewed: '2026-09-28',
@@ -119,4 +145,6 @@ export const NON_SERVICE_HOSTS = [
   'github.com', 'www.usgs.gov', 'websoilsurvey.nrcs.usda.gov', 'msc.fema.gov', 'planthardiness.ars.usda.gov',
   'operations.osmfoundation.org', 'openfreemap.org', 'pages.github.com', 'example.gov', 'example.invalid',
   'www.googleapis.com', 'www.fema.gov', 'www.sco.wisc.edu', 'gis.ny.gov',
+  'www.opengis.net', 'www.w3.org', // XML namespaces in exports
+  'registry.opendata.aws', 'power.larc.nasa.gov', 'www.usgs.gov', // documentation links
 ];

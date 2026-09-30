@@ -41,6 +41,8 @@ export default function RootLayout() {
         <Stack.Screen name="locate" options={{ title: 'Find your property' }} />
         <Stack.Screen name="boundary" options={{ title: 'Property boundary' }} />
         <Stack.Screen name="profile/[id]" options={{ title: 'Site profile' }} />
+        <Stack.Screen name="design/[id]" options={{ title: 'Design' }} />
+        <Stack.Screen name="sun/[id]" options={{ title: 'Sun path' }} />
         <Stack.Screen name="data-sources" options={{ title: 'Data sources' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       </Stack>

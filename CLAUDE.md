@@ -1,6 +1,6 @@
 # Plotwright — instructions for Claude sessions
 
-Read `docs/PLAN.md` (phases and architecture) and `docs/PHASE1_REPORT.md` (current state and known gaps) before changing anything.
+Read `docs/PLAN.md` (phases and architecture) and the latest `docs/PHASE*_REPORT.md` (current state and known gaps) before changing anything.
 
 ## Non-negotiables (from the owner's build prompt)
 - **Zero running cost.** Use only services and libraries that are free for commercial use. No paid, metered or trial-then-bill services, and no developer server. If a requirement can't be met for free, stop and ask. Don't add a paid service quietly.

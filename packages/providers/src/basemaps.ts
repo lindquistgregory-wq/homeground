@@ -44,4 +44,16 @@ export const USGS_TOPO: RasterSource = {
   captureNote: 'Composite of national datasets; contours from 3DEP.',
 };
 
-export const RASTER_SOURCES = [USGS_IMAGERY, USGS_TOPO];
+export const USGS_HILLSHADE: RasterSource = {
+  id: 'usgs-hillshade',
+  name: 'Shaded relief (USGS The National Map)',
+  tiles: ['https://basemap.nationalmap.gov/arcgis/rest/services/USGSShadedReliefOnly/MapServer/tile/{z}/{y}/{x}'],
+  tileSize: 256,
+  minzoom: 0,
+  maxzoom: 16,
+  attribution: 'USGS The National Map: 3D Elevation Program',
+  license: 'Public domain (U.S. Government work)',
+  captureNote: 'Shaded relief from 3DEP elevation.',
+};
+
+export const RASTER_SOURCES = [USGS_IMAGERY, USGS_TOPO, USGS_HILLSHADE];
