@@ -35,6 +35,8 @@ export interface CalendarContext {
   risk?: 'cautious' | 'typical';
   /** Soil temperature by day-of-year from a sensor or regional station, overriding the model. */
   soilF?: (doy: number) => number;
+  /** Where `soilF` comes from ("measured", "regional station", "modeled"), for the explanations. */
+  soilLabel?: string;
   /** Use heat units (GDD) instead of calendar days for maturity where the crop has a GDD target. */
   dynamicGdd?: boolean;
 }
@@ -82,11 +84,12 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
 
   // Soil-temperature gate: the first day soil stays at or above the crop's minimum.
   const soilReady = sow.minSoilF !== undefined && soil ? firstDayAtLeast(soil, sow.minSoilF, 1, 250) : null;
+  const soilKind = ctx.soilLabel ?? (ctx.soilF ? 'measured' : 'modeled');
   // Soil that never gets warm enough is a real limit, not a reason to drop the check.
   const soilNeverWarm = sow.minSoilF !== undefined && !!soil && soilReady === null;
   if (soilNeverWarm)
-    warnings.push(`Soil here rarely reaches the ${sow.minSoilF} °F this crop needs${ctx.soilF ? '' : ' (modeled)'}. Warm it with black plastic mulch or a low tunnel before planting, and check with a soil thermometer.`);
-  const soilNote = soilReady !== null ? ` and soil ${sow.minSoilF} °F+ (≈${formatDoy(soilReady)}${ctx.soilF ? '' : ', modeled'})` : '';
+    warnings.push(`Soil here rarely reaches the ${sow.minSoilF} °F this crop needs (${soilKind}). Warm it with black plastic mulch or a low tunnel before planting, and check with a soil thermometer.`);
+  const soilNote = soilReady !== null ? ` and soil ${sow.minSoilF} °F+ (≈${formatDoy(soilReady)}, ${soilKind})` : '';
   const cautious = tender && ctx.risk !== 'typical' && lf.late !== null;
   const cautionNote = cautious ? `, not before the 1-in-10-years late frost (${formatDoy(lf.late!)})` : '';
   const gate = (d: number) => {

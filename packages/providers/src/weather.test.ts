@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { humidityClimatology, nwsForecast, parseWindMph } from './weather';
+import { dailyClearness, humidityClimatology, nwsForecast, parseWindMph } from './weather';
 import { testClient } from './testing';
 
 // Synthetic, in the documented api.weather.gov shape (the authoring environment could not reach NWS).
@@ -43,4 +43,17 @@ test('NASA POWER humidity climatology', async () => {
   const h = await humidityClimatology(http, { lat: 42.25, lon: -73.98 });
   assert.equal(h.status === 'ok' && Math.round(h.value.summer), 74);
   assert.match(calls[0]!.url, /parameters=RH2M/);
+});
+
+test('NASA POWER daily clearness: ratio per day, missing (-999) days dropped [synthetic]', async () => {
+  const { http, calls } = testClient([{ match: /temporal\/daily\/point/, body: { properties: { parameter: {
+    ALLSKY_SFC_SW_DWN: { '20260920': 6.4, '20260921': 2.1, '20260922': -999 },
+    CLRSKY_SFC_SW_DWN: { '20260920': 7.0, '20260921': 6.9, '20260922': -999 },
+  } } } }]);
+  const r = await dailyClearness(http, { lat: 42.26, lon: -73.98 }, '20260920', '20260922');
+  assert.equal(r.status, 'ok');
+  if (r.status !== 'ok') return;
+  assert.deepEqual(Object.keys(r.value), ['20260920', '20260921']);
+  assert.ok(r.value['20260920']! > 0.9 && r.value['20260921']! < 0.35);
+  assert.match(calls[0]!.url, /latitude=42.5&longitude=-74/);
 });

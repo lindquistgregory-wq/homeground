@@ -25,7 +25,7 @@ export default function PlantDetail() {
   const [risk, setRisk] = useState<'cautious' | 'typical'>('cautious');
   const plant = plantById(plantId);
 
-  const cal = useMemo(() => (plant && state ? calendarFor(plant, state.site, { risk, dynamicGdd: ent.has('planting.dynamicScheduling') }) : null), [plant, state, risk, ent]);
+  const cal = useMemo(() => (plant && state ? calendarFor(plant, state.site, { risk, dynamicGdd: ent.has('planting.dynamicScheduling'), soilF: state.soil.soilF, soilLabel: state.soil.basisLabel }) : null), [plant, state, risk, ent]);
   const fit = useMemo(() => (plant && state ? scorePlant(plant, state.site, {}, undefined, 'your climate') : null), [plant, state]);
 
   if (!plant) return <Body>Unknown plant.</Body>;
@@ -64,7 +64,7 @@ export default function PlantDetail() {
           {cal ? <CalendarList cal={cal} /> : <Body muted>Frost dates for this property aren’t available yet, so the calendar can’t be personalised. Refresh the site profile to try again.</Body>}
           {climate?.status === 'ok' && (
             <Text style={{ color: t.muted, fontSize: 12, marginTop: 6 }}>
-              Frost dates: {climate.attribution.source}, adjusted to the parcel’s elevation.{state?.site.curves ? ' Soil temperature is modeled from air-temperature normals; a soil thermometer beats the model.' : ''}
+              Frost dates: {climate.attribution.source}, adjusted to the parcel’s elevation. Soil temperature: {state?.soil.label}.{state?.soil.kind === 'model' ? ' A soil thermometer or sensor beats the model.' : ''}
             </Text>
           )}
         </Card>

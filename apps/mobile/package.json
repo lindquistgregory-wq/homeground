@@ -19,6 +19,7 @@
     "@plotwright/user-sync": "workspace:*",
     "expo": "~55.0.0",
     "expo-background-task": "*",
+    "expo-build-properties": "*",
     "expo-crypto": "*",
     "expo-dev-client": "*",
     "expo-document-picker": "*",
@@ -27,6 +28,7 @@
     "expo-notifications": "*",
     "expo-print": "*",
     "expo-router": "*",
+    "expo-secure-store": "*",
     "expo-sharing": "*",
     "expo-sqlite": "*",
     "expo-status-bar": "*",
@@ -35,9 +37,11 @@
     "proj4": "^2.15.0",
     "react": "*",
     "react-native": "*",
+    "react-native-ble-plx": "^3.5.0",
     "react-native-safe-area-context": "*",
     "react-native-screens": "*",
     "react-native-svg": "*",
+    "react-native-udp": "^4.1.7",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

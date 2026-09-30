@@ -1,0 +1,113 @@
+{
+ "common_list": [
+  {
+   "id": "0x02",
+   "val": "79.2",
+   "unit": "F"
+  },
+  {
+   "id": "0x07",
+   "val": "65%"
+  }
+ ],
+ "rain": [
+  {
+   "id": "0x0D",
+   "val": "0.00 in"
+  },
+  {
+   "id": "0x0E",
+   "val": "0.00 in/Hr"
+  }
+ ],
+ "piezoRain": [
+  {
+   "id": "0x0D",
+   "val": "0.00 in"
+  },
+  {
+   "id": "0x0E",
+   "val": "0.00 in/Hr"
+  },
+  {
+   "id": "0x10",
+   "val": "0.00 in"
+  },
+  {
+   "id": "0x11",
+   "val": "0.00 in"
+  },
+  {
+   "id": "0x12",
+   "val": "0.00 in"
+  },
+  {
+   "id": "0x13",
+   "val": "0.00 in",
+   "battery": "4"
+  }
+ ],
+ "wh25": [
+  {
+   "intemp": "81.0",
+   "unit": "F",
+   "inhumi": "62%",
+   "abs": "29.40 inHg",
+   "rel": "29.40 inHg"
+  }
+ ],
+ "ch_aisle": [
+  {
+   "channel": "1",
+   "name": "",
+   "battery": "0",
+   "temp": "80.2",
+   "unit": "F",
+   "humidity": "None"
+  }
+ ],
+ "ch_soil": [
+  {
+   "channel": "1",
+   "name": "",
+   "battery": "1",
+   "humidity": "0%"
+  }
+ ],
+ "ch_temp": [
+  {
+   "channel": "1",
+   "name": "",
+   "temp": "79.9",
+   "unit": "F",
+   "battery": "2"
+  }
+ ],
+ "ch_leaf": [
+  {
+   "channel": "1",
+   "name": "",
+   "humidity": "0%",
+   "battery": "5"
+  }
+ ],
+ "lightning": [
+  {
+   "distance": "34 km",
+   "date": "2024-11-25T20:41:16",
+   "timestamp": "11/25/2024 20:41:16",
+   "count": "0",
+   "battery": "5"
+  }
+ ],
+ "co2": [
+  {
+   "temp": "24.0",
+   "unit": "C",
+   "humidity": "50%",
+   "PM25": "13.0",
+   "CO2": "880",
+   "battery": "6"
+  }
+ ]
+}

@@ -9,6 +9,8 @@ import { StubBillingAdapter, billing } from '../src/billing/adapter';
 import { useEntitlements } from '../src/billing/entitlements';
 import { Body, Button, Card, useTheme } from '../src/components/ui';
 import { deleteAllLocalData } from '../src/db/database';
+import { listSensors } from '../src/db/sensors';
+import { deleteSecrets } from '../src/services/secrets';
 import { listParcels, saveUserEndpoint } from '../src/db/parcels';
 import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
@@ -169,6 +171,9 @@ export default function Settings() {
                 text: 'Delete',
                 style: 'destructive',
                 onPress: async () => {
+                  // Station keys and bindkeys live in the keychain, not the database: remove them first.
+                  await deleteSecrets((await listSensors()).map((x) => x.id));
+                  await setAlertsEnabled(false).catch(() => undefined);
                   await deleteAllLocalData();
                   const cloudResult = await wipeCloudData();
                   if (cloudResult === 'deferred')

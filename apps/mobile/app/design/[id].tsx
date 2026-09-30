@@ -25,6 +25,7 @@ import {
 import { exportDesign, type ExportFormat } from '../../src/services/export';
 import { activePlantings, cropShadeObjects, isPlantable } from '../../src/services/garden';
 import { deletePlantingsForBed, plantingsForParcel, type Planting } from '../../src/db/plantings';
+import { listSensors } from '../../src/db/sensors';
 import { newId } from '../../src/services/identity';
 import { useSettings } from '../../src/services/settings';
 
@@ -40,6 +41,10 @@ const SUN_RAMP = ['interpolate', ['linear'], ['get', 'hours'], 0, '#440154', 3, 
 const HEAT_PAINT = { 'fill-color': SUN_RAMP, 'fill-opacity': 0.6, 'fill-antialias': false };
 const CONTOUR_PAINT = { 'line-color': '#f5e6c8', 'line-width': 0.8, 'line-opacity': 0.8 };
 const CAMERA_PADDING = { top: 40, right: 40, bottom: 40, left: 40 };
+const SENSOR_PIN_PAINT = { 'circle-color': '#4ea8f2', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 };
+// The OpenFreeMap style serves Noto Sans glyphs only; the MapLibre default font stack would render nothing.
+const SENSOR_LABEL_LAYOUT = { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, 1.1], 'text-anchor': 'top' };
+const SENSOR_LABEL_PAINT = { 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 };
 
 export default function DesignScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -64,6 +69,7 @@ export default function DesignScreen() {
   const [siting, setSiting] = useState<{ target: SitingTarget; geo: object; factors: string[] } | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [plantings, setPlantings] = useState<Planting[]>([]);
+  const [sensorPins, setSensorPins] = useState<object | null>(null);
   const [shadeSeason, setShadeSeason] = useState({ fromDoy: 180, toDoy: 288 });
   const pendingChange = useRef<DesignObject[]>([]);
   const sunRef = useRef<SunResult | null>(null);
@@ -94,6 +100,11 @@ export default function DesignScreen() {
   useFocusEffect(
     useCallback(() => {
       void plantingsForParcel(id).then((ps) => setPlantings(activePlantings(ps, new Date().getFullYear())));
+      // Pinned sensors, shown as dots so the plan shows where readings come from.
+      void listSensors(id).then((ss) => {
+        const pinned = ss.filter((x) => x.location);
+        setSensorPins(pinned.length ? { type: 'FeatureCollection', features: pinned.map((x) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [x.location!.lon, x.location!.lat] }, properties: { label: x.name } })) } : null);
+      });
     }, [id]),
   );
 
@@ -303,6 +314,12 @@ export default function DesignScreen() {
             >
               <Layer type="fill" id="obj-fill" paint={{ 'fill-color': ['case', ['==', ['get', 'existing'], 1], '#9e9e9e', '#ffffff'], 'fill-opacity': 0.35 }} />
               <Layer type="line" id="obj-line" paint={{ 'line-color': ['case', ['==', ['get', 'selected'], 1], '#4ea8f2', '#ffffff'], 'line-width': ['case', ['==', ['get', 'selected'], 1], 3, 1.5] }} />
+            </GeoJSONSource>
+          )}
+          {sensorPins && (
+            <GeoJSONSource id="sensor-pins" data={sensorPins}>
+              <Layer type="circle" id="sensor-pin" paint={SENSOR_PIN_PAINT} />
+              <Layer type="symbol" id="sensor-label" layout={SENSOR_LABEL_LAYOUT} paint={SENSOR_LABEL_PAINT} />
             </GeoJSONSource>
           )}
         </Map>

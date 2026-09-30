@@ -14,8 +14,14 @@ import { getDb, kvGet, kvSet } from '../db/database';
 import { getDesign } from '../db/designs';
 import { listParcels, getSiteProfile } from '../db/parcels';
 import { plantingsForParcel } from '../db/plantings';
+import { checkThresholds, METRIC_LABEL } from '@plotwright/core';
+import { latestValues, listSensors } from '../db/sensors';
 import { activePlantings, bedName } from './garden';
+import { frostOffset, localOffsetMin, recordForecastLows } from './sensorInsights';
+import { refreshAllStations } from './stations';
 import { http } from './http';
+import { initIdentity } from './identity';
+import { useEntitlements } from '../billing/entitlements';
 
 export const ALERT_TASK = 'plotwright-weather-alerts';
 const ENABLED_KEY = 'alerts.enabled';
@@ -30,7 +36,9 @@ Notifications.setNotificationHandler({
 TaskManager.defineTask(ALERT_TASK, async () => {
   try {
     await getDb();
-    await checkAlerts();
+    // A headless run starts without the app's startup: set up the device id and clock first.
+    await initIdentity();
+    await checkAlerts({ background: true });
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch {
     return BackgroundTask.BackgroundTaskResult.Failed;
@@ -105,31 +113,68 @@ export interface ParcelAlerts {
   parcelName: string;
   alerts: WeatherAlert[];
   forecastNote?: string;
+  /** Applied when a pinned sensor has shown the spot runs colder than the forecast. */
+  lowSpot?: { sensor: string; offsetF: number; nights: number };
 }
 
 /** Alerts for one parcel (used by the calendar screen, with or without notifications on). */
 export async function alertsForParcel(parcelId: string, parcelName: string, lat: number, lon: number): Promise<ParcelAlerts> {
   const crops = await plantedCrops(parcelId);
-  if (!crops.length) return { parcelId, parcelName, alerts: [] };
+  const hasAirSensor = (await listSensors(parcelId)).some((x) => x.exposure === 'open-air');
+  if (!crops.length && !hasAirSensor) return { parcelId, parcelName, alerts: [] };
   const fc = await nwsForecast(http, { lat, lon });
   if (fc.status !== 'ok') return { parcelId, parcelName, alerts: [], forecastNote: fc.reason };
+  // Remember tonight's forecast lows so pinned sensors can show how much colder the low spot runs.
+  await recordForecastLows(parcelId, fc.value.periods.filter((p) => p.isNight).map((p) => ({ date: p.start.slice(0, 10), lowF: p.temperatureF })));
+  if (!crops.length) return { parcelId, parcelName, alerts: [] };
   // An offline, cached forecast may include nights that have already passed.
   const now = Date.now();
-  const periods = fc.value.periods.filter((p) => Date.parse(p.end) > now);
-  return { parcelId, parcelName, alerts: weatherAlerts(periods, crops), forecastNote: fc.attribution.notes?.[0] };
+  let periods = fc.value.periods.filter((p) => Date.parse(p.end) > now);
+  const low = await frostOffset(parcelId);
+  // Only ever make alerts more cautious: apply the offset when the spot runs colder than forecast.
+  const lowSpot = low && low.offsetF <= -1 ? low : undefined;
+  if (lowSpot) periods = periods.map((p) => (p.isNight ? { ...p, temperatureF: p.temperatureF + lowSpot.offsetF } : p));
+  const alerts = weatherAlerts(periods, crops).map((a) =>
+    lowSpot && (a.kind === 'frost' || a.kind === 'freeze')
+      ? { ...a, body: `${a.body} Adjusted for your low spot: “${lowSpot.sensor}” has run about ${Math.round(-lowSpot.offsetF)} °F colder than the forecast over ${lowSpot.nights} nights.` }
+      : a);
+  return { parcelId, parcelName, alerts, forecastNote: fc.attribution.notes?.[0], lowSpot };
+}
+
+/** Threshold checks right after readings arrive (the scan screen); cheap, no forecast fetch. */
+let thresholdsInFlight: Promise<void> | null = null;
+export function checkThresholdsNow(): Promise<void> {
+  thresholdsInFlight ??= (async () => {
+    // Share the sent-list with a full check that's already running rather than racing it.
+    if (inFlight) await inFlight;
+    if (!(await alertsEnabled())) return;
+    const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);
+    await checkSensorThresholds(sent);
+    await kvSet(SENT_KEY, JSON.stringify([...sent]));
+  })().finally(() => { thresholdsInFlight = null; });
+  return thresholdsInFlight;
 }
 
 let inFlight: Promise<void> | null = null;
 
 /** Check every parcel with planted crops and post a notification for each new alert (one check at a time). */
-export function checkAlerts(): Promise<void> {
-  inFlight ??= runCheck().finally(() => { inFlight = null; });
+export function checkAlerts(opts: { background?: boolean } = {}): Promise<void> {
+  inFlight ??= runCheck(opts).finally(() => { inFlight = null; });
   return inFlight;
 }
 
-async function runCheck(): Promise<void> {
+async function runCheck(opts: { background?: boolean }): Promise<void> {
+  // Don't race a threshold check that's already writing the sent-list. Captured before any await: a
+  // threshold check that starts after this one waits for it instead, so the two can't wait on each other.
+  const earlier = thresholdsInFlight;
   if (!(await alertsEnabled())) return;
+  if (earlier) await earlier.catch(() => undefined);
   const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);
+  // Station accounts can be read from anywhere; fetch fresh readings before checking thresholds.
+  // In the background (about 30 s allowed) only a short gap of missed history is pulled.
+  await refreshAllStations(localOffsetMin(), false, opts.background ? 1 : 14).catch(() => undefined);
+  await checkSensorThresholds(sent);
+  await kvSet(SENT_KEY, JSON.stringify([...sent]));
   for (const parcel of await listParcels()) {
     const profile = await getSiteProfile(parcel.id);
     const c = profile?.centroid;
@@ -149,4 +194,40 @@ async function runCheck(): Promise<void> {
   // Keep the de-duplication list short: alert keys older than a week can go.
   const cutoff = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
   await kvSet(SENT_KEY, JSON.stringify([...sent].filter((k) => k.split('|')[2]! >= cutoff)));
+}
+
+/**
+ * Greenhouse / cold-frame / low-spot thresholds on individual sensors (Homestead Pro; set in the
+ * sensor's settings). Uses readings from the last 30 minutes; at most one notification per sensor,
+ * metric and direction per hour.
+ */
+async function checkSensorThresholds(sent: Set<string>): Promise<void> {
+  // A headless run hasn't loaded the plan yet; and thresholds stop when Homestead Pro lapses.
+  try {
+    await useEntitlements.getState().refresh();
+  } catch {
+    // keep the last known plan
+  }
+  if (!useEntitlements.getState().entitlements.has('sensors.greenhouseAlerts')) return;
+  const now = Date.now();
+  for (const s of await listSensors()) {
+    if (!s.thresholds) continue;
+    const latest = await latestValues(s.id);
+    const fresh = Object.fromEntries(Object.entries(latest).filter(([, v]) => v && now - v.t < 30 * 60_000).map(([m, v]) => [m, v!.value]));
+    for (const b of checkThresholds(fresh, s.thresholds)) {
+      const key = `${s.id}|th-${b.metric}-${b.kind}|${new Date(now).toISOString().slice(0, 13)}`;
+      if (sent.has(key)) continue;
+      sent.add(key);
+      const isTemp = b.metric === 'temperature';
+      const fmt = (v: number) => (isTemp ? `${Math.round((v * 9) / 5 + 32)} °F` : `${Math.round(v)} %`);
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `${s.name}: ${METRIC_LABEL[b.metric].toLowerCase()} ${b.kind} ${fmt(b.limit)}`,
+          body: `Now ${fmt(b.value)}. ${isTemp ? (b.kind === 'above' ? 'Open vents or add shade.' : 'Close up, cover plants or add heat.') : b.metric === 'humidity' ? 'Ventilate to keep leaves dry.' : 'Time to water.'}`,
+          data: { sensorId: s.id },
+        },
+        trigger: Platform.OS === 'android' ? { channelId: CHANNEL_ID } : null,
+      });
+    }
+  }
 }

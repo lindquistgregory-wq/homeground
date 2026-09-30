@@ -128,16 +128,51 @@ export const DATA_SOURCES: DataSource[] = [
   },
   {
     id: 'nasa-power', name: 'NASA POWER', provider: 'NASA Langley Research Center',
-    use: 'Monthly solar radiation (insolation, solar-array estimates) and humidity (disease pressure)', hosts: ['power.larc.nasa.gov'],
+    use: 'Monthly solar radiation (insolation, solar-array estimates), humidity (disease pressure), and daily all-sky vs clear-sky sunlight (which days were clear, for light-sensor calibration)', hosts: ['power.larc.nasa.gov'],
     license: 'NASA open data; acknowledgement requested', commercialUse: true,
     attribution: 'Data from the NASA Langley Research Center POWER Project, funded through the NASA Earth Science Directorate Applied Science Program.',
-    policy: 'One request per 0.5° grid cell, cached 1 year', url: 'https://power.larc.nasa.gov/', reviewed: '2026-09-28',
+    policy: 'One request per 0.5° grid cell, cached 1 year; daily clearness cached 1 day', url: 'https://power.larc.nasa.gov/', reviewed: '2026-09-28',
   },
   {
     id: 'nws', name: 'NWS forecast API', provider: 'NOAA National Weather Service',
     use: '7-day forecast for frost, heat and wind alerts about what you have planted', hosts: ['api.weather.gov'],
     license: 'Public domain (U.S. Government work)', commercialUse: true, attribution: 'National Weather Service',
     policy: 'Identifying User-Agent with contact email; forecast cached 1 hour, grid lookup 30 days', url: 'https://www.weather.gov/documentation/services-web-api', reviewed: '2026-09-28',
+  },
+  {
+    id: 'nrcs-scan', name: 'Soil Climate Analysis Network (AWDB REST API)', provider: 'USDA NRCS National Water and Climate Center',
+    use: 'Regional soil temperature and moisture from the nearest SCAN station, for planting dates when you have no soil sensor',
+    hosts: ['wcc.sc.egov.usda.gov'], license: 'Public domain (U.S. Government work)', commercialUse: true,
+    attribution: 'USDA NRCS National Water and Climate Center', policy: 'Station list cached 30 days; hourly data cached 6 hours; one small request at a time',
+    url: 'https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui/index.html', reviewed: '2026-09-29',
+  },
+  {
+    id: 'ecowitt-cloud', name: 'Ecowitt Cloud API v3', provider: 'Ecowitt (Shenzhen Ecowitt Technology)',
+    use: 'Your own Ecowitt station: current readings and history backfill, with the application key and API key you create in your Ecowitt account',
+    hosts: ['api.ecowitt.net'], license: 'Your own data, accessed with your own free keys', commercialUse: true, attribution: 'Ecowitt',
+    policy: 'Keys stored in the phone keychain; requests never cached; ≤ 1 request/second', url: 'https://api.ecowitt.net/', reviewed: '2026-09-29',
+    caveat: 'Ecowitt\'s API terms could not be retrieved automatically (the doc site blocks crawlers); re-check them in a browser before release.',
+  },
+  {
+    id: 'ambient', name: 'Ambient Weather Network REST API', provider: 'Ambient Weather',
+    use: 'Your own Ambient station: current readings and up to a year of history, with an application key and API key you create in your AmbientWeather.net account',
+    hosts: ['rt.ambientweather.net'], license: 'Your own data, accessed with your own free keys', commercialUse: true, attribution: 'Ambient Weather',
+    policy: 'Both keys are the user\'s own (Ambient expects apps to share one application key; we don\'t). ≤ 1 request/second per key; never cached',
+    url: 'https://ambientweather.docs.apiary.io/', reviewed: '2026-09-29',
+    caveat: 'Ambient\'s terms page could not be retrieved automatically; re-check before release.',
+  },
+  {
+    id: 'weatherlink', name: 'Davis WeatherLink v2 API', provider: 'Davis Instruments',
+    use: 'Your own Davis station: current conditions (free WeatherLink plan) and history (needs your WeatherLink Pro/Pro+ plan)',
+    hosts: ['api.weatherlink.com'], license: 'Your own data, accessed with your own free API key and secret', commercialUse: true, attribution: 'Davis Instruments WeatherLink',
+    policy: 'Secret sent only in the X-Api-Secret header; 1,000 calls/hour limit respected; never cached', url: 'https://weatherlink.github.io/v2-api/', reviewed: '2026-09-29',
+    caveat: 'History needs the user\'s paid WeatherLink Pro plan (the user\'s cost, never ours). WeatherLink.com API terms not found; re-check before release.',
+  },
+  {
+    id: 'local-network', name: 'Stations on your home network', provider: 'Your own Ecowitt gateway, WeatherLink Live or Tempest hub',
+    use: 'Advanced: read your station directly over Wi-Fi (Ecowitt gateway HTTP, WeatherLink Live HTTP, Tempest UDP broadcast). No internet service involved',
+    hosts: [], license: 'Your own device', commercialUse: true, attribution: '',
+    policy: 'Only private (LAN) addresses are accepted', url: 'https://weatherflow.github.io/Tempest/api/udp/v171/', reviewed: '2026-09-29',
   },
   {
     id: 'extension-guides', name: 'Cooperative Extension growing guides (links only)', provider: 'Land-grant universities (UMN, Illinois, Maryland, Utah State, Clemson, Cornell, UGA) and USDA SARE',
@@ -158,4 +193,7 @@ export const NON_SERVICE_HOSTS = [
   'www.googleapis.com', 'www.fema.gov', 'www.sco.wisc.edu', 'gis.ny.gov', 'www.weather.gov', 'www.nifa.usda.gov',
   'www.opengis.net', 'www.w3.org', // XML namespaces in exports
   'registry.opendata.aws', 'power.larc.nasa.gov', 'www.usgs.gov', // documentation links
+  // Sensor docs and vendor home pages shown as links (the app calls only the API hosts listed above)
+  'ambientweather.docs.apiary.io', 'weatherlink.github.io', 'weatherflow.github.io', 'www.nrcs.usda.gov', 'www.ecowitt.net', 'ambientweather.net',
+  'www.weatherlink.com', 'bthome.io', 'docs.ruuvi.com',
 ];

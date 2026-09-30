@@ -1,0 +1,77 @@
+[
+ {
+  "stationTriplet": "2057:AL:SCAN",
+  "stationId": "2057",
+  "stateCode": "AL",
+  "networkCode": "SCAN",
+  "name": "AAMU-JTG",
+  "dcoCode": "GC",
+  "countyName": "Madison",
+  "huc": "060300020502",
+  "elevation": 800.0,
+  "latitude": 34.78534,
+  "longitude": -86.55906,
+  "dataTimeZone": -6.0,
+  "pedonCode": "27979",
+  "shefId": "AAMA1",
+  "operator": "NRCS",
+  "beginDate": "2002-02-23 00:00",
+  "endDate": "2100-01-01 00:00",
+  "stationElements": [
+   {
+    "elementCode": "STO",
+    "ordinal": 1,
+    "heightDepth": -2,
+    "durationName": "HOURLY",
+    "dataPrecision": 0,
+    "storedUnitCode": "degF",
+    "originalUnitCode": "degF",
+    "beginDate": "2002-02-23 13:00",
+    "endDate": "2100-01-01 00:00",
+    "derivedData": false
+   },
+   {
+    "elementCode": "STO",
+    "ordinal": 1,
+    "heightDepth": -4,
+    "durationName": "HOURLY",
+    "dataPrecision": 0,
+    "storedUnitCode": "degF",
+    "originalUnitCode": "degF",
+    "beginDate": "2002-02-23 13:00",
+    "endDate": "2100-01-01 00:00",
+    "derivedData": false
+   },
+   {
+    "elementCode": "SMS",
+    "ordinal": 1,
+    "heightDepth": -2,
+    "durationName": "HOURLY",
+    "dataPrecision": 1,
+    "storedUnitCode": "pct",
+    "originalUnitCode": "pct",
+    "beginDate": "2002-02-23 13:00",
+    "endDate": "2100-01-01 00:00",
+    "derivedData": false
+   },
+   {
+    "elementCode": "STO",
+    "ordinal": 1,
+    "heightDepth": -2,
+    "durationName": "DAILY",
+    "dataPrecision": 0,
+    "storedUnitCode": "degF",
+    "originalUnitCode": "degF",
+    "beginDate": "2002-02-23 13:00",
+    "endDate": "2100-01-01 00:00",
+    "derivedData": true
+   }
+  ],
+  "associatedHucs": [
+   "060300020305",
+   "060300020306",
+   "060300020403",
+   "060300020404"
+  ]
+ }
+]

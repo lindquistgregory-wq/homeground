@@ -259,6 +259,30 @@ export function modeledSunAt(a: ParcelAnalysis, objects: DesignObject[], lat: nu
   return out.data[j * a.ground.width + i]! > 0.5;
 }
 
+/**
+ * Modeled sun/shade at one point for many moments (light-sensor calibration). Builds the surface
+ * once; each moment runs the engine on a single cell. null = outside the analysis grid.
+ */
+export function modeledSunSeries(a: ParcelAnalysis, objects: DesignObject[], lat: number, lon: number, times: Date[]): Array<boolean | null> {
+  const [x, y] = project(a.frame, [lon, lat]);
+  const i = Math.floor((x - a.ground.x0) / a.ground.cell), j = Math.floor((a.ground.y0 - y) / a.ground.cell);
+  if (i < 0 || j < 0 || i >= a.ground.width || j >= a.ground.height) return times.map(() => null);
+  const k = j * a.ground.width + i;
+  const s = surfaceFor(a, objects);
+  const mask = new Uint8Array(a.ground.data.length);
+  mask[k] = 1;
+  const out = like(a.ground, 0);
+  return times.map((when) => {
+    const pos = solarPosition(when, lat, lon);
+    if (pos.elevation <= 0) return false;
+    const samples = prepareSamples([{ ...pos, time: when }], { horizon: a.horizon, sampleHours: 1 });
+    if (!samples.length) return false;
+    out.data[k] = 0;
+    runEngine(s, samples, isLeafOn(doyOf(when), a.frost?.lastSpringDoy, a.frost?.firstFallDoy), mask, out);
+    return out.data[k]! > 0.5;
+  });
+}
+
 // ---------------- Map layers ----------------
 
 type Feature = { type: 'Feature'; geometry: { type: 'Polygon'; coordinates: number[][][] } | { type: 'LineString'; coordinates: number[][] }; properties: Record<string, number | string> };

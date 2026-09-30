@@ -58,6 +58,11 @@ export const DEFAULT_HOST_POLICIES: Record<string, HostPolicy> = {
   'www.ncei.noaa.gov': { maxConcurrent: 2 },
   'api.weather.gov': { maxConcurrent: 2 },
   'hazards.fema.gov': { maxConcurrent: 2 },
+  // Station APIs: the user's own keys, so stay well inside their per-key limits.
+  'rt.ambientweather.net': { minIntervalMs: 1100, maxConcurrent: 1 },
+  'api.ecowitt.net': { minIntervalMs: 1000, maxConcurrent: 1 },
+  'api.weatherlink.com': { minIntervalMs: 150, maxConcurrent: 2 },
+  'wcc.sc.egov.usda.gov': { maxConcurrent: 2 },
 };
 
 export class HttpError extends Error {

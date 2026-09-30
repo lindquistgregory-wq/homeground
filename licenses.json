@@ -31,6 +31,11 @@
       "commercialUse": true,
       "note": "Uses the OS scheduler (BGTaskScheduler / WorkManager); no server"
     },
+    "expo-build-properties": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Build config only (Android cleartext for LAN stations)"
+    },
     "expo-crypto": {
       "license": "MIT",
       "commercialUse": true
@@ -70,6 +75,11 @@
       "license": "MIT",
       "commercialUse": true
     },
+    "expo-secure-store": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Keychain/Keystore for the user's own station keys and sensor bindkeys"
+    },
     "expo-sharing": {
       "license": "MIT",
       "commercialUse": true,
@@ -104,6 +114,11 @@
       "license": "MIT",
       "commercialUse": true
     },
+    "react-native-ble-plx": {
+      "license": "Apache-2.0",
+      "commercialUse": true,
+      "note": "Passive BLE advertisement scanning; no service involved"
+    },
     "react-native-safe-area-context": {
       "license": "MIT",
       "commercialUse": true
@@ -116,6 +131,11 @@
       "license": "MIT",
       "commercialUse": true,
       "note": "Sun-path diagram"
+    },
+    "react-native-udp": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Tempest hub UDP broadcast on the user's own Wi-Fi. Verify New Architecture support on first device build"
     },
     "tsx": {
       "license": "MIT",

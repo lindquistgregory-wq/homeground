@@ -21,3 +21,4 @@ export * from './design/design';
 export * from './design/export';
 export * from './design/siting';
 export * from './plants/index';
+export * from './sensors/index';

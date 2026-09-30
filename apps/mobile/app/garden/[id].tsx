@@ -16,6 +16,9 @@ import { deletePlanting, savePlanting, type Planting, type PlantingStatus } from
 import { computeSun, loadAnalysis, type ParcelAnalysis, type SunResult } from '../../src/services/analysis';
 import { activePlantings, bedConditions, bedHistory, bedName, cropShadeObjects, cropShadeSeason, plantsForSpot, type BedReport } from '../../src/services/garden';
 import { useGarden } from '../../src/services/useGarden';
+import { calibratedSunHours } from '@plotwright/core';
+import { listSensors } from '../../src/db/sensors';
+import { getCalibration, type StoredCalibration } from '../../src/services/sunCalibration';
 import { useSettings } from '../../src/services/settings';
 
 const SHARES: Array<[number, string]> = [[1, 'Whole bed'], [0.5, 'Half'], [0.25, 'Quarter']];
@@ -66,7 +69,24 @@ export default function BedPlanner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.parcel.id, state?.design, state?.plantings, bedId, ent]);
 
-  const cond: BedReport | null = useMemo(() => (analysis && bed ? bedConditions(analysis, sun, bed, state?.profile) : null), [analysis, sun, bed, state?.profile]);
+  const [lightCal, setLightCal] = useState<{ sensor: string; cal: StoredCalibration } | null>(null);
+  useEffect(() => {
+    if (!state) return;
+    void (async () => {
+      for (const s of (await listSensors(state.parcel.id)).filter((x) => x.bedObjectId === bedId)) {
+        const c = await getCalibration(s.id);
+        if (c && c.clearDays >= 3 && c.ratio !== null) return setLightCal({ sensor: s.name, cal: c });
+      }
+      setLightCal(null);
+    })();
+  }, [state, bedId]);
+
+  const cond: BedReport | null = useMemo(() => {
+    if (!analysis || !bed) return null;
+    const c = bedConditions(analysis, sun, bed, state?.profile);
+    if (lightCal && c.sunHours !== undefined) c.sunHours = calibratedSunHours(c.sunHours, lightCal.cal).hours;
+    return c;
+  }, [analysis, sun, bed, state?.profile, lightCal]);
 
   const ranked: Suitability[] = useMemo(() => {
     if (!state || !bed || !cond) return [];
@@ -118,7 +138,10 @@ export default function BedPlanner() {
             <Body>
               Sun: {cond.sunHours !== undefined ? `${cond.sunHours.toFixed(1)} hours of direct sun a day, April–September average` : 'computing…'}
             </Body>
-            <Body muted>Modeled from terrain, mapped buildings and trees{ent.has('layers.canopyShade') ? ', canopy heights' : ''}, your design and other beds’ tall crops. Use a sun check on site to confirm.</Body>
+            <Body muted>
+              Modeled from terrain, mapped buildings and trees{ent.has('layers.canopyShade') ? ', canopy heights' : ''}, your design and other beds’ tall crops.
+              {lightCal ? ` Calibrated by the light sensor “${lightCal.sensor}” over ${lightCal.cal.clearDays} clear days (×${lightCal.cal.ratio!.toFixed(2)}).` : ' Use a sun check or a light sensor in the bed to confirm.'}
+            </Body>
             {cond.soil ? (
               <Body>
                 Soil{cond.raised ? ' under the bed' : ''}: {cond.soilName ?? 'dominant map unit'}{cond.soilPercent !== undefined ? ` (${Math.round(cond.soilPercent)}% of the parcel)` : ''}

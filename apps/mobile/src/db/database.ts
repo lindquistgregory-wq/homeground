@@ -100,6 +100,56 @@ const MIGRATIONS: string[] = [
   CREATE INDEX IF NOT EXISTS plantings_bed ON plantings(design_id, bed_object_id);
   CREATE INDEX IF NOT EXISTS plantings_parcel ON plantings(parcel_id);
   `,
+  // 4 — Phase 4 sensors. Raw readings stay on this device; daily summaries sync.
+  `
+  CREATE TABLE IF NOT EXISTS sensors (
+    id TEXT PRIMARY KEY,
+    parcel_id TEXT NOT NULL,
+    kind TEXT NOT NULL,                 -- 'ble' | 'cloud' | 'local' | 'csv'
+    protocol TEXT NOT NULL,             -- 'bthome' | 'govee' | … | 'ecowitt' | 'ambient' | 'weatherlink' | 'ecowitt-local' | 'wll-local' | 'tempest-udp' | 'csv'
+    vendor TEXT, model TEXT, name TEXT NOT NULL,
+    device_key TEXT,                    -- BLE device key, station MAC/id, or LAN address
+    channel TEXT,                       -- station channel ('outdoor', 'soil1'…); NULL for the station itself
+    parent_id TEXT,                     -- the station a channel belongs to
+    lon REAL, lat REAL, height_m REAL,
+    exposure TEXT NOT NULL DEFAULT 'open-air',
+    bed_object_id TEXT,
+    thresholds TEXT,                    -- JSON
+    mac TEXT,                           -- display-order MAC when known (needed to decrypt on iOS)
+    model_hint TEXT,
+    last_seen INTEGER, last_counter INTEGER,
+    created_at TEXT NOT NULL,
+    updated_hlc TEXT NOT NULL,
+    deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS sensors_parcel ON sensors(parcel_id);
+  CREATE INDEX IF NOT EXISTS sensors_device ON sensors(protocol, device_key);
+  CREATE TABLE IF NOT EXISTS readings (
+    sensor_id TEXT NOT NULL,
+    metric TEXT NOT NULL,
+    t INTEGER NOT NULL,
+    value REAL NOT NULL,
+    quality TEXT NOT NULL,
+    PRIMARY KEY (sensor_id, metric, t)
+  ) WITHOUT ROWID;
+  CREATE INDEX IF NOT EXISTS readings_time ON readings(sensor_id, t);
+  -- One partial summary per sensor, day and phone (each phone hears Bluetooth sensors separately);
+  -- they sync individually and are merged when read, so two phones never overwrite each other's day.
+  CREATE TABLE IF NOT EXISTS sensor_days (
+    sensor_id TEXT NOT NULL,
+    date TEXT NOT NULL,                 -- local date YYYY-MM-DD
+    device_id TEXT NOT NULL,            -- phone that collected these readings
+    doy INTEGER NOT NULL,
+    metrics TEXT NOT NULL,              -- JSON { metric: {min,max,mean,n,last,hm} }
+    updated_hlc TEXT NOT NULL,
+    PRIMARY KEY (sensor_id, date, device_id)
+  ) WITHOUT ROWID;
+  -- This phone's Bluetooth id for a sensor (iOS gives each phone its own ids); never synced.
+  CREATE TABLE IF NOT EXISTS ble_aliases (
+    platform_key TEXT PRIMARY KEY,
+    sensor_id TEXT NOT NULL
+  ) WITHOUT ROWID;
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -155,7 +205,7 @@ export class SqliteHttpCache implements KeyValueCache {
 export async function maxStoredHlc(): Promise<string | undefined> {
   const db = await getDb();
   const r = await db.getFirstAsync<{ m: string | null }>(
-    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs UNION ALL SELECT MAX(updated_hlc) FROM plantings)',
+    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs UNION ALL SELECT MAX(updated_hlc) FROM plantings UNION ALL SELECT MAX(updated_hlc) FROM sensors UNION ALL SELECT MAX(updated_hlc) FROM sensor_days)',
   );
   return r?.m ?? undefined;
 }
@@ -164,6 +214,6 @@ export async function maxStoredHlc(): Promise<string | undefined> {
 export async function deleteAllLocalData(): Promise<void> {
   const db = await getDb();
   await db.execAsync(
-    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings;',
+    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings; DELETE FROM sensors; DELETE FROM readings; DELETE FROM sensor_days; DELETE FROM ble_aliases;',
   );
 }

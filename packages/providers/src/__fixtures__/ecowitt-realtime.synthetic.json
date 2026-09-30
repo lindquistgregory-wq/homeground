@@ -1,0 +1,157 @@
+{
+ "code": 0,
+ "msg": "success",
+ "time": "1759160400",
+ "data": {
+  "outdoor": {
+   "temperature": {
+    "time": "1759160390",
+    "unit": "\u2103",
+    "value": "18.4"
+   },
+   "feels_like": {
+    "time": "1759160390",
+    "unit": "\u2103",
+    "value": "18.4"
+   },
+   "app_temp": {
+    "time": "1759160390",
+    "unit": "\u2103",
+    "value": "17.9"
+   },
+   "dew_point": {
+    "time": "1759160390",
+    "unit": "\u2103",
+    "value": "11.2"
+   },
+   "humidity": {
+    "time": "1759160390",
+    "unit": "%",
+    "value": "63"
+   }
+  },
+  "indoor": {
+   "temperature": {
+    "time": "1759160390",
+    "unit": "\u2103",
+    "value": "21.6"
+   },
+   "humidity": {
+    "time": "1759160390",
+    "unit": "%",
+    "value": "48"
+   }
+  },
+  "solar_and_uvi": {
+   "solar": {
+    "time": "1759160390",
+    "unit": "W/m\u00b2",
+    "value": "412.3"
+   },
+   "uvi": {
+    "time": "1759160390",
+    "unit": "",
+    "value": "3"
+   }
+  },
+  "rainfall": {
+   "rain_rate": {
+    "time": "1759160390",
+    "unit": "mm/hr",
+    "value": "0.0"
+   },
+   "daily": {
+    "time": "1759160390",
+    "unit": "mm",
+    "value": "2.4"
+   },
+   "event": {
+    "time": "1759160390",
+    "unit": "mm",
+    "value": "2.4"
+   },
+   "hourly": {
+    "time": "1759160390",
+    "unit": "mm",
+    "value": "0.0"
+   },
+   "weekly": {
+    "time": "1759160390",
+    "unit": "mm",
+    "value": "10.1"
+   },
+   "monthly": {
+    "time": "1759160390",
+    "unit": "mm",
+    "value": "41.7"
+   },
+   "yearly": {
+    "time": "1759160390",
+    "unit": "mm",
+    "value": "512.0"
+   }
+  },
+  "wind": {
+   "wind_speed": {
+    "time": "1759160390",
+    "unit": "m/s",
+    "value": "2.1"
+   },
+   "wind_gust": {
+    "time": "1759160390",
+    "unit": "m/s",
+    "value": "3.9"
+   },
+   "wind_direction": {
+    "time": "1759160390",
+    "unit": "\u00ba",
+    "value": "214"
+   }
+  },
+  "pressure": {
+   "relative": {
+    "time": "1759160390",
+    "unit": "hPa",
+    "value": "1016.2"
+   },
+   "absolute": {
+    "time": "1759160390",
+    "unit": "hPa",
+    "value": "982.7"
+   }
+  },
+  "soil_ch1": {
+   "soilmoisture": {
+    "time": "1759160390",
+    "unit": "%",
+    "value": "34"
+   }
+  },
+  "temp_and_humidity_ch1": {
+   "temperature": {
+    "time": "1759160390",
+    "unit": "\u2103",
+    "value": "19.0"
+   },
+   "humidity": {
+    "time": "1759160390",
+    "unit": "%",
+    "value": "60"
+   }
+  },
+  "temp_ch1": {
+   "temperature": {
+    "time": "1759160390",
+    "unit": "\u2103",
+    "value": "16.8"
+   }
+  },
+  "leaf_ch1": {
+   "leaf_wetness": {
+    "time": "1759160390",
+    "unit": "%",
+    "value": "0"
+   }
+  }
+ }
+}
