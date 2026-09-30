@@ -1,4 +1,4 @@
-import { requireOptionalNativeModule } from 'expo-modules-core';
+import { requireOptionalNativeModule } from 'expo';
 
 /**
  * Synchronous native port of `sunHours()` from @plotwright/core. Arguments are typed arrays shared

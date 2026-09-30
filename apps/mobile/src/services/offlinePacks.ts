@@ -10,6 +10,7 @@
 import { bbox as areaBbox, planPack, tilePath, tilesFor, tileUrl, type Bbox, type PackPlan } from '@plotwright/core';
 import { OFFLINE_PACK_LAYERS, buildSiteProfile } from '@plotwright/providers';
 import { bundledZoneTable } from '@plotwright/data';
+import { OfflineManager } from '@maplibre/maplibre-react-native';
 import { Directory, File, Paths } from 'expo-file-system';
 import { USER_AGENT } from '../config';
 import { kvGet, kvSet } from '../db/database';
@@ -43,9 +44,9 @@ const root = (parcelId: string) => new Directory(Paths.cache, 'packs', parcelId)
 
 /** Keep more of what the user has looked at on the vector basemap (MapLibre's ambient cache, 50 MB by default). */
 export function configureMapCache(): void {
+  // A static import: require() resolves MapLibre's CommonJS build while the map screens import the
+  // ESM build, and loading both registers the native views twice ("MLRNCamera" invariant).
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { OfflineManager } = require('@maplibre/maplibre-react-native') as typeof import('@maplibre/maplibre-react-native');
     void OfflineManager.setMaximumAmbientCacheSize(150 * 1024 * 1024).catch(() => undefined);
   } catch { /* not linked in this build */ }
 }

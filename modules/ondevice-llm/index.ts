@@ -6,7 +6,7 @@
  * planner.
  */
 import type { NativeToolModel, PlannerModel, TextModel, ToolSpec } from '@plotwright/core';
-import { requireOptionalNativeModule } from 'expo-modules-core';
+import { requireOptionalNativeModule } from 'expo';
 
 export interface ModelAvailability {
   engine: 'apple' | 'gemini-nano';
