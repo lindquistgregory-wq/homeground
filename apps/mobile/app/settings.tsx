@@ -1,4 +1,4 @@
-import { DEFAULT_TRANSMITTANCE, Material, TIER_NAMES, centroid, daySunSamples, emptySurface, makeGrid, prepareSamples, PRODUCT_IDS, runShadeBenchmark, sunHours } from '@plotwright/core';
+import { DEFAULT_TRANSMITTANCE, Material, TIER_NAMES, affectedMask, centroid, daySunSamples, emptySurface, makeGrid, prepareSamples, PRODUCT_IDS, runShadeBenchmark, sunHours } from '@plotwright/core';
 import { ShadeNativeModule } from '@plotwright/shade-native';
 import { validateUserEndpoint } from '@plotwright/providers';
 import { UserSync } from '@plotwright/user-sync';
@@ -23,10 +23,11 @@ import { deleteAllPacks } from '../src/services/offlinePacks';
 
 /**
  * A synthetic 100 m yard (sloped ground, a tree line, a house) run through both engines: times the
- * native one and reports the largest difference from the TypeScript engine (float32 vs float64
- * inputs mean tiny differences are expected).
+ * native one (a full day, then moving in the same 6 × 3 m greenhouse as runShadeBenchmark) and
+ * reports the largest difference from the TypeScript engine (float32 vs float64 inputs mean tiny
+ * differences are expected).
  */
-function benchNative(): { ms: number; maxDiffH: number } {
+function benchNative(): { ms: number; moveMs: number; maxDiffH: number } {
   const n = 100;
   const ground = makeGrid({ width: n, height: n, cell: 1, x0: 580000, y0: 4680100, zone: { zone: 18, hemisphere: 'N' } }, 0);
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) ground.data[j * n + i] = 100 + 0.03 * i + 0.02 * j;
@@ -40,15 +41,24 @@ function benchNative(): { ms: number; maxDiffH: number } {
   heights.set(s.height, 0);
   heights.set(s.base, n * n);
   const tr = DEFAULT_TRANSMITTANCE;
+  const trans = new Float32Array([1, tr.opaque, tr.deciduousLeafOff, tr.evergreen, tr.film]);
+  const params = new Float64Array([n, n, 1, 0.3, 250]);
   const out = new Float32Array(n * n);
   const t0 = performance.now();
-  ShadeNativeModule!.sunHours(ground.data, heights, s.material, smp, new Float32Array([1, tr.opaque, tr.deciduousLeafOff, tr.evergreen, tr.film]),
-    new Uint8Array(n * n).fill(1), out, new Float64Array([n, n, 1, 0.3, 250]));
+  ShadeNativeModule!.sunHours(ground.data, heights, s.material, smp, trans, new Uint8Array(n * n).fill(1), out, params);
   const ms = performance.now() - t0;
   const js = sunHours(s, samples, { sampleHours: 0.25, leafOn: false });
   let maxDiffH = 0;
   for (let k = 0; k < out.length; k++) maxDiffH = Math.max(maxDiffH, Math.abs(out[k]! - js.data[k]!));
-  return { ms, maxDiffH };
+
+  // Move a structure: a 3 m greenhouse at x 30–36 m, y 40–43 m, then recompute only the cells its shadow can reach.
+  for (let j = 57; j < 60; j++) for (let i = 30; i < 36; i++) { s.height[j * n + i] = 3; s.material[j * n + i] = Material.film; }
+  heights.set(s.height, 0);
+  const t1 = performance.now();
+  const mask = affectedMask(ground, [580030, 4680040, 580036, 4680043], 3, samples);
+  ShadeNativeModule!.sunHours(ground.data, heights, s.material, smp, trans, mask, out, params);
+  const moveMs = performance.now() - t1;
+  return { ms, moveMs, maxDiffH };
 }
 
 export default function Settings() {
@@ -199,7 +209,10 @@ export default function Settings() {
           setTimeout(() => {
             const r = runShadeBenchmark({ sizeM: 100, cellM: 1 });
             const native = ShadeNativeModule ? benchNative() : null;
-            setBench(`JS: full day ${r.fullDayMs.toFixed(0)} ms, move-a-structure ${r.incrementalMs.toFixed(0)} ms${native !== null ? ` · native full day ${native.ms.toFixed(0)} ms, max difference from JS ${native.maxDiffH.toFixed(3)} h` : ' · native engine not linked'}`);
+            const jsPart = `full day ${r.fullDayMs.toFixed(0)} ms, move-a-structure ${r.incrementalMs.toFixed(0)} ms`;
+            setBench(native !== null
+              ? `Native (used on this phone): full day ${native.ms.toFixed(0)} ms, move-a-structure ${native.moveMs.toFixed(0)} ms · JS fallback: ${jsPart} · max difference ${native.maxDiffH.toFixed(3)} h`
+              : `JS (native engine not linked): ${jsPart}`);
           }, 50);
         }} />
       </Card>
