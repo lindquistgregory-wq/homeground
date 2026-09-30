@@ -9,7 +9,7 @@ import {
   type DesignDraft, type HomesteadGoals, type HomesteadPlan, type PlanItem, type PlannerContext, type PlannerModel,
 } from '@plotwright/core';
 import { KNOWLEDGE_BASE } from '@plotwright/data';
-import { modelAvailability, onDeviceModel, unavailableReason, type ModelAvailability } from '@plotwright/ondevice-llm';
+import { downloadModel, modelAvailability, onDeviceModel, unavailableReason, type ModelAvailability } from '@plotwright/ondevice-llm';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -43,6 +43,8 @@ export default function Planner() {
   const [drafts, setDrafts] = useState<DraftRow[]>([]);
   const [tasks, setTasks] = useState<TaskRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [downloading, setDownloading] = useState<number | null>(null);
   const scroll = useRef<{ scrollToEnd(o?: { animated?: boolean }): void } | null>(null);
 
   const refreshLists = useCallback(async () => {
@@ -72,7 +74,7 @@ export default function Planner() {
     if (!ctx || !readyToPlan(goals)) { setPlan(null); return; }
     let cancelled = false;
     void ctx.sitePlanInput().then((site) => {
-      if (!cancelled) setPlan(buildPlan(goals, site, KNOWLEDGE_BASE, { includeIncome: tier.income }));
+      if (!cancelled) setPlan(buildPlan(goals, site, KNOWLEDGE_BASE, { includeIncome: tier.income, showCosts: tier.multiYear }));
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -125,6 +127,8 @@ export default function Planner() {
   };
 
   const approve = async (d: DraftRow) => {
+    if (busy || !tier.full) return;
+    setBusy(true);
     try {
       if (d.kind === 'design') {
         const r = await applyDesignDraft(id, d.payload);
@@ -136,8 +140,25 @@ export default function Planner() {
       }
     } catch (e) {
       Alert.alert('Couldn’t apply the draft', (e as Error).message);
+    } finally {
+      setBusy(false);
     }
     await refreshLists();
+  };
+
+  const getModel = async () => {
+    setDownloading(0);
+    try {
+      const ok = await downloadModel((b) => setDownloading(b));
+      if (ok) {
+        setAvail(await modelAvailability());
+        setModel(await onDeviceModel());
+      } else Alert.alert('Download didn’t finish', 'Try again on Wi-Fi with the phone charging.');
+    } catch (e) {
+      Alert.alert('Download failed', (e as Error).message);
+    } finally {
+      setDownloading(null);
+    }
   };
 
   if (error) return <Body>{error}</Body>;
@@ -167,6 +188,10 @@ export default function Planner() {
         ) : (
           <View>
             {!tier.full && avail?.status === 'available' ? <Body muted>Chatting with the on-device AI is part of Grower. The guided questions build the same plan.</Body> : <Body muted>{unavailableReason(avail)}</Body>}
+            {tier.full && avail?.status === 'downloadable' && (
+              <Button title={downloading !== null ? `Downloading… ${Math.round(downloading / 1e6)} MB` : 'Download the on-device AI (free)'} kind="secondary" disabled={downloading !== null} onPress={() => void getModel()}
+                accessibilityHint="Google's Gemini Nano runs on this phone; nothing is sent anywhere" />
+            )}
             <Interview goals={goals} onSave={onSaveGoals} />
           </View>
         ))}
@@ -184,7 +209,7 @@ export default function Planner() {
           <View>
             {!tier.full && <Body muted>Turning the plan into design drafts is part of Grower.</Body>}
             {drafts.length === 0 ? <Body muted>No drafts waiting. Use “Add to my design” on a plan item, or ask the planner.</Body>
-              : drafts.map((d) => <DraftCard key={d.id} d={d} onApprove={() => void approve(d)} onReject={async () => { await setDraftStatus(d.id, 'rejected'); await refreshLists(); }} />)}
+              : drafts.map((d) => <DraftCard key={d.id} d={d} canApprove={tier.full && !busy} onApprove={() => void approve(d)} onReject={async () => { await setDraftStatus(d.id, 'rejected'); await refreshLists(); }} />)}
           </View>
         )}
 

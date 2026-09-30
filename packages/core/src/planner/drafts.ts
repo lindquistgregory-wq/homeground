@@ -19,6 +19,8 @@ export interface DraftObject {
   near?: 'garden' | 'house' | 'sunny' | 'edge' | 'anywhere';
   /** Crops intended for a bed (plant ids). */
   plants?: string[];
+  /** Square feet the plan gives each crop, so beds can be shared in the right proportions. */
+  plantAreas?: Record<string, number>;
 }
 
 export interface DraftRemoval {
@@ -63,15 +65,19 @@ export function validateDesignDraft(d: DesignDraft, existing: Array<Pick<DesignO
     }
     const t = objectType(c.kind);
     if (!t) { problems.push(`Unknown object type “${c.kind}”.`); continue; }
-    const count = Math.max(1, Math.min(MAX_COUNT, Math.round(c.count ?? 1)));
-    if ((c.count ?? 1) > MAX_COUNT) problems.push(`At most ${MAX_COUNT} ${t.name.toLowerCase()} per change.`);
+    // Large counts are split into several changes of at most MAX_COUNT (a big garden is still one draft).
+    const total = Math.max(1, Math.min(MAX_COUNT * 10, Math.round(Number.isFinite(c.count) ? c.count! : 1)));
+    if ((c.count ?? 1) > MAX_COUNT * 10) problems.push(`At most ${MAX_COUNT * 10} ${t.name.toLowerCase()} in one draft.`);
     const size = (v: number | undefined, def: number) => (v === undefined || !Number.isFinite(v) || v <= 0 || v > 200 ? def : v);
     const plants = (c.plants ?? []).filter((p) => {
       const ok = !!plantById(p);
       if (!ok) problems.push(`Unknown plant “${p}”.`);
       return ok;
     });
-    changes.push({ ...c, count, width: size(c.width, t.width), length: size(c.length, t.length), plants: plants.length ? plants : undefined });
+    const plantAreas = c.plantAreas ? Object.fromEntries(Object.entries(c.plantAreas).filter(([k, v]) => plants.includes(k) && Number.isFinite(v) && v > 0)) : undefined;
+    for (let left = total; left > 0; left -= MAX_COUNT) {
+      changes.push({ ...c, count: Math.min(MAX_COUNT, left), width: size(c.width, t.width), length: size(c.length, t.length), plants: plants.length ? plants : undefined, plantAreas });
+    }
   }
   if (!changes.length) problems.push('The draft has no valid changes.');
   return { ok: problems.length === 0 && changes.length > 0, problems, cleaned: { ...d, changes } };

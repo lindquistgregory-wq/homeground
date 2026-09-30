@@ -86,6 +86,11 @@ export async function listDrafts(parcelId: string, status: 'pending' | 'all' = '
   return rows.map((r) => ({ id: r.id, kind: r.kind, payload: JSON.parse(r.payload), status: r.status, createdAt: r.created_at }) as DraftRow);
 }
 
+export async function draftStatus(id: string): Promise<DraftRow['status'] | undefined> {
+  const db = await getDb();
+  return (await db.getFirstAsync<{ status: DraftRow['status'] }>('SELECT status FROM planner_drafts WHERE id = ?', id))?.status;
+}
+
 export async function setDraftStatus(id: string, status: 'approved' | 'rejected'): Promise<void> {
   const db = await getDb();
   await db.runAsync('UPDATE planner_drafts SET status = ? WHERE id = ?', status, id);

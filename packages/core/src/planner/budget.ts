@@ -26,6 +26,11 @@ export interface BudgetLine {
   year?: number | null;
   /** Price data before 2020, or a figure the source itself calls highly variable. */
   caution?: string;
+  /**
+   * A published whole-system budget at a different scale (e.g. a 25-doe operation): shown for
+   * reference, never added to the totals.
+   */
+  reference?: { startup: Range; scale: string };
   sources: KbSource[];
 }
 
@@ -111,14 +116,16 @@ export function budgetLine(item: BudgetItem, kb: KnowledgeBase): BudgetLine | { 
       const basis = LIVESTOCK_COST_SCALE[item.species] ?? {};
       const name = item.species.replace(/_/g, ' ');
       const per = (r: Range | null, b: number | 'as-published' | undefined): Range | null => (!r || b === undefined ? null : b === 'as-published' ? r : scale(r, item.count / b));
-      const startup = per(lp.startupCostUSD, basis.startup);
+      const asPublished = basis.startup === 'as-published' && lp.startupCostUSD;
+      const startup = asPublished ? null : per(lp.startupCostUSD, basis.startup);
       const annual = per(lp.annualCostUSD, basis.annual);
-      if (!startup && !annual) return { unknown: `${name} costs` };
+      const reference = asPublished ? { startup: lp.startupCostUSD!, scale: String(lp.startupNote ?? lp.unit).split('.')[0]! } : undefined;
+      if (!startup && !annual && !reference) return { unknown: `${name} costs` };
       const notes: string[] = [];
-      if (basis.startup === 'as-published' && startup) notes.push(`startup is the published budget for its own scale (${String(lp.startupNote ?? lp.unit).split('.')[0]})`);
+      if (reference) notes.push(`startup not priced for your numbers: the only published budget is for a different scale (${reference.scale}), shown for reference and left out of the totals`);
       if (typeof basis.annual === 'number' && annual) notes.push(basis.annual === 1 ? `yearly cost ${lp.unit}` : `yearly cost scaled from a ${basis.annual}-animal budget`);
       return {
-        label: `${item.count} ${name}`, startup, annual, basis: notes.join('; '),
+        label: `${item.count} ${name}`, startup, annual, basis: notes.join('; '), reference,
         year: typeof lp.priceYear === 'number' ? lp.priceYear : null, caution: lp.oldPrice ? 'Price data before 2020; expect higher today.' : undefined, sources: lp.sources,
       };
     }

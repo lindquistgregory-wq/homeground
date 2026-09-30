@@ -110,3 +110,34 @@ test('unverified-number check ignores small counts and years', () => {
   assert.deepEqual(unverifiedNumbers('Ask 3 questions. In 2027 plant 10 trees.', []), []);
   assert.deepEqual(unverifiedNumbers('Costs $735–$1,950.', ['$735–$1,950 (UMD)']), []);
 });
+
+test('update_goals never erases answers the model left out or sent blank', async () => {
+  const f = fakeContext({ household: parseHousehold('40m'), hoursPerWeek: 10, budgetStartupUsd: 5000, gardenSpaceSqFt: 500, diet: ['vegan'], confirmedAt: 'x' });
+  const upd = TOOLS.find((t) => t.name === 'update_goals')!;
+  await upd.run(f.ctx, { experience: 'experienced', diet: '', goals: '', animalInterest: '', hoursPerWeek: '' });
+  const g = f.goals();
+  assert.equal(g.hoursPerWeek, 10);
+  assert.equal(g.budgetStartupUsd, 5000);
+  assert.equal(g.gardenSpaceSqFt, 500);
+  assert.deepEqual(g.diet, ['vegan']);
+  assert.equal(g.experience, 'experienced');
+  assert.equal(g.confirmedAt, 'x', 'a non-essential answer keeps the confirmation');
+  await upd.run(f.ctx, { hoursPerWeek: 4 });
+  assert.equal(f.goals().confirmedAt, undefined, 'changing hours needs re-confirmation');
+  const r = await upd.run(f.ctx, { household: '40m, 6 months, two adults' });
+  assert.equal(f.goals().household!.length, 2);
+  assert.match(r, /Couldn't read: two adults/);
+});
+
+test('number check: the model’s own earlier words are not evidence, and years need a date word', () => {
+  assert.deepEqual(unverifiedNumbers('That gives 2,050 lb, or 1995 eggs.', []), ['2,050', '1995']);
+  assert.deepEqual(unverifiedNumbers('Plant the orchard in 2027.', []), []);
+  assert.deepEqual(extractJson('Here {not json} then {"say": "Line one\nline two"}'), { say: 'Line one\nline two' });
+});
+
+test('tool routing keeps the plan and draft tools when a message mentions everything', () => {
+  const { ctx } = fakeContext({ household: parseHousehold('40m,38f'), ambition: 'most-veg', hoursPerWeek: 8, budgetStartupUsd: 2000, gardenSpaceSqFt: 500 });
+  const names = toolsForTurn('Which beds get sun, what would it cost, could I sell eggs, add it to the map and make a to-do list with the harvest', ctx).map((t) => t.name);
+  for (const n of ['update_goals', 'make_plan', 'propose_design_changes', 'create_tasks']) assert.ok(names.includes(n), n);
+  assert.ok(!toolsForTurn('what is my street address', ctx).some((t) => t.name === 'get_plant_suitability' || t.name === 'propose_design_changes'), 'word boundaries');
+});

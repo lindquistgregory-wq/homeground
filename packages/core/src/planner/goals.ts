@@ -88,15 +88,22 @@ export function summarizeGoals(g: HomesteadGoals): string {
   return parts.length ? `${parts.join('; ')}.` : 'Nothing learned yet.';
 }
 
-/** Merge a partial update (from a form or a model's structured output) into the goals, keeping arrays sane. */
+/** Fields the plan is built on: changing one after confirmation needs a fresh confirmation. */
+const ESSENTIAL_FIELDS: Array<keyof HomesteadGoals> = ['household', 'ambition', 'hoursPerWeek', 'budgetStartupUsd', 'gardenSpaceSqFt', 'diet', 'animals'];
+
+/**
+ * Merge a partial update (from a form or a model's structured output) into the goals. Undefined and null
+ * values are ignored (a model leaving out an argument never erases an answer).
+ */
 export function mergeGoals(g: HomesteadGoals, patch: Partial<HomesteadGoals>): HomesteadGoals {
   const out: HomesteadGoals = { ...g };
+  let essentialChanged = false;
   for (const [k, v] of Object.entries(patch) as Array<[keyof HomesteadGoals, unknown]>) {
-    if (v === undefined || v === null) continue;
-    if (k === 'notes') out.notes = [...new Set([...(g.notes ?? []), ...(v as string[])])].slice(-10);
-    else (out as Record<string, unknown>)[k] = v;
+    if (v === undefined || v === null || k === 'confirmedAt') continue;
+    if (k === 'notes') { out.notes = [...new Set([...(g.notes ?? []), ...(v as string[])])].slice(-10); continue; }
+    if (ESSENTIAL_FIELDS.includes(k) && JSON.stringify(g[k]) !== JSON.stringify(v)) essentialChanged = true;
+    (out as Record<string, unknown>)[k] = v;
   }
-  // Any change after confirmation needs a fresh confirmation.
-  if (Object.keys(patch).some((k) => k !== 'confirmedAt')) delete out.confirmedAt;
+  if (essentialChanged) delete out.confirmedAt;
   return out;
 }

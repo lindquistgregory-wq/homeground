@@ -68,29 +68,34 @@ const MAX_TOOLS_PER_TURN = 6;
 /** Rough token estimate for budgeting (English averages ~4 characters per token). */
 export const approxTokens = (s: string) => Math.ceil(s.length / 4);
 
-/** Which tools this message plausibly needs, most relevant first (always including the core ones). */
+/** Keyword routes, in priority order (actions first, then the facts they need). Whole words only. */
+const ROUTES: Array<[RegExp, string]> = [
+  [/\b(add|place|put|map|design|build|where should)\b/, 'propose_design_changes'],
+  [/\b(tasks?|to-?dos?|remind(er)?s?|schedule|when should|calendar)\b/, 'create_tasks'],
+  [/\b(enough|self[- ]?suffic\w*|calories?|nutrients?|protein|vitamins?|feed (us|our|my)|how much of our food)\b/, 'estimate_food_coverage'],
+  [/\b(grow|plant|plants|crops?|vegetables?|fruits?|trees?|beds?|suit\w*|sun|soil)\b/, 'get_plant_suitability'],
+  [/(\$|\b(cost|costs|budget|price|afford|spend|money)\b)/, 'estimate_budget'],
+  [/\b(sell|income|business|markets?|profit|earn|enterprises?)\b/, 'lookup_enterprise_profile'],
+  [/\b(yield|harvest|how (much|many)|pounds|lbs?|eggs|honey|milk)\b/, 'estimate_yield'],
+  [/\b(parcel|land|property|acres?|zone|frost|slope|flood|climate|site)\b/, 'get_site_profile'],
+  [/\b(sensors?|soil temp\w*|readings?|station|rain|water)\b/, 'get_sensor_summary'],
+  [/\b(already|existing|current (design|layout)|what('s| is) on)\b/, 'get_design'],
+];
+
+/** Which tools this message plausibly needs: the core ones first, then keyword matches by priority. */
 export function toolsForTurn(text: string, ctx: PlannerContext): Tool[] {
   const t = text.toLowerCase();
-  const want = new Set<string>(['update_goals']);
+  const order: string[] = ['update_goals'];
   const ready = readyToPlan(ctx.goals());
-  if (ready) want.add('make_plan');
-  const add = (re: RegExp, name: string) => { if (re.test(t)) want.add(name); };
-  add(/grow|plant|crop|vegetable|fruit|tree|bed|suit|sun|soil/, 'get_plant_suitability');
-  add(/cost|budget|price|\$|afford|spend|money/, 'estimate_budget');
-  add(/sell|income|business|market|profit|earn|enterprise/, 'lookup_enterprise_profile');
-  add(/add|place|put|map|design|build|where should/, 'propose_design_changes');
-  add(/task|to-?do|remind|schedule|when should|calendar/, 'create_tasks');
-  add(/yield|harvest|how (much|many)|pounds|lb|eggs|honey|milk/, 'estimate_yield');
-  add(/enough|self[- ]?suffic|calorie|nutrient|protein|vitamin|feed (us|our|my)|how much of our food/, 'estimate_food_coverage');
-  add(/sensor|soil temp|reading|station|frost|rain|water/, 'get_sensor_summary');
-  add(/parcel|land|property|acre|zone|frost|slope|flood|climate|site/, 'get_site_profile');
-  add(/already|existing|current (design|layout)|what('s| is) on/, 'get_design');
-  if (!ready) want.add('get_site_profile');
+  if (ready) order.push('make_plan');
+  else order.push('get_site_profile');
+  for (const [re, name] of ROUTES) if (re.test(t) && !order.includes(name)) order.push(name);
   // Tier gates: tools the plan doesn't include are not offered at all.
-  if (!ctx.tier.full) { want.delete('propose_design_changes'); want.delete('create_tasks'); }
-  if (!ctx.tier.income) want.delete('lookup_enterprise_profile');
-  if (!ctx.tier.multiYear) want.delete('estimate_budget');
-  return TOOLS.filter((x) => want.has(x.name)).slice(0, MAX_TOOLS_PER_TURN);
+  const gated = new Set<string>();
+  if (!ctx.tier.full) gated.add('propose_design_changes').add('create_tasks');
+  if (!ctx.tier.income) gated.add('lookup_enterprise_profile');
+  if (!ctx.tier.multiYear) gated.add('estimate_budget');
+  return order.filter((n) => !gated.has(n)).slice(0, MAX_TOOLS_PER_TURN).map((n) => TOOLS.find((x) => x.name === n)!).filter(Boolean);
 }
 
 function contextBlock(ctx: PlannerContext): string {
@@ -110,16 +115,24 @@ function historyBlock(history: ChatMessage[]): string {
 const NUM_RE = /\$?\d[\d,]*(?:\.\d+)?%?/g;
 const normNum = (s: string) => s.replace(/[$,%]/g, '').replace(/\.0+$/, '');
 
-/** Figures in a reply that don't appear in the evidence (tool results, profile, conversation). Small counts are ignored. */
+const YEAR_BEFORE = /\b(in|by|since|until|from|year|spring|summer|fall|autumn|winter|of)\s*$/i;
+
+/**
+ * Figures in a reply that don't appear in the evidence (the user's words, the saved profile and tool
+ * results; never the model's own earlier replies or arguments). Small counts are ignored, and 1990–2100
+ * only counts as a year after a date word ("in 2027").
+ */
 export function unverifiedNumbers(reply: string, evidence: string[]): string[] {
   const known = new Set<string>();
   for (const e of evidence) for (const m of e.match(NUM_RE) ?? []) known.add(normNum(m));
   const out: string[] = [];
-  for (const m of reply.match(NUM_RE) ?? []) {
-    const n = normNum(m);
+  for (const m of reply.matchAll(NUM_RE)) {
+    const n = normNum(m[0]);
     const v = Number(n);
-    if (!Number.isFinite(v) || v <= 12 || (v >= 1990 && v <= 2100 && !m.includes('$'))) continue; // counts, years
-    if (!known.has(n)) out.push(m);
+    if (!Number.isFinite(v) || v <= 12) continue;
+    const isYear = v >= 1990 && v <= 2100 && !m[0].includes('$') && !m[0].includes(',') && YEAR_BEFORE.test(reply.slice(Math.max(0, m.index! - 12), m.index!));
+    if (isYear) continue;
+    if (!known.has(n)) out.push(m[0]);
   }
   return [...new Set(out)];
 }
@@ -139,19 +152,24 @@ async function runTool(ctx: PlannerContext, allowed: Tool[], name: string, args:
   return result;
 }
 
-/** Pull the first JSON object out of a model's text (models often wrap JSON in prose or code fences). */
-export function extractJson(text: string): Record<string, unknown> | null {
-  const start = text.indexOf('{');
-  if (start < 0) return null;
-  let depth = 0, inStr = false, esc = false;
+/** Parse one balanced {...} starting at `start`, tolerating raw newlines/tabs inside strings. */
+function parseObjectAt(text: string, start: number): Record<string, unknown> | null {
+  let depth = 0, inStr = false, esc = false, out = '';
   for (let i = start; i < text.length; i++) {
     const ch = text[i]!;
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === '"') inStr = false; continue; }
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === '"') inStr = false;
+      out += ch === '\n' ? '\\n' : ch === '\r' ? '' : ch === '\t' ? '\\t' : ch;
+      continue;
+    }
+    out += ch;
     if (ch === '"') inStr = true;
     else if (ch === '{') depth++;
     else if (ch === '}' && --depth === 0) {
       try {
-        const v = JSON.parse(text.slice(start, i + 1));
+        const v = JSON.parse(out);
         return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
       } catch {
         return null;
@@ -159,6 +177,20 @@ export function extractJson(text: string): Record<string, unknown> | null {
     }
   }
   return null;
+}
+
+/**
+ * Pull a JSON object out of a model's text. Models wrap JSON in prose or code fences, put braces in the
+ * prose, or break lines inside strings; each "{" is tried in turn.
+ */
+export function extractJson(text: string): Record<string, unknown> | null {
+  for (let i = text.indexOf('{'); i >= 0; i = text.indexOf('{', i + 1)) {
+    const v = parseObjectAt(text, i);
+    if (v && ('say' in v || 'tool' in v)) return v;
+  }
+  // Last resort: a "say" value in otherwise broken JSON.
+  const m = /"say"\s*:\s*"((?:[^"\\]|\\.)*)"/s.exec(text);
+  return m ? { say: m[1]!.replace(/\\n/g, '\n').replace(/\\"/g, '"') } : null;
 }
 
 function textToolProtocol(tools: Tool[]): string {
@@ -188,17 +220,24 @@ export async function plannerTurn(model: PlannerModel, ctx: PlannerContext, hist
   const past = historyBlock(history);
   let reply: string;
 
+  let queue: Promise<unknown> = Promise.resolve();
   if (model.kind === 'native-tools') {
     const prompt = [context, past && `Recent conversation:\n${past}`, `User: ${userText}`].filter(Boolean).join('\n\n');
     reply = await model.respond({
       instructions: PLANNER_INSTRUCTIONS,
       prompt,
       tools: tools.map(({ name, description, parameters }) => ({ name, description, parameters })),
-      callTool: async (name, argsJson) => {
-        if (calls.length >= MAX_TOOL_STEPS * 2) return 'Tool limit reached for this turn; answer with what you have.';
-        let args: Record<string, unknown> = {};
-        try { args = JSON.parse(argsJson || '{}'); } catch { /* keep empty */ }
-        return runTool(ctx, tools, name, args, calls);
+      // The model may call tools in parallel; run them one at a time so two update_goals calls can't
+      // both start from the old profile.
+      callTool: (name, argsJson) => {
+        const run = queue.then(async () => {
+          if (calls.length >= MAX_TOOL_STEPS * 2) return 'Tool limit reached for this turn; answer with what you have.';
+          let args: Record<string, unknown> = {};
+          try { args = JSON.parse(argsJson || '{}'); } catch { /* keep empty */ }
+          return runTool(ctx, tools, name, args, calls);
+        });
+        queue = run.catch(() => undefined);
+        return run;
       },
     });
   } else {
@@ -227,7 +266,8 @@ export async function plannerTurn(model: PlannerModel, ctx: PlannerContext, hist
   }
 
   const screened = screenReply(reply.trim() || 'Sorry, I didn’t catch that. Could you rephrase?');
-  const evidence = [userText, ...history.map((h) => h.text), summarizeGoals(ctx.goals()), ...calls.map((c) => c.result), ...calls.map((c) => JSON.stringify(c.args))];
+  // Evidence: what the user said, the saved profile and tool results; never the model's own words.
+  const evidence = [userText, ...history.filter((h) => h.role === 'user').map((h) => h.text), summarizeGoals(ctx.goals()), ...calls.map((c) => c.result)];
   const unverified = screened.replaced ? [] : unverifiedNumbers(screened.reply, evidence);
   let final = screened.reply;
   if (unverified.length) final += `\n\n(Check: ${unverified.join(', ')} didn’t come from the app’s data; treat ${unverified.length === 1 ? 'it' : 'them'} as unverified.)`;

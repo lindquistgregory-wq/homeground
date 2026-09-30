@@ -5,12 +5,35 @@
  */
 export type SafetyTopic = 'pesticide' | 'veterinary' | 'foraging' | 'medical';
 
-const RULES: Array<{ topic: SafetyTopic; re: RegExp }> = [
-  { topic: 'foraging', re: /\b(forag|wild mushroom|is (this|it) (safe|ok|okay) to eat|can i eat (this|these|wild)|edible (mushroom|plant|berr)|identify (this )?(mushroom|plant|berr))/i },
-  { topic: 'pesticide', re: /\b(mix|mixing|combine|dilut|tank[- ]?mix|how much|ratio|dose|dosage|strength|concentrat)\w*\b.*\b(pesticide|herbicide|insecticide|fungicide|roundup|glyphosate|sevin|carbaryl|malathion|permethrin|copper sulfate|neem|spray)/i },
-  { topic: 'veterinary', re: /\b(my|our|the) (hen|chicken|duck|goat|sheep|pig|rabbit|cow|turkey|dog|cat|bird|doe|ewe|kid|lamb|chick)s?\b.*\b(sick|ill|limp|letharg|bloat|diarrh|not eating|dying|injur|wound|swollen|cough|sneez|what('s| is) wrong|dose|medicat|antibiotic|dewormer|ivermectin)/i },
-  { topic: 'medical', re: /\b(i|we|my (son|daughter|kid|child|wife|husband))\b.*\b(ate|poison|allergic|rash|sting|bitten)\b|\bmedical advice\b/i },
-];
+const PRODUCT = /\b(pesticides?|herbicides?|insecticides?|fungicides?|miticides?|roundup|glyphosate|sevin|carbaryl|malathion|permethrin|pyrethrins?|spinosad|neem|copper (fungicide|sulfate|spray)|sulfur spray|diazinon|2,?4-?d|bt spray|weed ?killer|bug spray)\b/i;
+const AMOUNT = /\b(mix|mixing|combine|combining|dilut\w*|tank[- ]?mix|how (much|many|strong)|ratio|dose|dosage|strength|stronger|double|triple|concentrat\w*|tablespoons?|tbsp|teaspoons?|tsp|ounces?|oz|ml|cups?|per (gallon|gal|liter|litre))\b/i;
+const NOT_USING = /\b(no|without|avoid(ing)?|instead of|free of|free from|not use|don'?t use|never use)\s+(any\s+|using\s+)?(chemical\s+)?(pesticides?|herbicides?|insecticides?|fungicides?|sprays?|chemicals?)\b/i;
+
+const ANIMAL = /\b(hens?|chickens?|chicks?|roosters?|ducks?|ducklings?|geese|goose|goats?|doelings?|bucklings?|sheep|lambs?|ewes?|rams?|pigs?|piglets?|hogs?|sows?|rabbits?|bunn(y|ies)|turkeys?|poults?|cows?|calf|calves|cattle|horses?|donkeys?|llamas?|alpacas?|dogs?|cats?|flock|herd|livestock|poultry)\b/i;
+const ILLNESS = /\b(sick|ill|limp\w*|letharg\w*|bloat\w*|diarrh\w*|scour\w*|not eating|off (its |their )?feed|dying|died|injur\w*|wound\w*|swollen|swelling|cough\w*|sneez\w*|wheez\w*|what('s| is) wrong|dose|dosage|medicat\w*|antibiotics?|de-?worm\w*|dewormer|ivermectin|fenbendazole|albendazole|penicillin|oxytetracycline|treat|treating|treatment|bumblefoot|mites|lice|prolapse\w*|egg[- ]?bound|mastitis|wry neck|coccidiosis|vaccin\w*|infect\w*|abscess\w*|parasites?)\b/i;
+
+const WILD = /\b(wild|foraged?|foraging|from (my|the|our) (yard|woods|lawn|forest|field|pasture)|in (my|the|our) (woods|yard|lawn|forest))\b/i;
+const FUNGI = /\b(mushrooms?|morels?|chanterelles?|puffballs?|toadstools?|fungus|fungi|boletes?|chicken of the woods|hen of the woods)\b/i;
+const RISKY_PLANTS = /\b(dandelions?|pokeweed|poke ?salad|elderberr\w*|nightshade|hemlock|acorns?|ramps|fiddleheads?|purslane|lambs?-?quarters?|nettles?|milkweed|jimson ?weed|may ?apples?|wild (carrots?|parsnips?|garlic|onions?|berries|greens|plants?))\b/i;
+const EAT = /\b(eat|eating|edible|safe to eat|poison\w*|toxic|raw|cook them|consume)\b/i;
+
+const EXPOSURE = /\b(ate|eaten|swallowed|drank|stung|bitten|bit me|got (sprayed|splashed)|inhaled|licked)\b/i;
+const HARM = /\b(poison\w*|toxic|allergic|reaction|rash|swell\w*|sick|vomit\w*|hospital|emergency|symptoms?|numb|dizzy|can'?t breathe)\b/i;
+
+function matches(topic: SafetyTopic, t: string): boolean {
+  switch (topic) {
+    case 'pesticide':
+      return PRODUCT.test(t) && AMOUNT.test(t) && !NOT_USING.test(t);
+    case 'veterinary':
+      return ANIMAL.test(t) && ILLNESS.test(t);
+    case 'foraging':
+      return (FUNGI.test(t) && EAT.test(t)) || (RISKY_PLANTS.test(t) && EAT.test(t)) || (WILD.test(t) && EAT.test(t)) || /\bwhich (berries|plants|mushrooms|weeds)\b.*\b(edible|eat|safe)\b/i.test(t);
+    case 'medical':
+      return (EXPOSURE.test(t) && HARM.test(t)) || /\bmedical advice\b/i.test(t);
+  }
+}
+
+const ORDER: SafetyTopic[] = ['pesticide', 'veterinary', 'foraging', 'medical'];
 
 export const SAFETY_REPLY: Record<SafetyTopic, string> = {
   foraging: 'I can’t tell you whether a wild plant or mushroom is safe to eat. Photos and app descriptions aren’t reliable enough, and some poisonous species look like edible ones. Ask a local expert in person, such as your extension office or a mycological society, and never eat anything you can’t identify with certainty.',
@@ -21,15 +44,15 @@ export const SAFETY_REPLY: Record<SafetyTopic, string> = {
 
 /** Which safety rule a message falls under, if any. */
 export function safetyTopic(text: string): SafetyTopic | null {
-  for (const r of RULES) if (r.re.test(text)) return r.topic;
+  for (const topic of ORDER) if (matches(topic, text)) return topic;
   return null;
 }
 
 /** Backstop on model output: replace replies that give mixing ratios, doses or edibility verdicts. */
 export function screenReply(reply: string): { reply: string; replaced?: SafetyTopic } {
-  if (/\b\d+(\.\d+)?\s*(ml|oz|tbsp|tsp|cc|mg)\b.*\b(per|\/)\s*(gallon|gal|liter|litre|lb|kg)\b/i.test(reply) && /pesticide|herbicide|insecticide|fungicide|spray|dewormer|antibiotic/i.test(reply)) {
+  if (/\b\d+(\.\d+)?\s*(ml|oz|ounces?|tbsp|tablespoons?|tsp|teaspoons?|cc|mg|cups?)\b.*\b(per|\/|in a|for each)\s*(gallon|gal|liter|litre|lb|kg|pounds?)\b/i.test(reply) && (PRODUCT.test(reply) || /spray|dewormer|antibiotic|ivermectin|medicat/i.test(reply))) {
     return { reply: SAFETY_REPLY.pesticide, replaced: 'pesticide' };
   }
-  if (/\b(is|are) (safe|edible) to eat\b/i.test(reply) && /mushroom|wild|forag/i.test(reply)) return { reply: SAFETY_REPLY.foraging, replaced: 'foraging' };
+  if (/\b(is|are) (safe|edible)( to eat)?\b/i.test(reply) && (FUNGI.test(reply) || WILD.test(reply) || RISKY_PLANTS.test(reply))) return { reply: SAFETY_REPLY.foraging, replaced: 'foraging' };
   return { reply };
 }

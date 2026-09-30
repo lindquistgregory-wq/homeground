@@ -56,7 +56,10 @@ export interface HomesteadPlan {
   createdAt: string;
   goalsSummary: string;
   items: PlanItem[];
+  /** Everything planned, at maturity (fruit trees take years). */
   coverage: CoverageReport;
+  /** What the year-0/1 items produce: the honest "first year" picture. */
+  coverageYear1: CoverageReport;
   budget: Budget;
   budgetByPhase: Record<PhaseId, Budget>;
   laborByPhase: Record<PhaseId, [number, number]>;
@@ -77,7 +80,7 @@ type Weights = Partial<Record<NutrientKey, number>>;
 
 function dietAllows(diet: DietFlag[] | undefined, species: string): boolean {
   const d = new Set(diet ?? []);
-  if (d.has('vegan')) return false;
+  if (d.has('vegan')) return false; // includes honey
   const meat = ['meat_chickens', 'turkeys', 'meat_rabbits', 'meat_goats', 'sheep', 'feeder_pigs'];
   if (d.has('vegetarian') && meat.includes(species)) return false;
   if (d.has('no-pork') && species === 'feeder_pigs') return false;
@@ -132,8 +135,9 @@ export function allocateGarden(
   };
   const w: Weights = { kcal: 2, proteinG: 1, vitARaeUg: 1, vitCMg: 1, fiberG: 0.5 };
   const have: NutrientTotals = { kcal: 0, proteinG: 0, vitARaeUg: 0, vitCMg: 0, fiberG: 0, calciumMg: 0, ironMg: 0 };
-  // Crops without consumption data get a small allowance (a planning choice): one bed per ~1,000 sq ft.
-  const noDataUnits = Math.max(1, Math.floor((units * unit) / 1000));
+  // Crops without consumption data get a small allowance (a planning choice): one 4×8 bed per three
+  // people, and never more than one bed per ~1,000 sq ft of garden.
+  const noDataUnits = Math.max(1, Math.min(Math.floor((units * unit) / 1000), Math.ceil((Math.ceil(household.people / 3) * 32) / unit)));
   const cands = annualCandidates(site, kb).map((p) => {
     const c = cropContribution(p, { plantId: p.id, areaSqFt: unit }, kb);
     const mid = c ? (Object.fromEntries(Object.keys(c.nutrients.low).map((k) => [k, (c.nutrients.low[k as NutrientKey] + c.nutrients.high[k as NutrientKey]) / 2])) as NutrientTotals) : null;
@@ -173,7 +177,7 @@ export const rng = (r: [number, number]) => {
 };
 const fmtArea = (sq: number) => `${Math.round(sq).toLocaleString('en-US')} sq ft`;
 
-export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: KnowledgeBase, opts: { now?: Date; includeIncome?: boolean } = {}): HomesteadPlan {
+export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: KnowledgeBase, opts: { now?: Date; includeIncome?: boolean; showCosts?: boolean } = {}): HomesteadPlan {
   const items: PlanItem[] = [];
   const warnings: string[] = [];
   const assumptions: string[] = [];
@@ -205,7 +209,7 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
     title: `Vegetable garden, ${fmtArea(usedY1)}`,
     detail: crops.map((c) => `${plantById(c.plantId)!.commonName} ${fmtArea(c.areaSqFt!)}`).join(', '),
     crops,
-    draft: [{ op: 'add', kind: bedKind, count: beds, near: 'sunny', plants: crops.map((c) => c.plantId) }],
+    draft: [{ op: 'add', kind: bedKind, count: beds, near: 'sunny', plants: crops.map((c) => c.plantId), plantAreas: Object.fromEntries(crops.map((c) => [c.plantId, c.areaSqFt ?? 0])) }],
     why: [
       `Chosen to cover your target (${target.label.toLowerCase()}) with the crops that suit this climate${site.suitability ? '' : ' (climate fit not scored yet)'}.`,
       bedKind === 'raised-bed' ? (physical !== 'none' ? 'Raised beds mean less bending.' : 'Raised beds suit a small, intensive garden.') : 'In-ground rows suit a large garden.',
@@ -226,27 +230,42 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
     items.push({ id: 'beds', phase: 'year0', category: 'infrastructure', title: `Build ${beds} raised bed${beds === 1 ? '' : 's'}`, detail: 'Library size 4 × 8 ft.', budget: [{ kind: 'raised-beds', count: beds }], why: ['Beds for the year-1 garden.'] });
   }
   if (goals.water === 'well' || goals.water === 'municipal' || goals.water === undefined || goals.water === 'unsure') {
-    items.push({ id: 'drip', phase: 'year0', category: 'infrastructure', title: 'Drip irrigation for the garden', detail: `${fmtArea(y1Area)} of beds on a timer.`, budget: [{ kind: 'drip', areaSqFt: y1Area }], draft: [{ op: 'add', kind: 'drip-line', near: 'garden' }], why: ['Drip puts water at the roots and saves hours of hand-watering.'] });
+    items.push({ id: 'drip', phase: 'year0', category: 'infrastructure', title: 'Drip irrigation for the garden', detail: `${fmtArea(usedY1)} of beds on a timer.`, budget: [{ kind: 'drip', areaSqFt: usedY1 }], draft: [{ op: 'add', kind: 'drip-line', near: 'garden' }], why: ['Drip puts water at the roots and saves hours of hand-watering.'] });
   }
   if (goals.water === 'rain-only' || goals.water === 'none') {
     items.push({ id: 'rain', phase: 'year0', category: 'infrastructure', title: 'Rainwater catchment', detail: 'Example size 1,000 gallons; size it to your roof and dry spells.', budget: [{ kind: 'rain-catchment', gallons: 1000 }], draft: [{ op: 'add', kind: 'ibc-tote', count: 3, near: 'house' }], why: ['You said the garden has no mains or well water.'] });
     warnings.push('Without mains or well water, a dry spell can outlast stored rainwater. Check your state’s rules on rainwater collection.');
   }
-  items.push({ id: 'deer', phase: 'year0', category: 'infrastructure', title: 'Deer fence around the garden (if deer visit)', detail: `About ${Math.round(4 * Math.sqrt(y1Area))} ft of fence for a square plot.`, budget: [{ kind: 'deer-fence', lengthFt: 4 * Math.sqrt(y1Area) }], draft: [{ op: 'add', kind: 'fence-deer', near: 'garden' }], optional: true, why: ['Only needed where deer are common.'] });
+  items.push({ id: 'deer', phase: 'year0', category: 'infrastructure', title: 'Deer fence around the garden (if deer visit)', detail: `About ${Math.round(4 * Math.sqrt(usedY1))} ft of fence for a square plot.`, budget: [{ kind: 'deer-fence', lengthFt: 4 * Math.sqrt(usedY1) }], draft: [{ op: 'add', kind: 'fence-deer', near: 'garden' }], optional: true, why: ['Only needed where deer are common.'] });
   items.push({ id: 'compost', phase: 'year0', category: 'infrastructure', title: 'Compost bays', detail: 'Turn kitchen and garden waste into bed fill.', draft: [{ op: 'add', kind: 'compost-bays', near: 'garden' }], why: ['Cuts the cost of soil and fertiliser each year.'] });
 
   // --- Livestock ---
-  const animalsOk = goals.animals !== 'no';
+  // Animals only once the user says they're allowed (or unsure, with a warning to check).
+  const animalsOk = goals.animals === 'yes' || goals.animals === 'poultry-only' || goals.animals === 'unsure';
+  if (goals.animals === undefined) assumptions.push('Animals are left out until you say whether they’re allowed where you live.');
   const poultryOnly = goals.animals === 'poultry-only';
   const interest = new Set(goals.animalInterest ?? []);
   const wantsAnimalFood = ambition !== 'kitchen' || interest.size > 0;
+  /**
+   * Chore time only where the source's scale matches: the hen range is 10 hens (low) to 100 hens (high);
+   * the broiler figure is a 100-bird, 7-batch system, so it isn't applied to small batches.
+   */
+  const laborFor = (species: string, count: number): [number, number] | undefined => {
+    const l = kb.homestead.livestock[species]?.laborHoursPerWeek ?? undefined;
+    if (!l) return undefined;
+    if (species === 'laying_hens') return count <= 10 ? [l[0], l[0]] : count >= 100 ? [l[1], l[1]] : l;
+    if (species === 'meat_chickens') return count >= 100 ? l : undefined;
+    return l;
+  };
   const addLivestock = (species: string, count: number, phase: PhaseId, why: string[], draft: DraftObject[], extraBudget: BudgetItem[] = []) => {
     const lp = kb.homestead.livestock[species]!;
+    const labor = laborFor(species, count);
+    const name = species === 'honeybees' ? `hive${count === 1 ? '' : 's'} of honeybees` : species.replace(/_/g, ' ');
     items.push({
-      id: `ls-${species}`, phase, category: 'livestock', title: `${count} ${species.replace(/_/g, ' ')}`,
-      detail: [lp.spaceIndoorSqFt ? `${rng(lp.spaceIndoorSqFt)} sq ft indoors each` : '', lp.spaceOutdoorSqFt ? `${rng(lp.spaceOutdoorSqFt)} sq ft outdoors each` : '', lp.laborHoursPerWeek ? `about ${rng(lp.laborHoursPerWeek)} h/week of chores` : ''].filter(Boolean).join('; '),
+      id: `ls-${species}`, phase, category: 'livestock', title: `${count} ${name}`,
+      detail: [lp.spaceIndoorSqFt ? `${rng(lp.spaceIndoorSqFt)} sq ft indoors each` : '', lp.spaceOutdoorSqFt ? `${rng(lp.spaceOutdoorSqFt)} sq ft outdoors each` : '', labor ? `about ${rng(labor)} h/week of chores` : 'chore time not in the sources for this size'].filter(Boolean).join('; '),
       livestock: { species, count }, budget: [{ kind: 'livestock', species, count }, ...extraBudget], draft,
-      laborHoursPerWeek: lp.laborHoursPerWeek ?? undefined, why, regulatory: lp.regulatory,
+      laborHoursPerWeek: labor, why, regulatory: lp.regulatory,
     });
   };
   if (animalsOk && (interest.has('laying_hens') || (wantsAnimalFood && interest.size === 0)) && dietAllows(goals.diet, 'laying_hens')) {
@@ -255,7 +274,7 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
       [{ op: 'add', kind: 'chicken-coop', near: 'house' }, { op: 'add', kind: 'chicken-run', near: 'house' }], [{ kind: 'coop' }]);
     if (goals.roostersAllowed === undefined) warnings.push('Hens don’t need a rooster to lay. Check whether your town limits roosters or flock size.');
   }
-  if (animalsOk && interest.has('honeybees')) addLivestock('honeybees', 2, 'year1', ['Two hives let you compare colonies and share resources between them (a common beginner suggestion).'], [{ op: 'add', kind: 'beehive', count: 2, near: 'edge' }]);
+  if (animalsOk && interest.has('honeybees') && !(goals.diet ?? []).includes('vegan')) addLivestock('honeybees', 2, 'year1', ['Two hives let you compare colonies and share resources between them (a common beginner suggestion).'], [{ op: 'add', kind: 'beehive', count: 2, near: 'edge' }]);
   if (animalsOk && interest.has('meat_chickens') && dietAllows(goals.diet, 'meat_chickens')) {
     // Size to the protein still missing after the garden and any eggs, in batches of 5.
     const mid = (c: ReturnType<typeof cropContribution>) => (c ? (c.nutrients.low.proteinG + c.nutrients.high.proteinG) / 2 : 0);
@@ -282,7 +301,7 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
       const lp = kb.homestead.livestock[sp]!;
       const pasture = lp.pastureAcresPerHead;
       if (pasture && pasture[0] * n > acres) {
-        warnings.push(`${sp.replace(/_/g, ' ')}: ${n} need about ${(pasture[0] * n).toFixed(2)}+ acres of pasture; the parcel is ${acres.toFixed(2)} acres.`);
+        warnings.push(`${sp.replace(/_/g, ' ')}: ${n} need about ${(pasture[0] * n).toFixed(2)}+ acres of pasture; ${site.parcelAcres === undefined ? 'the parcel size isn’t known yet' : `the parcel is ${acres.toFixed(2)} acres`}.`);
         continue;
       }
       const herd = ['dairy_goats', 'meat_goats', 'sheep', 'feeder_pigs'].includes(sp);
@@ -297,8 +316,14 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
   // --- Years 2–5 perennials ---
   const perennialFruit = PLANTS.filter((p) => ['fruit-tree', 'berry', 'vine-fruit', 'nut-tree'].includes(p.kind) && (site.suitability?.[p.id] ?? 0) >= 70)
     .sort((a, b) => (site.suitability?.[b.id] ?? 0) - (site.suitability?.[a.id] ?? 0));
-  const trees = perennialFruit.filter((p) => p.kind === 'fruit-tree' || p.kind === 'nut-tree').slice(0, 3);
-  const berries = perennialFruit.filter((p) => p.kind === 'berry' || p.kind === 'vine-fruit').slice(0, 2);
+  // Scale perennials to the household and the land (a planning choice): a kitchen garden or a single
+  // person gets one tree and one berry; tiny lots get berries only; bigger goals get up to three trees.
+  const people = members.length;
+  const acresKnown = site.parcelAcres;
+  const treeTypes = acresKnown !== undefined && acresKnown < 0.1 ? 0 : ambition === 'kitchen' || people === 1 ? 1 : ambition === 'most-veg' ? 2 : 3;
+  const berryTypes = ambition === 'kitchen' || people === 1 ? 1 : 2;
+  const trees = perennialFruit.filter((p) => p.kind === 'fruit-tree' || p.kind === 'nut-tree').slice(0, treeTypes);
+  const berries = perennialFruit.filter((p) => p.kind === 'berry' || p.kind === 'vine-fruit').slice(0, berryTypes);
   if (!site.suitability) assumptions.push('Fruit and berry choices need the site profile’s climate fit; none are suggested until it’s built.');
   for (const t of trees) {
     const n = t.pollination === 'needs-partner' ? 2 : 1;
@@ -319,7 +344,7 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
   }
   for (const id of ['asparagus', 'rhubarb']) {
     const p = plantById(id);
-    if (p && (site.suitability?.[id] ?? 0) >= 70) {
+    if (p && ambition !== 'kitchen' && (site.suitability?.[id] ?? 0) >= 70) {
       items.push({ id: `bed-${id}`, phase: 'years2to5', category: 'perennials', title: `${p.commonName} bed`, detail: 'A permanent 4 × 8 ft bed.', crops: [{ plantId: id, areaSqFt: 32 }], draft: [{ op: 'add', kind: 'raised-bed', near: 'garden', plants: [id] }], why: ['Perennial vegetable: plant once, harvest for years.'] });
     }
   }
@@ -335,12 +360,17 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
     livestock: items.filter((i) => i.livestock).map((i) => i.livestock!),
   };
   const coverage = estimateFoodCoverage(members, planned, kb);
+  // What years 0–1 produce (the year-1 garden and year-1 animals only; trees bear years later).
+  const coverageYear1 = estimateFoodCoverage(members, {
+    crops: items.filter((i) => i.phase === 'year1' && i.crops).flatMap((i) => i.crops ?? []),
+    livestock: items.filter((i) => i.phase === 'year1' && i.livestock).map((i) => i.livestock!),
+  }, kb);
 
-  // --- Storage ---
-  if (coverage.storage.length && goals.willPreserve !== false) {
+  // --- Storage (year 1 harvest; the orchard adds more once it bears) ---
+  if (coverageYear1.storage.length && goals.willPreserve !== false) {
     items.push({
       id: 'storage', phase: 'year1', category: 'storage', title: 'Plan for storing the harvest',
-      detail: coverage.storage.map((s) => `${s.method.replace('-', ' ')}: ${Math.round(s.lb[0])}–${Math.round(s.lb[1])} lb (${s.crops.join(', ')})`).join('; '),
+      detail: coverageYear1.storage.map((s) => `${s.method.replace('-', ' ')}: ${Math.round(s.lb[0])}–${Math.round(s.lb[1])} lb (${s.crops.join(', ')})`).join('; '),
       budget: goals.willPreserve ? [{ kind: 'chest-freezer' }] : undefined,
       why: [String(kb.homestead.preservation.safetyNote)],
     });
@@ -369,7 +399,9 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
 
   const startNow = budgetByPhase.year0.startupTotal[0] + budgetByPhase.year1.startupTotal[0];
   if (goals.budgetStartupUsd !== undefined && startNow > goals.budgetStartupUsd) {
-    warnings.push(`Years 0–1 cost at least ${moneyRange([startNow, startNow])} (sourced items only) vs your ${moneyRange([goals.budgetStartupUsd, goals.budgetStartupUsd])} budget. Start with the garden and hens, and build the rest as money allows.`);
+    warnings.push(opts.showCosts === false
+      ? 'Setting up everything in years 0–1 likely costs more than your budget. Start with the garden and hens, and build the rest as money allows.'
+      : `Years 0–1 cost at least ${moneyRange([startNow, startNow])} (sourced items only) vs your ${moneyRange([goals.budgetStartupUsd, goals.budgetStartupUsd])} budget. Start with the garden and hens, and build the rest as money allows.`);
   }
   if (goals.hoursPerWeek !== undefined && laborByPhase.year1[0] > goals.hoursPerWeek) {
     warnings.push(`Animal chores alone take about ${rng(laborByPhase.year1)} h/week in year 1, more than the ${goals.hoursPerWeek} h you have, before any gardening.`);
@@ -378,7 +410,7 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
   if (budget.unknown.length) assumptions.push(`No sourced cost for: ${budget.unknown.join(', ')}.`);
 
   return {
-    createdAt: (opts.now ?? new Date()).toISOString(), goalsSummary: summarizeGoals(goals), items, coverage, budget, budgetByPhase, laborByPhase, enterprises,
+    createdAt: (opts.now ?? new Date()).toISOString(), goalsSummary: summarizeGoals(goals), items, coverage, coverageYear1, budget, budgetByPhase, laborByPhase, enterprises,
     warnings, assumptions,
     dataUsed: [...(site.sources ?? []), ...coverage.sources, 'Livestock, infrastructure and enterprise figures: extension and USDA sources cited in each item'],
   };

@@ -30,7 +30,10 @@ export interface Question {
 }
 
 const num = (v: unknown) => {
-  const n = typeof v === 'number' ? v : Number(String(v).replace(/[$,\s]/g, ''));
+  if (v === undefined || v === null) return undefined;
+  const s = typeof v === 'number' ? String(v) : String(v).replace(/[$,\s]/g, '');
+  if (s === '') return undefined; // a cleared field is a skipped question, not 0
+  const n = Number(s);
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 };
 

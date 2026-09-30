@@ -70,9 +70,26 @@ const MAX_RESULT_CHARS = 1400;
 const clip = (s: string) => (s.length > MAX_RESULT_CHARS ? `${s.slice(0, MAX_RESULT_CHARS - 20)}… (shortened)` : s);
 const str = (v: unknown) => (typeof v === 'string' ? v : v === undefined || v === null ? '' : String(v));
 const numArg = (v: unknown) => {
-  const n = typeof v === 'number' ? v : Number(str(v).replace(/[$,\s]/g, ''));
-  return Number.isFinite(n) ? n : undefined;
+  if (v === undefined || v === null) return undefined;
+  const t = typeof v === 'number' ? String(v) : str(v).replace(/[$,\s]/g, '');
+  if (t === '') return undefined; // omitted or blank arguments never become 0
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
 };
+/** A list argument the model actually filled (blank strings don't erase stored lists). */
+const given = (v: unknown) => v !== undefined && v !== null && str(v).trim() !== '';
+const MAX_ANIMALS = 500, MAX_PLANTS = 1000, MAX_AREA = 200_000;
+
+/** Find a plant from a loose name: "tomatoes", "potato", "blueberry bushes". */
+function findPlant(name: string) {
+  const n = name.toLowerCase().replace(/\b(bush(es)?|plants?|trees?|vines?|canes?)\b/g, '').trim();
+  const tries = [n, n.replace(/ies$/, 'y'), n.replace(/oes$/, 'o'), n.replace(/es$/, ''), n.replace(/s$/, '')];
+  for (const x of tries) {
+    const p = plantById(x.replace(/\s+/g, '-')) ?? searchPlants(x)[0];
+    if (p) return p;
+  }
+  return undefined;
+}
 const list = (v: unknown) => str(v).split(/[,;\n]/).map((s) => s.trim()).filter(Boolean);
 
 /** "tomato:32, potato:64" or "tomato 32" → crop amounts (sq ft); plant names are matched loosely. */
@@ -80,13 +97,15 @@ export function parseCropList(v: unknown): { crops: CropAmount[]; unknown: strin
   const crops: CropAmount[] = [];
   const unknown: string[] = [];
   for (const part of list(v)) {
-    const m = /^(.+?)[\s:=]+(\d+(?:\.\d+)?)\s*(sq ?ft|ft|plants?|trees?)?$/i.exec(part);
-    const name = (m ? m[1]! : part).trim();
-    const p = plantById(name.toLowerCase().replace(/\s+/g, '-')) ?? searchPlants(name)[0];
+    const m = /^(.+?)[\s:=]+(\d+(?:\.\d+)?)\s*(sq ?ft|ft|plants?|trees?|bush(?:es)?)?$/i.exec(part) ?? /^(\d+(?:\.\d+)?)\s*(sq ?ft|ft|plants?|trees?|bush(?:es)?)?\s+(.+)$/i.exec(part)?.slice(0) as RegExpExecArray | undefined;
+    // "4 blueberry bushes" (number first) or "tomato:32" (number last).
+    const numberFirst = !!m && /^\d/.test(part);
+    const name = (m ? (numberFirst ? m[3]! : m[1]!) : part).trim();
+    const p = findPlant(name);
     if (!p) { unknown.push(name); continue; }
-    const n = m ? Number(m[2]) : 32;
-    const unit = (m?.[3] ?? '').toLowerCase();
-    crops.push(/plant|tree/.test(unit) || (!unit && p.yieldLb?.per === 'plant') ? { plantId: p.id, plants: n } : unit === 'ft' ? { plantId: p.id, rowFt: n } : { plantId: p.id, areaSqFt: n });
+    const n = Math.min(m ? Number(numberFirst ? m[1] : m[2]) : 32, MAX_AREA);
+    const unit = ((numberFirst ? m?.[2] : m?.[3]) ?? '').toLowerCase();
+    crops.push(/plant|tree|bush/.test(unit) || (!unit && p.yieldLb?.per === 'plant') ? { plantId: p.id, plants: n } : unit === 'ft' ? { plantId: p.id, rowFt: n } : { plantId: p.id, areaSqFt: n });
   }
   return { crops, unknown };
 }
@@ -94,7 +113,7 @@ export function parseCropList(v: unknown): { crops: CropAmount[]; unknown: strin
 /** "laying_hens:10, bees 2" → livestock counts, matched against the knowledge base ids. */
 export function parseAnimalList(v: unknown, kb: KnowledgeBase): { animals: Array<{ species: string; count: number }>; unknown: string[] } {
   const ids = Object.keys(kb.homestead.livestock);
-  const alias: Record<string, string> = { hens: 'laying_hens', chickens: 'laying_hens', layers: 'laying_hens', broilers: 'meat_chickens', 'meat birds': 'meat_chickens', bees: 'honeybees', hives: 'honeybees', rabbits: 'meat_rabbits', pigs: 'feeder_pigs', goats: 'dairy_goats', ducks: 'ducks_layers' };
+  const alias: Record<string, string> = { hen: 'laying_hens', chicken: 'laying_hens', hive: 'honeybees', hens: 'laying_hens', chickens: 'laying_hens', layers: 'laying_hens', broilers: 'meat_chickens', 'meat birds': 'meat_chickens', bees: 'honeybees', hives: 'honeybees', rabbits: 'meat_rabbits', pigs: 'feeder_pigs', goats: 'dairy_goats', ducks: 'ducks_layers' };
   const animals: Array<{ species: string; count: number }> = [];
   const unknown: string[] = [];
   for (const part of list(v)) {
@@ -104,25 +123,34 @@ export function parseAnimalList(v: unknown, kb: KnowledgeBase): { animals: Array
     else if ((m = /^(\d+)\s*[x×]?\s*(.+)$/i.exec(part))) (count = Number(m[1])), (name = m[2]!);
     name = name.trim().toLowerCase();
     const id = ids.find((i) => i === name.replace(/\s+/g, '_')) ?? alias[name] ?? ids.find((i) => i.includes(name.replace(/s$/, '').replace(/\s+/g, '_')));
-    if (id && count > 0) animals.push({ species: id, count });
+    if (id && count > 0) animals.push({ species: id, count: Math.min(count, MAX_ANIMALS) });
     else unknown.push(name);
   }
   return { animals, unknown };
 }
 
-/** "40m, 38f, 9f" (age + sex, optional a/s for active/sedentary) → household members. */
-export function parseHousehold(v: unknown): HouseholdMember[] {
-  const out: HouseholdMember[] = [];
+/**
+ * "40m, 38f, 9f, 6 months" (age + sex, optional a/s for active/sedentary; "yo"/"years" and months
+ * accepted) → household members. Entries it can't read are returned in `dropped`.
+ */
+export function parseHouseholdDetailed(v: unknown): { members: HouseholdMember[]; dropped: string[] } {
+  const members: HouseholdMember[] = [];
+  const dropped: string[] = [];
   for (const part of list(v)) {
-    const m = /^(\d{1,3})\s*(m|f|male|female|man|woman|boy|girl)?\s*(active|sedentary|a|s)?$/i.exec(part.replace(/\s+/g, ' ').trim());
-    if (!m) continue;
+    const clean = part.replace(/\s+/g, ' ').trim().replace(/\b(y\.?o\.?|years?( old)?|yrs?)\b/gi, '').replace(/\s+/g, ' ').trim();
+    const months = /^(\d{1,2})\s*(months?|mos?)\b\s*(m|f|male|female|boy|girl)?/i.exec(clean);
+    const m = months ? ([months[0], String(Math.floor(Number(months[1]) / 12)), months[3], undefined] as unknown as RegExpExecArray)
+      : /^(\d{1,3})\s*(m|f|male|female|man|woman|boy|girl)?\s*(active|sedentary|a|s)?$/i.exec(clean);
+    if (!m || Number(m[1]) > 110) { dropped.push(part); continue; }
     const sexWord = (m[2] ?? '').toLowerCase();
     const sex = /^(f|female|woman|girl)$/.test(sexWord) ? 'female' : 'male';
     const act = (m[3] ?? '').toLowerCase();
-    out.push({ age: Number(m[1]), sex, activity: act.startsWith('a') ? 'active' : act.startsWith('s') ? 'sedentary' : 'moderatelyActive' });
+    members.push({ age: Number(m[1]), sex, activity: act.startsWith('a') ? 'active' : act.startsWith('s') ? 'sedentary' : 'moderatelyActive' });
   }
-  return out;
+  return { members, dropped };
 }
+
+export const parseHousehold = (v: unknown): HouseholdMember[] => parseHouseholdDetailed(v).members;
 
 const E = (values: string[]) => values;
 
@@ -152,9 +180,14 @@ export const TOOLS: Tool[] = [
     },
     async run(ctx, a) {
       const patch: Partial<HomesteadGoals> = {};
-      if (a.household !== undefined) { const h = parseHousehold(a.household); if (h.length) patch.household = h; }
+      let dropped: string[] = [];
+      if (given(a.household)) {
+        const h = parseHouseholdDetailed(a.household);
+        dropped = h.dropped;
+        if (h.members.length) patch.household = h.members;
+      }
       const pick = <T extends string>(v: unknown, allowed: readonly T[]) => (allowed.includes(str(v) as T) ? (str(v) as T) : undefined);
-      if (a.diet !== undefined) patch.diet = list(a.diet).filter((d) => ['vegetarian', 'vegan', 'no-pork', 'no-dairy', 'no-eggs'].includes(d)) as HomesteadGoals['diet'];
+      if (given(a.diet)) patch.diet = list(a.diet).filter((d) => ['vegetarian', 'vegan', 'no-pork', 'no-dairy', 'no-eggs'].includes(d)) as HomesteadGoals['diet'];
       patch.ambition = pick(a.ambition, Object.keys(FOOD_TARGETS) as Array<keyof typeof FOOD_TARGETS>);
       patch.hoursPerWeek = numArg(a.hoursPerWeek);
       patch.budgetStartupUsd = numArg(a.budgetStartupUsd);
@@ -162,16 +195,16 @@ export const TOOLS: Tool[] = [
       patch.experience = pick(a.experience, ['none', 'some-gardening', 'experienced', 'livestock'] as const);
       patch.physical = pick(a.physical, ['none', 'some', 'significant'] as const);
       patch.animals = pick(a.animals, ['yes', 'poultry-only', 'no', 'unsure'] as const);
-      if (a.animalInterest !== undefined) patch.animalInterest = parseAnimalList(a.animalInterest, ctx.kb).animals.map((x) => x.species);
+      if (given(a.animalInterest)) patch.animalInterest = parseAnimalList(a.animalInterest, ctx.kb).animals.map((x) => x.species);
       patch.water = pick(a.water, ['municipal', 'well', 'rain-only', 'none', 'unsure'] as const);
       if (typeof a.willPreserve === 'boolean') patch.willPreserve = a.willPreserve;
       if (typeof a.wantsIncome === 'boolean') patch.wantsIncome = a.wantsIncome;
       patch.marketAccess = pick(a.marketAccess, ['none', 'some', 'strong'] as const);
-      if (a.goals !== undefined) patch.goals = list(a.goals).filter((g) => ['food', 'savings', 'income', 'lifestyle', 'ecology', 'resilience'].includes(g)) as HomesteadGoals['goals'];
+      if (given(a.goals)) patch.goals = list(a.goals).filter((g) => ['food', 'savings', 'income', 'lifestyle', 'ecology', 'resilience'].includes(g)) as HomesteadGoals['goals'];
       let next = mergeGoals(ctx.goals(), patch);
       if (a.confirmed === true) next = { ...next, confirmedAt: ctx.now().toISOString() };
       await ctx.saveGoals(next);
-      return `Saved. Profile now: ${summarizeGoals(next)}`;
+      return `Saved. Profile now: ${summarizeGoals(next)}${dropped.length ? ` Couldn't read: ${dropped.join(', ')} (use age and sex, e.g. "40m").` : ''}`;
     },
   },
   {
@@ -247,8 +280,11 @@ export const TOOLS: Tool[] = [
       let crops = parseCropList(a.crops).crops, animals = parseAnimalList(a.animals, ctx.kb).animals;
       if (!crops.length && !animals.length) {
         const plan = buildPlan(g, await ctx.sitePlanInput(), ctx.kb, { now: ctx.now() });
-        crops = plan.items.flatMap((i) => (i.id === 'garden-y1' && plan.items.some((j) => j.id === 'garden-y2') ? [] : i.crops ?? []));
-        animals = plan.items.filter((i) => i.livestock).map((i) => i.livestock!);
+        // Lower tiers see years 0–1 only, so coverage is for what they can see.
+        const visible = plan.items.filter((i) => ctx.tier.multiYear || i.phase !== 'years2to5');
+        const expanded = visible.some((j) => j.id === 'garden-y2');
+        crops = visible.flatMap((i) => (i.id === 'garden-y1' && expanded ? [] : i.crops ?? []));
+        animals = visible.filter((i) => i.livestock).map((i) => i.livestock!);
       }
       const r = estimateFoodCoverage(g.household, { crops, livestock: animals }, ctx.kb);
       const lines = NUTRIENT_KEYS.map((k) => `${NUTRIENT_LABEL[k]}: ${pct(r.share[k][0])}–${pct(r.share[k][1])} of yearly needs`);
@@ -326,14 +362,16 @@ export const TOOLS: Tool[] = [
     parameters: { type: 'object', required: [], properties: {} },
     async run(ctx) {
       const g = ctx.goals();
-      const plan = buildPlan(g, await ctx.sitePlanInput(), ctx.kb, { now: ctx.now(), includeIncome: ctx.tier.income });
+      const plan = buildPlan(g, await ctx.sitePlanInput(), ctx.kb, { now: ctx.now(), includeIncome: ctx.tier.income, showCosts: ctx.tier.multiYear });
       const phases = ctx.tier.multiYear ? (['year0', 'year1', 'years2to5'] as const) : (['year0', 'year1'] as const);
       const lines: string[] = [];
       for (const ph of phases) {
         const its = plan.items.filter((i) => i.phase === ph);
         if (its.length) lines.push(`${PHASE_TITLE[ph]}: ${its.map((i) => i.title).join('; ')}.`);
       }
-      lines.push(`Food: calories ${pct(plan.coverage.share.kcal[0])}–${pct(plan.coverage.share.kcal[1])}, vitamin C ${pct(plan.coverage.share.vitCMg[0])}–${pct(plan.coverage.share.vitCMg[1])} of needs.`);
+      const y1 = plan.coverageYear1.share;
+      lines.push(`Food in year 1: calories ${pct(y1.kcal[0])}–${pct(y1.kcal[1])}, vitamin C ${pct(y1.vitCMg[0])}–${pct(y1.vitCMg[1])} of needs.`);
+      if (ctx.tier.multiYear) lines.push(`Once everything planned is mature: calories ${pct(plan.coverage.share.kcal[0])}–${pct(plan.coverage.share.kcal[1])}.`);
       if (ctx.tier.multiYear) lines.push(`Startup ${moneyRange(plan.budget.startupTotal)} for priced items.`);
       lines.push(...plan.warnings.slice(0, 3));
       lines.push('The full plan is on the Plan tab.');

@@ -12,7 +12,7 @@ import { humidityClimatology, type SiteProfile } from '@plotwright/providers';
 import { useEntitlements } from '../billing/entitlements';
 import { getOrCreateDesign, saveDesign } from '../db/designs';
 import { getParcel, getSiteProfile, type ParcelRecord } from '../db/parcels';
-import { getGoals, saveDraft, saveGoals, saveTask, setDraftStatus } from '../db/planner';
+import { draftStatus, getGoals, saveDraft, saveGoals, saveTask, setDraftStatus } from '../db/planner';
 import { savePlanting } from '../db/plantings';
 import { listSensors } from '../db/sensors';
 import { dominantSoil, siteConditions } from './garden';
@@ -211,6 +211,9 @@ export interface ApplyResult {
 
 /** Apply an approved design draft: add/remove objects, and plan the draft's crops into the new beds. */
 export async function applyDesignDraft(parcelId: string, draft: DesignDraft): Promise<ApplyResult> {
+  // Approve once: a second tap (or another screen) finds the draft no longer pending.
+  if ((await draftStatus(draft.id)) !== 'pending') throw new Error('This draft was already handled.');
+  await setDraftStatus(draft.id, 'approved');
   const parcel = await getParcel(parcelId);
   if (!parcel) throw new Error('Property not found.');
   const design = await getOrCreateDesign(parcelId);
@@ -230,22 +233,42 @@ export async function applyDesignDraft(parcelId: string, draft: DesignDraft): Pr
     if (placed.length < n) res.unplaced.push(`${n - placed.length} × ${objectType(c.kind)?.name ?? c.kind} (no free space found)`);
     objects.push(...placed);
     res.added += placed.length;
-    // Crops the planner chose for these beds become planned plantings (they show up in the calendar).
+    // Crops the planner chose become planned plantings (they show up in the calendar). With areas, beds
+    // are filled in order, each crop taking the share of a bed its planned area needs; without, one
+    // crop per bed in turn.
     const plants = c.plants ?? [];
-    for (let i = 0; i < placed.length && plants.length; i++) {
-      for (const plantId of plants.length <= placed.length ? [plants[i % plants.length]!] : plants.filter((_, k) => k % placed.length === i)) {
-        await savePlanting({ parcelId, designId: design.id, bedObjectId: placed[i]!.id, plantId, year, share: 1, status: 'planned' });
-        res.plantings++;
+    if (placed.length && plants.length) {
+      const bedSqFt = footprintAreaM2(placed[0]!, frameForBoundary(parcel.geometry)) * SQFT;
+      const areas = c.plantAreas;
+      if (areas && bedSqFt > 0) {
+        let bed = 0, room = 1;
+        for (const plantId of plants) {
+          let need = (areas[plantId] ?? bedSqFt) / bedSqFt;
+          while (need > 1e-3 && bed < placed.length) {
+            const share = Math.min(need, room);
+            await savePlanting({ parcelId, designId: design.id, bedObjectId: placed[bed]!.id, plantId, year, share: Math.round(share * 100) / 100, status: 'planned' });
+            res.plantings++;
+            need -= share;
+            room -= share;
+            if (room <= 1e-3) (bed++, (room = 1));
+          }
+          if (need > 1e-3) res.unplaced.push(`${plantId} (no bed left for it)`);
+        }
+      } else {
+        for (let i = 0; i < Math.min(placed.length, plants.length); i++) {
+          await savePlanting({ parcelId, designId: design.id, bedObjectId: placed[i]!.id, plantId: plants[i]!, year, share: 1, status: 'planned' });
+          res.plantings++;
+        }
       }
     }
   }
   await saveDesign({ ...design, objects, updatedAt: new Date().toISOString() });
-  await setDraftStatus(draft.id, 'approved');
   return res;
 }
 
 export async function applyTaskDrafts(parcelId: string, draftId: string, tasks: TaskDraft[]): Promise<number> {
-  for (const t of tasks) await saveTask({ ...t, parcelId, done: false });
+  if ((await draftStatus(draftId)) !== 'pending') throw new Error('These tasks were already handled.');
   await setDraftStatus(draftId, 'approved');
+  for (const t of tasks) await saveTask({ ...t, parcelId, done: false });
   return tasks.length;
 }

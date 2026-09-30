@@ -32,7 +32,7 @@ function HouseholdInput({ value, onChange }: { value: HouseholdMember[]; onChang
             {m.sex === 'female' && m.age >= 14 && m.age <= 50 && <Chip label="Pregnant" active={!!m.pregnant} onPress={() => set(i, { pregnant: !m.pregnant })} />}
             {m.sex === 'female' && m.age >= 14 && m.age <= 50 && <Chip label="Breastfeeding" active={!!m.lactating} onPress={() => set(i, { lactating: !m.lactating })} />}
           </View>
-          <Pressable accessibilityRole="button" onPress={() => onChange(value.filter((_, k) => k !== i))}><Text style={{ color: t.bad }}>Remove</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Remove person ${i + 1}, age ${m.age}`} onPress={() => onChange(value.filter((_, k) => k !== i))} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: t.bad }}>Remove</Text></Pressable>
         </View>
       ))}
       <Button title="Add a person" kind="secondary" onPress={() => onChange([...value, { age: 35, sex: 'female', activity: 'moderatelyActive' }])} />
@@ -64,6 +64,7 @@ export function Interview({ goals, onSave }: { goals: HomesteadGoals; onSave: (g
   const t = useTheme();
   const qs = nextQuestions(goals);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
+  const [more, setMore] = useState(false);
   const prog = interviewProgress(goals);
   const submit = async () => {
     let g = goals;
@@ -76,13 +77,14 @@ export function Interview({ goals, onSave }: { goals: HomesteadGoals; onSave: (g
     setAnswers({});
     await onSave(g);
   };
-  if (!qs.length || (readyToPlan(goals) && !goals.confirmedAt && Object.keys(answers).length === 0 && qs.every((q) => !['household', 'ambition', 'hours', 'budget', 'space'].includes(q.id)))) {
+  // Once the essentials are in, show the summary to confirm; optional questions only when asked for.
+  if (!qs.length || (readyToPlan(goals) && !more)) {
     return (
       <Card title={goals.confirmedAt ? 'Your homestead goals' : 'Does this sound right?'}>
         <Body>{summarizeGoals(goals)}</Body>
         {!goals.confirmedAt && <Button title="Yes, make my plan" onPress={() => void onSave({ ...goals, confirmedAt: new Date().toISOString() })} />}
         {qs.length > 0 && <Body muted>{qs.length} more optional question{qs.length === 1 ? '' : 's'} below sharpen the plan.</Body>}
-        {qs.length > 0 && <Button title="Answer a few more" kind="secondary" onPress={() => setAnswers({ __more: true })} />}
+        {qs.length > 0 && <Button title="Answer a few more" kind="secondary" onPress={() => setMore(true)} />}
         <Button title="Start over" kind="secondary" onPress={() => Alert.alert('Start over?', 'This clears your answers for this property.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Clear', style: 'destructive', onPress: () => void onSave({}) }])} />
       </Card>
     );
@@ -97,6 +99,7 @@ export function Interview({ goals, onSave }: { goals: HomesteadGoals; onSave: (g
         </Card>
       ))}
       <Button title="Next" onPress={() => void submit()} />
+      {readyToPlan(goals) && <Button title="Done for now" kind="secondary" onPress={() => setMore(false)} />}
       {prog.answered > 0 && <Text style={{ color: t.muted, fontSize: 13 }}>So far: {summarizeGoals(goals)}</Text>}
     </View>
   );
@@ -138,7 +141,7 @@ function ItemCard({ item, onDraft }: { item: PlanItem; onDraft?: () => void }) {
   return (
     <View style={[styles.item, { borderColor: t.border }]}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)}>
-        <Text style={{ color: t.text, fontWeight: '600', fontSize: 15 }}>{item.title}{item.optional ? '  (optional)' : ''} {open ? '▾' : '▸'}</Text>
+        <Text style={{ color: t.text, fontWeight: '600', fontSize: 15 }}>{item.title}{item.optional ? '  (optional)' : ''} <Text accessibilityElementsHidden importantForAccessibility="no">{open ? '▾' : '▸'}</Text></Text>
         {!!item.detail && <Body muted>{item.detail}</Body>}
       </Pressable>
       {open && (
@@ -157,6 +160,7 @@ export function PlanView({ plan, tier, onDraft }: { plan: HomesteadPlan; tier: {
   const t = useTheme();
   const phases: PhaseId[] = tier.multiYear ? ['year0', 'year1', 'years2to5'] : ['year0', 'year1'];
   const c = plan.coverage;
+  const y1 = plan.coverageYear1;
   return (
     <View>
       {plan.warnings.length > 0 && (
@@ -179,16 +183,18 @@ export function PlanView({ plan, tier, onDraft }: { plan: HomesteadPlan; tier: {
       })}
       {!tier.multiYear && <Body muted>Years 2–5 (orchard, perennials, more animals) and budgets are part of Homestead Pro.</Body>}
 
-      <Card title="How much of your food this covers">
+      <Card title={tier.multiYear ? 'How much of your food this covers' : 'How much of your food year 1 covers'}>
         {NUTRIENT_KEYS.map((k) => (
           <View key={k} style={{ marginBottom: 6 }}>
-            <Text style={{ color: t.text }}>{NUTRIENT_LABEL[k]}: {pct(c.share[k][0])}–{pct(c.share[k][1])}</Text>
-            <Bar share={c.share[k]} />
+            <Text style={{ color: t.text }}>
+              {NUTRIENT_LABEL[k]}: year 1 {pct(y1.share[k][0])}–{pct(y1.share[k][1])}{tier.multiYear ? `; once mature ${pct(c.share[k][0])}–${pct(c.share[k][1])}` : ''}
+            </Text>
+            <Bar share={y1.share[k]} />
           </View>
         ))}
         {c.notCounted.map((n, i) => <Body key={i} muted>Not counted: {n.reason}</Body>)}
-        {c.storage.length > 0 && <Body>To store each year: {c.storage.map((s) => `${Math.round(s.lb[0])}–${Math.round(s.lb[1])} lb for ${s.method.replace('-', ' ')}`).join('; ')}.</Body>}
-        <Text style={{ color: t.muted, fontSize: 12, marginTop: 6 }}>Everything planned at maturity (fruit trees take years). {c.sources.join('. ')}.</Text>
+        {y1.storage.length > 0 && <Body>To store from year 1: {y1.storage.map((s) => `${Math.round(s.lb[0])}–${Math.round(s.lb[1])} lb for ${s.method.replace('-', ' ')}`).join('; ')}.</Body>}
+        <Text style={{ color: t.muted, fontSize: 12, marginTop: 6 }}>{tier.multiYear ? '“Once mature” counts everything planned, including fruit trees that take years to bear. ' : ''}{c.sources.join('. ')}.</Text>
       </Card>
 
       {tier.multiYear && (
@@ -197,6 +203,7 @@ export function PlanView({ plan, tier, onDraft }: { plan: HomesteadPlan; tier: {
             <View key={i} style={{ marginBottom: 6 }}>
               <Text style={{ color: t.text }}>{l.label}: {l.startup ? `start ${moneyRange(l.startup)}` : ''}{l.annual ? `${l.startup ? ', ' : ''}${moneyRange(l.annual)}/yr` : ''}</Text>
               {!!l.basis && <Text style={{ color: t.muted, fontSize: 12 }}>{l.basis}</Text>}
+              {l.reference && <Text style={{ color: t.muted, fontSize: 12 }}>For reference only (not in the totals): {moneyRange(l.reference.startup)} for {l.reference.scale}.</Text>}
               {l.caution && <Text style={{ color: t.warn, fontSize: 12 }}>{l.caution}</Text>}
               {l.sources[0] && <Pressable accessibilityRole="link" onPress={() => Linking.openURL(l.sources[0]!.url)}><Text style={{ color: t.accent, fontSize: 12 }}>{l.sources[0]!.title} ↗</Text></Pressable>}
             </View>
@@ -229,19 +236,19 @@ export function PlanView({ plan, tier, onDraft }: { plan: HomesteadPlan; tier: {
 
 // ---------------- Drafts & tasks ----------------
 
-export function DraftCard({ d, onApprove, onReject }: { d: DraftRow; onApprove: () => void; onReject: () => void }) {
+export function DraftCard({ d, canApprove, onApprove, onReject }: { d: DraftRow; canApprove: boolean; onApprove: () => void; onReject: () => void }) {
   const t = useTheme();
   const title = d.kind === 'design' ? (d.payload as DesignDraft).summary : `${(d.payload as TaskDraft[]).length} tasks`;
   return (
     <Card title={title}>
       {d.kind === 'design'
         ? (d.payload as DesignDraft).changes.map((c, i) => (
-          <Body key={i}>{c.op === 'add' ? `Add ${c.count ?? 1} × ${c.kind.replace(/-/g, ' ')}${c.near ? ` near the ${c.near}` : ''}${c.plants?.length ? ` for ${c.plants.join(', ')}` : ''}` : `Remove ${c.objectId}`}</Body>
+          <Body key={i}>{c.op === 'add' ? `Add ${c.count ?? 1} × ${c.kind.replace(/-/g, ' ')}${c.near ? ` near the ${c.near}` : ''}${c.plants?.length ? ` for ${c.plants.join(', ')}` : ''}` : `Remove an object${c.reason ? ` (${c.reason})` : ''}`}</Body>
         ))
         : (d.payload as TaskDraft[]).map((x, i) => <Body key={i}>• {x.title}{x.due ? ` (${x.due})` : ''}</Body>)}
       <Text style={{ color: t.muted, fontSize: 12 }}>Suggested by {d.kind === 'design' && (d.payload as DesignDraft).createdBy === 'model' ? 'the AI planner' : 'the planner'}. Nothing changes until you approve.</Text>
       <View style={styles.row}>
-        <Button title="Approve" onPress={onApprove} />
+        <Button title="Approve" onPress={onApprove} disabled={!canApprove} />
         <Button title="Dismiss" kind="secondary" onPress={onReject} />
       </View>
     </Card>
@@ -256,7 +263,7 @@ export function TaskList({ tasks, onToggle, onDelete }: { tasks: TaskRecord[]; o
       {tasks.map((x) => (
         <View key={x.id} style={[styles.task, { borderColor: t.border }]}>
           <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: x.done }} onPress={() => onToggle(x)} style={{ flex: 1 }}>
-            <Text style={{ color: x.done ? t.muted : t.text, textDecorationLine: x.done ? 'line-through' : 'none', fontSize: 15 }}>{x.done ? '☑' : '☐'} {x.title}</Text>
+            <Text accessibilityLabel={x.title} style={{ color: x.done ? t.muted : t.text, textDecorationLine: x.done ? 'line-through' : 'none', fontSize: 15 }}>{x.done ? '☑' : '☐'} {x.title}</Text>
             <Text style={{ color: t.muted, fontSize: 12 }}>{x.category}{x.due ? ` · ${x.due}` : ''}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={`Delete ${x.title}`} onPress={() => onDelete(x)} style={{ padding: 10 }}><Text style={{ color: t.bad }}>✕</Text></Pressable>

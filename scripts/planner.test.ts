@@ -52,7 +52,9 @@ test('budget: per-unit costs scale, whole-system budgets are quoted at their own
   const drip = b.lines.find((l) => /Drip/.test(l.label))!;
   assert.deepEqual(drip.startup, [1000, 2000]);
   const hens = b.lines.find((l) => /laying hens/.test(l.label))!;
-  assert.deepEqual(hens.startup, KB.homestead.livestock.laying_hens!.startupCostUSD, 'flock budget not stretched to 20 hens');
+  assert.equal(hens.startup, null, 'a 10-hen flock budget is not stretched to 20 hens, nor added to totals');
+  assert.deepEqual(hens.reference?.startup, KB.homestead.livestock.laying_hens!.startupCostUSD);
+  assert.ok(!b.startupTotal.includes(NaN));
   assert.equal(hens.annual![0], (KB.homestead.livestock.laying_hens!.annualCostUSD![0] / 10) * 20);
   const bees = b.lines.find((l) => /honeybees/.test(l.label))!;
   assert.equal(bees.startup![0], KB.homestead.livestock.honeybees!.startupCostUSD![0] * 2);
@@ -110,8 +112,9 @@ test('drafts and tasks are validated before anything can be approved', () => {
   const v = validateDesignDraft({ id: 'd', summary: 's', createdBy: 'model', why: [], changes: [
     { op: 'add', kind: 'raised-bed', count: 400, plants: ['tomato', 'unicorn'] }, { op: 'add', kind: 'moat' }, { op: 'remove', objectId: 'missing' },
   ] }, []);
-  assert.equal(v.ok, false);
-  assert.equal(v.cleaned.changes.length, 1);
+  assert.equal(v.ok, false); // the unknown object and removal
+  // 400 beds are split into chunks of 50 rather than rejected.
+  assert.equal(v.cleaned.changes.length, 8);
   assert.equal((v.cleaned.changes[0] as { count: number }).count, 50);
   assert.deepEqual((v.cleaned.changes[0] as { plants: string[] }).plants, ['tomato']);
   const t = validateTasks([{ title: '  Build coop ', category: 'build', due: 'March' }, { title: '', category: 'plant' }, { title: 'x', category: 'weird' as 'plant', due: 'someday' }]);
@@ -128,4 +131,22 @@ test('safety: pesticide mixing, vet diagnosis and foraging questions get the fix
   assert.equal(safetyTopic('When should I plant garlic?'), null);
   assert.equal(screenReply('Mix 2 oz per gallon of the insecticide spray.').replaced, 'pesticide');
   assert.equal(screenReply('Plant garlic in October.').replaced, undefined);
+});
+
+test('safety filter: catches real risks and leaves ordinary garden questions alone', () => {
+  const must: Array<[string, string]> = [
+    ['Can I eat dandelions from my yard?', 'foraging'], ['Are morels safe to eat?', 'foraging'], ['Which berries in my woods are edible?', 'foraging'],
+    ['Is pokeweed edible?', 'foraging'], ['Can I eat the elderberries raw?', 'foraging'],
+    ['How many tablespoons of Sevin per gallon?', 'pesticide'], ['Can I use copper fungicide at double strength?', 'pesticide'],
+    ['What dewormer dose for a 100 lb goat?', 'veterinary'], ['How much ivermectin should I give goats?', 'veterinary'], ['Hen has bumblefoot, how do I treat it?', 'veterinary'],
+    ['My son ate a pokeweed berry and is vomiting', 'medical'],
+  ];
+  for (const [q, topic] of must) assert.equal(safetyTopic(q), topic, q);
+  const fine = [
+    'How much forage do goats need per acre?', 'Is it safe to eat tomatoes after a frost?', 'How much water should I spray on seedlings?',
+    'Which crops mix well together so I can avoid spraying?', 'What ratio of compost to soil should I use with no pesticide?',
+    'I’m allergic to bee stings, can I keep bees?', 'We ate all our tomatoes by August', 'How many hens do I need for eggs?', 'When should I plant garlic?',
+    'Can my kids help with the chickens?', 'How do I start a worm bin?',
+  ];
+  for (const q of fine) assert.equal(safetyTopic(q), null, q);
 });
