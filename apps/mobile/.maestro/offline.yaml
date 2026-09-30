@@ -1,0 +1,22 @@
+appId: app.plotwright.planner
+name: Offline pack (Android emulator; airplane mode is a no-op on iOS)
+---
+# Debug build on the Homestead Pro dev tier (Settings → Dev: Homestead Pro), with one property.
+- launchApp
+- tapOn:
+    index: 0
+    text: ".*acre.*|.*ha.*"
+- scrollUntilVisible:
+    element: "Save for offline use"
+    direction: DOWN
+- tapOn: "Save for offline use"
+- extendedWaitUntil:
+    visible: "Saved.*"
+    timeout: 180000
+- setAirplaneMode: enabled
+- back
+- tapOn:
+    index: 0
+    text: ".*acre.*|.*ha.*"
+- assertVisible: "Elevation"
+- setAirplaneMode: disabled

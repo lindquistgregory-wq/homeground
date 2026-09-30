@@ -3,6 +3,7 @@
  * plant shows how well it fits the property's climate (zone, season length, heat, chill, humidity);
  * bed-level fit (sun, soil) is in the bed planner.
  */
+import { BrowseBanner } from '../../src/ads/useAds';
 import { scorePlant, searchPlants, type PlantKind, type PlantSpec, type Suitability } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -66,6 +67,7 @@ export default function PlantLibrary() {
           </Pressable>
         )}
       />
+      <BrowseBanner screen="plants" />
     </View>
   );
 }

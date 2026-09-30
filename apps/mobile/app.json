@@ -61,11 +61,30 @@
         }
       ],
       "expo-secure-store",
+      "expo-iap",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511",
+          "delayAppMeasurementInit": true,
+          "skAdNetworkItems": [
+            "cstr6suwn9.skadnetwork"
+          ]
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Only asked if you turn on personalised ads in Settings. Lets Google use your device’s advertising identifier to choose more relevant ads. Plotwright itself never tracks you."
+        }
+      ],
       [
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": true
+            "usesCleartextTraffic": true,
+            "extraProguardRules": "-keep class com.google.android.gms.internal.consent_sdk.** { *; }"
           }
         }
       ]

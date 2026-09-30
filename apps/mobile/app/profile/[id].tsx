@@ -10,7 +10,9 @@ import { SITE_PROFILE_VERSION, buildSiteProfile, type SiteProfile } from '@plotw
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { OfflinePackCard } from '../../src/components/OfflinePack';
 import { ParcelMap } from '../../src/components/ParcelMap';
+import { deletePack, type PackInfo } from '../../src/services/offlinePacks';
 import { Body, Button, Card, LayerCard, LEGAL_DISCLAIMER, useTheme } from '../../src/components/ui';
 import { deleteParcel, getParcel, getSiteProfile, saveSiteProfile, type ParcelRecord } from '../../src/db/parcels';
 import { http } from '../../src/services/http';
@@ -23,6 +25,7 @@ export default function Profile() {
   const [parcel, setParcel] = useState<ParcelRecord | null>(null);
   const [profile, setProfile] = useState<SiteProfile | null>(null);
   const [loading, setLoading] = useState<string[]>([]);
+  const [pack, setPack] = useState<PackInfo | undefined>(undefined);
 
   const compute = useCallback(async (p: ParcelRecord, refresh = false) => {
     setLoading(['starting']);
@@ -53,7 +56,7 @@ export default function Profile() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       <View style={styles.map}>
-        <ParcelMap boundary={parcel.geometry} />
+        <ParcelMap boundary={parcel.geometry} offlineImagery={pack?.imagery} />
       </View>
       <Body muted>{LEGAL_DISCLAIMER}</Body>
 
@@ -151,6 +154,8 @@ export default function Profile() {
         </Card>
       )}
 
+      <OfflinePackCard parcelId={parcel.id} onChange={setPack} />
+
       <Button title="Plan my homestead" onPress={() => router.push({ pathname: '/planner/[id]', params: { id: parcel.id } })} accessibilityHint="Guided questions or on-device AI chat, then a phased plan" />
       <Button title="Design your land" kind="secondary" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcel.id } })} />
       <Button title="Planting calendar & alerts" kind="secondary" onPress={() => router.push({ pathname: '/calendar/[id]', params: { id: parcel.id } })} />
@@ -164,7 +169,7 @@ export default function Profile() {
         onPress={() =>
           Alert.alert('Delete property?', 'This removes the boundary and profile from this device and marks them deleted on your other devices. Older synced copies stay in your iCloud until you use “Delete all my data”.', [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Delete', style: 'destructive', onPress: async () => { await deleteParcel(parcel.id); router.replace('/'); } },
+            { text: 'Delete', style: 'destructive', onPress: async () => { await deletePack(parcel.id).catch(() => undefined); await deleteParcel(parcel.id); router.replace('/'); } },
           ])
         }
       />

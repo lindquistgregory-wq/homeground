@@ -54,11 +54,11 @@ Bluetooth sensors (Govee, SwitchBot, Xiaomi/Qingping, Inkbird, RuuviTag, BTHome)
 
 ## Deliberately excluded (cost money or not free for commercial use)
 
-Regrid and other commercial parcel APIs · Open-Meteo (free tier is non-commercial) · OpenTopography API (commercial use needs a paid key) · NREL API keys (replaced by on-device SPA in Phase 2) · paid satellite basemaps · cloud LLM APIs · RevenueCat and similar subscription SaaS.
+Regrid and other commercial parcel APIs · Open-Meteo (free tier is non-commercial) · OpenTopography API (commercial use needs a paid key) · NREL API keys (replaced by on-device SPA in Phase 2) · paid satellite basemaps · cloud LLM APIs · RevenueCat and similar subscription SaaS · Firebase Analytics/Crashlytics (free, but they need a project API key shipped inside the app, which the no-shared-keys rule forbids) · Sentry (metered).
 
 ## Coming in later phases (verify terms when they're added)
 
-NOAA CPC outlooks · NLCD · USDA PLANTS · AdMob + UMP (Phase 6, consent-gated).
+NOAA CPC outlooks · NLCD · USDA PLANTS.
 
 ## Bundled knowledge and on-device AI (Phase 5)
 
@@ -72,3 +72,13 @@ Nothing here is contacted over the network. The datasets ship inside the app, an
 | Homestead profiles (`packages/data/knowledge/homestead.json`) | Livestock, enterprises, infrastructure, food preservation | Facts with citations (extension, USDA, SARE/PASA, NCHFP); no text copied | Every entry has source URLs and years; pre-2016 figures flagged `oldData`, pre-2020 prices `oldPrice`; unknowns are `null`. A few costs are from commercial cost guides and say so |
 | Apple Foundation Models (iOS 26+) | Planner conversation and tool calls | Free with the OS; Apple acceptable-use requirements | On-device only. **Private Cloud Compute is not used**: it has per-user quotas and an iCloud+ upsell |
 | ML Kit GenAI Prompt API (Gemini Nano) | Planner conversation on supported Android phones | Free; ML Kit GenAI Additional Terms + Generative AI Prohibited Use Policy | **Beta**. Terms: users 18+, app must not target minors, foreground only. No key or Firebase project |
+
+## Monetization (Phase 6)
+
+| Item | Used for | Terms / cost | Notes |
+|---|---|---|---|
+| App Store (StoreKit 2) via `expo-iap` | Grower / Homestead Pro subscriptions, Pro lifetime, "remove ads" | Apple takes 15% in the Small Business Program (enrol), 30% otherwise (15% after a subscriber's first year) | Verified on the device (signed JWS). No receipt server, no subscription SaaS; expo-iap's hosted IAPKit option is not used |
+| Google Play Billing Library 9 via `expo-iap` | Same | US/UK/EEA from 30 June 2026: 10% service fee + 5% billing fee on the first $1M a year and on auto-renewing subscriptions | Purchase state read on the device; purchases acknowledged within Play's 3-day window |
+| Google AdMob + User Messaging Platform (`react-native-google-mobile-ads` 16.5.0) | Ads on the free plan; consent (GDPR/TCF v2.3, US states) | Free SDK; Google keeps an unpublished revenue share | The SDK contacts Google's ad and consent servers itself (googleads.g.doubleclick.net, pagead2.googlesyndication.com, fundingchoicesmessages.google.com and others). Non-personalised unless the user opts in; ATT is asked only then. Needs the owner's AdMob account; the app ids in `app.json` are Google's samples until replaced |
+| Usage statistics and error log | Which screens and features are used; app errors | On the phone only | Off by default; the user can read, share or clear them. Crash reports otherwise come from the OS's own opt-in reports (App Store Connect / Xcode Organizer, Play Console Android vitals) |
+| Offline parcel packs | USGS imagery tiles saved to the phone (Homestead Pro) | Public domain; the USGS services advertise tile export (`exportTilesAllowed`) | Parcel + 250 m, zoom 12–16, at most 3,000 tiles, two downloads at a time with the identifying User-Agent. OpenFreeMap vector tiles are not bulk-downloaded (its terms don't cover it); MapLibre's cache (raised to 150 MB) keeps what you've viewed |

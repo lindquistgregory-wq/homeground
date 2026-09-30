@@ -1,0 +1,44 @@
+appId: app.plotwright.planner
+name: Onboarding → Site Profile → design → planting calendar
+---
+- launchApp:
+    clearState: true
+- tapOn: "Find your property"
+- tapOn: "Street address, town, state"
+- inputText: "1 Main St, Kingston, NY"
+- tapOn: "Search"
+- extendedWaitUntil:
+    visible: "Use this spot"
+    timeout: 30000
+- tapOn: "Use this spot"
+# County parcel services vary; drawing works everywhere.
+- extendedWaitUntil:
+    visible: "Draw on the map"
+    timeout: 30000
+- tapOn: "Draw on the map"
+- tapOn: { point: "35%,25%" }
+- tapOn: { point: "65%,25%" }
+- tapOn: { point: "65%,45%" }
+- tapOn: { point: "35%,45%" }
+- tapOn: "Finish shape"
+- tapOn: "Use this boundary"
+- extendedWaitUntil:
+    visible: "Elevation"
+    timeout: 60000
+- assertVisible: "Frost dates (adjusted to your elevation)"
+- scrollUntilVisible:
+    element: "Design your land"
+    direction: DOWN
+- tapOn: "Design your land"
+- tapOn: "Browse object library"
+- tapOn: "Raised bed"
+- tapOn: { point: "50%,24%" }
+- assertNotVisible: "Advertisement"
+- back
+- scrollUntilVisible:
+    element: "Planting calendar & alerts"
+    direction: DOWN
+- tapOn: "Planting calendar & alerts"
+- extendedWaitUntil:
+    visible: "Planting calendar"
+    timeout: 30000

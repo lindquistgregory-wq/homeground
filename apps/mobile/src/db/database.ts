@@ -189,6 +189,10 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX IF NOT EXISTS tasks_parcel ON tasks(parcel_id);
   `,
+  // 6 — Phase 6: multi-season scenarios are designs tagged with a season/year (JSON), synced like any design.
+  `
+  ALTER TABLE designs ADD COLUMN scenario TEXT;
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;

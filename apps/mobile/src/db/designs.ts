@@ -1,4 +1,4 @@
-import type { Design, DesignObject, DesignVersion } from '@plotwright/core';
+import { copyObjects, parseScenarioMeta, scenarioLabel, type Design, type DesignObject, type DesignVersion, type ScenarioMeta } from '@plotwright/core';
 import { getDb } from './database';
 import { clock, newId } from '../services/identity';
 
@@ -9,11 +9,16 @@ interface Row {
   objects: string;
   created_at: string;
   updated_at: string;
+  scenario?: string | null;
 }
 
 const fromRow = (r: Row): Design => ({
   id: r.id, parcelId: r.parcel_id, name: r.name, objects: JSON.parse(r.objects) as DesignObject[], createdAt: r.created_at, updatedAt: r.updated_at,
+  scenario: parseScenarioMeta(r.scenario),
 });
+
+/** The main plan's id is the same on every device, so the first sync merges instead of duplicating. */
+export const mainDesignId = (parcelId: string) => `design-${parcelId}`;
 
 /** Tombstone every design of a deleted parcel so other devices drop them too. */
 export async function deleteDesignsForParcel(parcelId: string): Promise<void> {
@@ -27,9 +32,35 @@ export async function deleteDesignsForParcel(parcelId: string): Promise<void> {
   await db.runAsync('DELETE FROM design_versions WHERE design_id IN (SELECT id FROM designs WHERE parcel_id = ?)', parcelId);
 }
 
+/** Main plans only (scenarios are listed with listScenarios). */
 export async function designsForParcel(parcelId: string): Promise<Design[]> {
   const db = await getDb();
-  return (await db.getAllAsync<Row>('SELECT * FROM designs WHERE parcel_id = ? AND deleted = 0 ORDER BY created_at', parcelId)).map(fromRow);
+  return (await db.getAllAsync<Row>('SELECT * FROM designs WHERE parcel_id = ? AND deleted = 0 AND scenario IS NULL ORDER BY created_at', parcelId)).map(fromRow);
+}
+
+export async function listScenarios(parcelId: string): Promise<Design[]> {
+  const db = await getDb();
+  return (await db.getAllAsync<Row>('SELECT * FROM designs WHERE parcel_id = ? AND deleted = 0 AND scenario IS NOT NULL ORDER BY created_at', parcelId)).map(fromRow);
+}
+
+/** A season/year alternative copied from `from` (new object ids, so the two never collide). */
+export async function createScenario(from: Design, meta: ScenarioMeta): Promise<Design> {
+  const now = new Date().toISOString();
+  const d: Design = {
+    id: `scenario-${newId()}`, parcelId: from.parcelId, name: scenarioLabel(meta), objects: copyObjects(from.objects, newId),
+    createdAt: now, updatedAt: now, scenario: { ...meta, basedOn: from.id },
+  };
+  await saveDesign(d);
+  return d;
+}
+
+export async function deleteScenario(d: Design): Promise<void> {
+  if (!d.scenario) throw new Error('Only scenarios can be deleted here.');
+  const db = await getDb();
+  const hlc = clock().tick();
+  await db.runAsync('UPDATE designs SET deleted = 1, updated_hlc = ? WHERE id = ?', hlc, d.id);
+  await db.runAsync('INSERT OR REPLACE INTO sync_pending (collection, id, hlc) VALUES (?, ?, ?)', 'designs', d.id, hlc);
+  await db.runAsync('DELETE FROM design_versions WHERE design_id = ?', d.id);
 }
 
 export async function getDesign(id: string): Promise<Design | undefined> {
@@ -39,11 +70,11 @@ export async function getDesign(id: string): Promise<Design | undefined> {
 }
 
 export async function getOrCreateDesign(parcelId: string): Promise<Design> {
-  const existing = (await designsForParcel(parcelId))[0];
-  if (existing) return existing;
+  const existing = (await getDesign(mainDesignId(parcelId))) ?? (await designsForParcel(parcelId))[0];
+  if (existing && !existing.scenario) return existing;
   const now = new Date().toISOString();
   // Same id on every device so the first sync merges into one plan instead of creating two.
-  const d: Design = { id: `design-${parcelId}`, parcelId, name: 'Main plan', objects: [], createdAt: now, updatedAt: now };
+  const d: Design = { id: mainDesignId(parcelId), parcelId, name: 'Main plan', objects: [], createdAt: now, updatedAt: now };
   await saveDesign(d);
   return d;
 }
@@ -53,10 +84,10 @@ export async function saveDesign(d: Design): Promise<void> {
   const hlc = clock().tick();
   const now = new Date().toISOString();
   await db.runAsync(
-    `INSERT INTO designs (id, parcel_id, name, objects, created_at, updated_at, updated_hlc) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO designs (id, parcel_id, name, objects, created_at, updated_at, updated_hlc, scenario) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET name = excluded.name, objects = excluded.objects, updated_at = excluded.updated_at,
-       updated_hlc = excluded.updated_hlc, deleted = 0`,
-    d.id, d.parcelId, d.name, JSON.stringify(d.objects), d.createdAt, now, hlc,
+       updated_hlc = excluded.updated_hlc, deleted = 0, scenario = excluded.scenario`,
+    d.id, d.parcelId, d.name, JSON.stringify(d.objects), d.createdAt, now, hlc, d.scenario ? JSON.stringify(d.scenario) : null,
   );
   await db.runAsync('INSERT OR REPLACE INTO sync_pending (collection, id, hlc) VALUES (?, ?, ?)', 'designs', d.id, hlc);
 }
