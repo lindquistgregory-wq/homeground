@@ -25,16 +25,21 @@ export default function Profile() {
   const [parcel, setParcel] = useState<ParcelRecord | null>(null);
   const [profile, setProfile] = useState<SiteProfile | null>(null);
   const [loading, setLoading] = useState<string[]>([]);
+  // Layers that have arrived during the current build, shown over the stored profile until the build saves.
+  const [arrived, setArrived] = useState<Partial<SiteProfile>>({});
   const [pack, setPack] = useState<PackInfo | undefined>(undefined);
 
   const compute = useCallback(async (p: ParcelRecord, refresh = false) => {
     setLoading(['starting']);
+    setArrived({});
     // "Refresh" bypasses fresh cache entries; the first build uses whatever is cached.
-    const result = await buildSiteProfile({ http: refresh ? http.fresh() : http, zoneTable: bundledZoneTable }, p.geometry, { countyFips: p.countyFips, zip: p.zip }, (layer, status) =>
-      setLoading((l) => (status === 'started' ? [...l, String(layer)] : l.filter((x) => x !== layer && x !== 'starting'))),
-    );
+    const result = await buildSiteProfile({ http: refresh ? http.fresh() : http, zoneTable: bundledZoneTable }, p.geometry, { countyFips: p.countyFips, zip: p.zip }, (layer, status, value) => {
+      setLoading((l) => (status === 'started' ? [...l, String(layer)] : l.filter((x) => x !== layer && x !== 'starting')));
+      if (status === 'done' && value !== undefined) setArrived((a) => ({ ...a, [layer]: value }));
+    });
     await saveSiteProfile(p.id, result);
     setProfile(result);
+    setArrived({});
     setLoading([]);
   }, []);
 
@@ -52,6 +57,8 @@ export default function Profile() {
 
   if (!parcel) return <Body>Loading…</Body>;
   const ft = units === 'imperial';
+  // Each card shows its layer as soon as it arrives, without waiting for the slowest service.
+  const shown: Partial<SiteProfile> | null = profile || Object.keys(arrived).length ? { ...profile, ...arrived } : null;
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -69,12 +76,12 @@ export default function Profile() {
           {parcel.boundaryMeta.attribution ? ` (${parcel.boundaryMeta.attribution})` : ''}
           {parcel.boundaryMeta.medianGpsAccuracyM ? ` · GPS ±${Math.round(parcel.boundaryMeta.medianGpsAccuracyM)} m` : ''}
         </Body>
-        {profile?.place.countyName && <Body muted>{profile.place.countyName}</Body>}
+        {shown?.place?.countyName && <Body muted>{shown.place.countyName}</Body>}
         {profile && <Body muted>Profile built {new Date(profile.computedAt).toLocaleString()}</Body>}
         {loading.length > 0 && <Body muted>Fetching: {loading.filter((l) => l !== 'starting').join(', ') || 'starting'}…</Body>}
       </Card>
 
-      <LayerCard title="Elevation" layer={profile?.elevation}>
+      <LayerCard title="Elevation" layer={shown?.elevation}>
         {(e) => (
           <Body>
             {formatElevation(e.centroidM, units)} at the centre · {formatElevation(e.minM, units)}–{formatElevation(e.maxM, units)} across
@@ -83,7 +90,7 @@ export default function Profile() {
         )}
       </LayerCard>
 
-      <LayerCard title="Hardiness zone" layer={profile?.hardiness}>
+      <LayerCard title="Hardiness zone" layer={shown?.hardiness}>
         {(z) => (
           <Body>
             Zone {z.zone}
@@ -92,7 +99,7 @@ export default function Profile() {
         )}
       </LayerCard>
 
-      <LayerCard title="Frost dates (adjusted to your elevation)" layer={profile?.climate}>
+      <LayerCard title="Frost dates (adjusted to your elevation)" layer={shown?.climate}>
         {(c) =>
           c.frost.dates.freezeRare ? (
             <Body>Freezes are rare here: nearby stations don't record a 32 °F freeze in most years.</Body>
@@ -107,7 +114,7 @@ export default function Profile() {
         }
       </LayerCard>
 
-      <LayerCard title="Soils" layer={profile?.soils}>
+      <LayerCard title="Soils" layer={shown?.soils}>
         {(s) => (
           <View>
             {s.units.slice(0, 6).map((u) => (
@@ -129,11 +136,11 @@ export default function Profile() {
         )}
       </LayerCard>
 
-      <LayerCard title="Flood hazard" layer={profile?.flood}>
+      <LayerCard title="Flood hazard" layer={shown?.flood}>
         {(f) => <Body>{f.headline}</Body>}
       </LayerCard>
 
-      <LayerCard title="Streams & ponds" layer={profile?.water}>
+      <LayerCard title="Streams & ponds" layer={shown?.water}>
         {(w) =>
           w.nearest ? (
             <Body>

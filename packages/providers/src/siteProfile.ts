@@ -43,7 +43,8 @@ export interface SiteProfileDeps {
   lapseRateCPerKm?: number;
 }
 
-export type ProgressFn = (layer: keyof SiteProfile, status: 'started' | 'done') => void;
+/** Reports each layer as it starts and finishes; 'done' carries the layer's result so a screen can show it straight away. */
+export type ProgressFn = <K extends keyof SiteProfile>(layer: K, status: 'started' | 'done', value?: SiteProfile[K]) => void;
 
 export async function buildSiteProfile(
   deps: SiteProfileDeps,
@@ -54,14 +55,16 @@ export async function buildSiteProfile(
   const now = deps.now ?? Date.now;
   const t0 = now();
   const timings: Record<string, number> = {};
-  const timed = async <T>(name: keyof SiteProfile, fn: () => Promise<T>): Promise<T> => {
+  const timed = async <K extends keyof SiteProfile>(name: K, fn: () => Promise<SiteProfile[K]>): Promise<SiteProfile[K]> => {
     const s = now();
     onProgress(name, 'started');
+    let result: SiteProfile[K] | undefined;
     try {
-      return await fn();
+      result = await fn();
+      return result;
     } finally {
       timings[name] = now() - s;
-      onProgress(name, 'done');
+      onProgress(name, 'done', result);
     }
   };
 

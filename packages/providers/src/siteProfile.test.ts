@@ -43,6 +43,19 @@ test('builds a complete Site Profile from all Phase 1 layers', async () => {
   assert.match(p.imagery.attribution, /USGS/);
 });
 
+test('each finished layer is reported with its value, so the screen can show it before the slowest layer', async () => {
+  const { http } = testClient(allServices({ nfhl: { match: /NFHL/, status: 503, body: '' } }));
+  const done = new Map<string, unknown>();
+  const p = await buildSiteProfile({ http }, LOT, {}, (layer, status, value) => {
+    if (status === 'done') done.set(layer, value);
+  });
+  for (const k of ['place', 'elevation', 'hardiness', 'climate', 'soils', 'flood', 'water'] as const) {
+    assert.ok(done.has(k), `${k} reported`);
+    assert.deepEqual(done.get(k), p[k], `${k} value matches the final profile`);
+  }
+  assert.equal((done.get('flood') as typeof p.flood).status, 'unavailable', 'a failed layer is reported too');
+});
+
 test('one failing service yields an explicit unavailable layer, not a failed profile', async () => {
   const { http } = testClient(allServices({ nfhl: { match: /NFHL/, status: 503, body: '' } }));
   const p = await buildSiteProfile({ http }, LOT);
