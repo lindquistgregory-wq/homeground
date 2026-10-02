@@ -28,6 +28,7 @@
     },
     "android": {
       "package": "app.plotwright.planner",
+      "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
@@ -91,6 +92,7 @@
         }
       ],
       "./plugins/withAdsKotlinMetadataFix",
+      "./plugins/withReleaseSigning",
       "expo-sharing"
     ],
     "experiments": {
