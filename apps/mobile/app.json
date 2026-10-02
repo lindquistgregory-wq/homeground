@@ -83,7 +83,9 @@
         {
           "android": {
             "usesCleartextTraffic": true,
-            "extraProguardRules": "-keep class com.google.android.gms.internal.consent_sdk.** { *; }",
+            "extraProguardRules": "-keep class com.google.android.gms.internal.consent_sdk.** { *; }\n# Background tasks (alerts): expo-modules-core loads its headless app loader by name from the manifest.\n-keep class * implements expo.modules.apploader.HeadlessAppLoader { <init>(); }",
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
             "minSdkVersion": 29
           }
         }
