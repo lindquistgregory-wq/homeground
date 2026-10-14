@@ -7,7 +7,8 @@
  * Units: temperatures °F, spacing inches, heights inches, days, yields in pounds.
  */
 
-export type PlantKind = 'vegetable' | 'herb' | 'berry' | 'fruit-tree' | 'nut-tree' | 'vine-fruit' | 'cover-crop' | 'flower';
+/** 'field-crop': grains, oilseeds and forage (hay, pasture) grown for the household or livestock. */
+export type PlantKind = 'vegetable' | 'herb' | 'berry' | 'fruit-tree' | 'nut-tree' | 'vine-fruit' | 'cover-crop' | 'flower' | 'field-crop';
 export type Lifecycle = 'annual' | 'biennial' | 'perennial';
 /**
  * tender: damaged at 32 °F · half-hardy: survives light frost (~30–32 °F) · hardy: survives hard
@@ -39,6 +40,8 @@ export interface SowingPlan {
 export interface PlantSpec {
   id: string;
   commonName: string;
+  /** Other common names people search by (e.g. "garbanzo", "zucchini"). */
+  aliases?: string[];
   scientificName: string;
   family: string;
   kind: PlantKind;

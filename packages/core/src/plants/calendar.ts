@@ -175,9 +175,9 @@ export function plantCalendar(plant: PlantSpec, ctx: CalendarContext): PlantCale
     const f32Label = `median first frost (${formatDoy(f32)})`;
     const [a, b] = win(f32 - sow.fallDaysBeforeFirstFrost[0], f32 - sow.fallDaysBeforeFirstFrost[1]);
     const kind: EventKind = sow.method === 'transplant' ? 'fall-transplant' : 'fall-sow';
-    const label = plant.id === 'garlic' ? 'Plant cloves' : kind === 'fall-transplant' ? 'Set out fall transplants' : plant.kind === 'cover-crop' ? 'Sow cover crop' : 'Sow for fall harvest';
+    const label = plant.id === 'garlic' ? 'Plant cloves' : kind === 'fall-transplant' ? 'Set out fall transplants' : plant.kind === 'cover-crop' ? 'Sow cover crop' : plant.kind === 'field-crop' ? (plant.lifecycle === 'perennial' ? 'Sow (late-summer seeding)' : 'Sow to overwinter') : 'Sow for fall harvest';
     events.push({ kind, start: clampDoy(a), end: clampDoy(b), label, basis: `${describeFall(sow.fallDaysBeforeFirstFrost)} the ${f32Label}` });
-    if (dtm && plant.id !== 'garlic' && plant.kind !== 'cover-crop') {
+    if (dtm && plant.id !== 'garlic' && plant.kind !== 'cover-crop' && plant.kind !== 'field-crop') {
       const ready = a + dtm[0];
       if (tender && ready > ff.doy) {
         warnings.push(`A fall sowing wouldn’t mature (about ${formatDoy(ready)}) before the ${ff.label}.`);

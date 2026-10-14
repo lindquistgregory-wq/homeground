@@ -4,11 +4,11 @@
  * the DEM. Plants are ranked with reasons, and each can be laid out to scale with a yield estimate.
  */
 import {
-  PLANTS, estimateYieldLb, footprintAreaM2, formatArea, layoutBed, plantById, rankPlants, rotationAdvice, type PlantSpec, type Suitability,
+  PLANTS, estimateYieldLb, searchPlants, footprintAreaM2, formatArea, layoutBed, plantById, rankPlants, rotationAdvice, type PlantSpec, type Suitability,
 } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Chip, FactorList, LayoutSvg, StaleProfileNotice, VerdictBadge } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
@@ -37,6 +37,7 @@ export default function BedPlanner() {
   const [open, setOpen] = useState<string | null>(null);
   const [share, setShare] = useState(1);
   const [showAll, setShowAll] = useState(false);
+  const [q, setQ] = useState('');
   const year = new Date().getFullYear();
 
   const bedIndex = state?.design.objects.findIndex((o) => o.id === bedId) ?? -1;
@@ -122,7 +123,11 @@ export default function BedPlanner() {
     await reload();
   };
 
-  const visible = showAll ? ranked : ranked.slice(0, 15);
+  // A search shows every match, so a plant ranked below the top 15 is still easy to find.
+  const matchIds = q.trim() ? new Set(searchPlants(q).map((p) => p.id)) : null;
+  const visible = matchIds ? ranked.filter((s) => matchIds.has(s.plantId)) : showAll ? ranked : ranked.slice(0, 15);
+  // Matches that don't belong in this kind of spot (trees outside a tree spot), so a search never comes up empty without a reason.
+  const elsewhere = matchIds ? PLANTS.filter((p) => matchIds.has(p.id) && !ranked.some((s) => s.plantId === p.id)) : [];
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -185,6 +190,19 @@ export default function BedPlanner() {
         {!cond ? <ActivityIndicator /> : (
           <View>
             <Body muted>Ranked for this bed’s sun, soil and slope and your property’s climate.</Body>
+            <TextInput
+              value={q} onChangeText={setQ} placeholder={`Search all ${ranked.length} plants for this spot`} placeholderTextColor={t.muted}
+              accessibilityLabel="Search plants for this bed" autoCorrect={false}
+              style={[styles.search, { color: t.text, borderColor: t.border, backgroundColor: t.card }]}
+            />
+            {matchIds && visible.length === 0 && elsewhere.length === 0 && <Body muted>No plants match “{q}”.</Body>}
+            {elsewhere.length > 0 && (
+              <Body muted>
+                {elsewhere.map((p) => p.commonName).join(', ')}: {elsewhere.every((p) => p.kind === 'fruit-tree' || p.kind === 'nut-tree')
+                  ? 'trees go in a fruit or nut tree spot. Add one in Design, then plan it from there.'
+                  : 'not for this kind of spot (tree spots take only trees; small containers skip plants over 6 ft).'}
+              </Body>
+            )}
             {visible.map((s) => {
               const plant = plantById(s.plantId)!;
               const isOpen = open === s.plantId;
@@ -200,7 +218,7 @@ export default function BedPlanner() {
                 </View>
               );
             })}
-            {!showAll && ranked.length > 15 && <Button title={`Show all ${ranked.length}`} kind="secondary" onPress={() => setShowAll(true)} />}
+            {!showAll && !matchIds && ranked.length > 15 && <Button title={`Show all ${ranked.length}`} kind="secondary" onPress={() => setShowAll(true)} />}
           </View>
         )}
       </Card>
@@ -247,6 +265,7 @@ function compass(deg: number): string {
 }
 
 const styles = StyleSheet.create({
+  search: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, minHeight: 44, fontSize: 16, marginTop: 8, marginBottom: 4 },
   planting: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8, flexWrap: 'wrap' },
   rank: { borderTopWidth: 1, paddingVertical: 10 },
   rankHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
