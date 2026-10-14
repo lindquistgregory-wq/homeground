@@ -70,7 +70,8 @@ export async function buildSiteProfile(
 
   const c = centroid(boundary);
   const placeP = timed('place', async (): Promise<CensusPlace> => {
-    if (known.countyFips && (known.zcta || known.zip)) return { ...known, zcta: known.zcta ?? known.zip };
+    // Address geocoding gives the county code and ZIP but not the county's name; look that up (cached) unless it's known too.
+    if (known.countyFips && (known.zcta || known.zip) && known.countyName) return { ...known, zcta: known.zcta ?? known.zip };
     try {
       return { ...(await reverseCensus(deps.http, c.lat, c.lon)), ...stripUndefined(known) };
     } catch {

@@ -3,7 +3,7 @@
  * get warnings (boundary, setbacks, slope, overlaps), keep versions, and export.
  */
 import {
-  Camera, GeoJSONSource, Layer, Map, RasterSource, type CircleLayerSpecification, type FillLayerSpecification,
+  Camera, GeoJSONSource, Layer, Map, RasterSource, type CameraRef, type CircleLayerSpecification, type FillLayerSpecification,
   type LineLayerSpecification, type MapRef, type SymbolLayerSpecification,
 } from '@maplibre/maplibre-react-native';
 import {
@@ -248,6 +248,8 @@ export default function DesignScreen() {
     };
   }, [objectsGeo]);
 
+  const cameraRef = useRef<CameraRef>(null);
+
   const onObjectPress = (e: { stopPropagation(): void; nativeEvent: { features: Array<{ properties?: { id?: unknown } | null }> } }) => {
     if (placing || moving) return; // let the map handle placement taps
     e.stopPropagation(); // otherwise the Map's onPress deselects straight away
@@ -255,6 +257,14 @@ export default function DesignScreen() {
     if (typeof fid === 'string') {
       setSelectedId(fid);
       setTab('selected');
+      // Frame the object with ~40 m around it: close enough to work on, not past the detail the aerial imagery has.
+      const ring = objectsGeo?.features.find((f) => f.properties.id === fid)?.geometry.coordinates[0];
+      if (ring) {
+        const lons = ring.map((p) => p[0]!), lats = ring.map((p) => p[1]!);
+        const lat = (Math.min(...lats) + Math.max(...lats)) / 2;
+        const dLat = 40 / 111_320, dLon = 40 / (111_320 * Math.cos((lat * Math.PI) / 180));
+        cameraRef.current?.fitBounds([Math.min(...lons) - dLon, Math.min(...lats) - dLat, Math.max(...lons) + dLon, Math.max(...lats) + dLat], { padding: CAMERA_PADDING, duration: 500 });
+      }
     }
   };
 
@@ -309,7 +319,7 @@ export default function DesignScreen() {
           attribution
           onPress={(e) => onMapPress(e.nativeEvent.lngLat[0], e.nativeEvent.lngLat[1])}
         >
-          <Camera initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding: CAMERA_PADDING }} />
+          <Camera ref={cameraRef} initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding: CAMERA_PADDING }} />
           {layers.imagery && offlineImagery && (
             <RasterSource id="img-offline" tiles={[offlineImagery.template]} tileSize={256} maxzoom={offlineImagery.maxZoom} attribution={USGS_IMAGERY.attribution}>
               <Layer type="raster" id="img-offline-l" />
@@ -367,6 +377,16 @@ export default function DesignScreen() {
             </GeoJSONSource>
           )}
         </Map>
+        {!placing && !moving && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Zoom to the whole property"
+            onPress={() => cameraRef.current?.fitBounds([b[0], b[1], b[2], b[3]], { padding: CAMERA_PADDING, duration: 500 })}
+            style={[styles.zoomAll, { backgroundColor: t.card, borderColor: t.border }]}
+          >
+            <Text style={{ color: t.accent, fontWeight: '600' }}>⤢ Whole property</Text>
+          </Pressable>
+        )}
         {(placing || moving) && (
           <View style={[styles.banner, { backgroundColor: t.card }]}>
             <Text style={{ color: t.text }}>{placing ? `Tap the map to place: ${objectType(placing)?.name}` : 'Tap the new spot'}</Text>
@@ -789,6 +809,7 @@ function ScenariosPanel({ design, frame, allowed, onOpen, onMain }: {
 
 const styles = StyleSheet.create({
   map: { height: '48%' },
+  zoomAll: { position: 'absolute', top: 8, right: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
   banner: { position: 'absolute', top: 8, left: 8, right: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderRadius: 10 },
   tabs: { flexDirection: 'row', borderBottomWidth: 1 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 3, borderBottomColor: 'transparent' },

@@ -74,13 +74,21 @@ export default function Home() {
         }}
         ListFooterComponent={
           <View>
-            <Button
-              title={parcels.length ? 'Add another property' : 'Find your property'}
-              onPress={() => router.push('/locate')}
-              disabled={atLimit}
-              accessibilityHint="Search an address, use GPS, or tap the map"
-            />
-            {atLimit && <Body muted>Your plan includes {limits.parcels} propert{limits.parcels === 1 ? 'y' : 'ies'}.</Body>}
+            {atLimit ? (
+              // At the plan's limit: a quiet line instead of a large disabled button.
+              <Text style={[styles.limit, { color: t.muted }]}>
+                Your plan includes {limits.parcels} propert{limits.parcels === 1 ? 'y' : 'ies'} ·{' '}
+                <Text accessibilityRole="link" style={{ color: t.accent, fontWeight: '600' }} onPress={() => router.push({ pathname: '/paywall', params: { source: 'home' } })}>
+                  See plans
+                </Text>
+              </Text>
+            ) : (
+              <Button
+                title={parcels.length ? 'Add another property' : 'Find your property'}
+                onPress={() => router.push('/locate')}
+                accessibilityHint="Search an address, use GPS, or tap the map"
+              />
+            )}
             <View style={styles.links}>
               {([['Plants', '/plants'], ['Settings', '/settings'], ['Data sources', '/data-sources']] as const).map(([label, href]) => (
                 <Pressable key={label} accessibilityRole="button" onPress={() => router.push(href)} style={[styles.link, { borderColor: t.border }]}>
@@ -104,6 +112,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', borderTopWidth: 1 },
   action: { flex: 1, alignItems: 'center', paddingVertical: 14 },
   actionText: { fontSize: 16, fontWeight: '600' },
+  limit: { fontSize: 15, textAlign: 'center', marginTop: 4 },
   links: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 10, marginTop: 20 },
   link: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10 },
   linkText: { fontSize: 15, fontWeight: '600' },

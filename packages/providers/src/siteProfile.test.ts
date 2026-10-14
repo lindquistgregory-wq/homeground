@@ -85,8 +85,16 @@ test('second build is served entirely from the on-device cache', async () => {
   assert.equal(again.soils.status, 'ok');
 });
 
-test('known county/ZIP from address geocoding skip the reverse lookup', async () => {
+test('a fully known place skips the reverse lookup', async () => {
   const { http, calls } = testClient(allServices());
-  await buildSiteProfile({ http }, LOT, { countyFips: '36039', zip: '12413' });
+  await buildSiteProfile({ http }, LOT, { countyFips: '36039', zip: '12413', countyName: 'Greene County' });
   assert.ok(!calls.some((c) => /geographies\/coordinates/.test(c.url)));
+});
+
+test('known county code and ZIP still look up the county name, keeping the known values', async () => {
+  const { http, calls } = testClient(allServices());
+  const p = await buildSiteProfile({ http }, LOT, { countyFips: '36039', zip: '12413' });
+  assert.ok(calls.some((c) => /geographies\/coordinates/.test(c.url)));
+  assert.ok(p.place.countyName, 'county name filled in');
+  assert.equal(p.place.countyFips, '36039');
 });
