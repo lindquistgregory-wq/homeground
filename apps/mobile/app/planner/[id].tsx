@@ -187,7 +187,10 @@ export default function Planner() {
           </View>
         ) : (
           <View>
-            {!tier.full && avail?.status === 'available' ? <Body muted>Chatting with the on-device AI is part of Grower. The guided questions build the same plan.</Body> : <Body muted>{unavailableReason(avail)}</Body>}
+            {/* A short, quiet line: the guided questions are the normal experience on most phones. */}
+            <Text style={{ color: t.muted, fontSize: 13, marginBottom: 8 }}>
+              {!tier.full && avail?.status === 'available' ? 'Chatting with the on-device AI is part of Grower. The guided questions build the same plan.' : unavailableReason(avail)}
+            </Text>
             {tier.full && avail?.status === 'downloadable' && (
               <Button title={downloading !== null ? `Downloading… ${Math.round(downloading / 1e6)} MB` : 'Download the on-device AI (free)'} kind="secondary" disabled={downloading !== null} onPress={() => void getModel()}
                 accessibilityHint="Google's Gemini Nano runs on this phone; nothing is sent anywhere" />

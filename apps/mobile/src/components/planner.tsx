@@ -91,7 +91,15 @@ export function Interview({ goals, onSave }: { goals: HomesteadGoals; onSave: (g
   }
   return (
     <View>
-      <Body muted>Question {Math.min(prog.answered + 1, prog.total)} of about {prog.total}. Skip anything you’d rather not answer.</Body>
+      {/* A progress bar: how far through the interview, at a glance. */}
+      <View style={styles.progress} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: prog.total, now: prog.answered }}>
+        <Text style={{ color: t.muted, fontSize: 13 }}>
+          Questions {Math.min(prog.answered + 1, prog.total)}–{Math.min(prog.answered + qs.length, prog.total)} of about {prog.total} · skip anything you’d rather not answer
+        </Text>
+        <View style={[styles.track, { backgroundColor: t.border }]}>
+          <View style={[styles.fill, { backgroundColor: t.accent, width: `${Math.round((100 * prog.answered) / Math.max(prog.total, 1))}%` }]} />
+        </View>
+      </View>
       {qs.map((q) => (
         <Card key={q.id} title={q.ask}>
           {q.help && <Body muted>{q.help}</Body>}
@@ -276,6 +284,9 @@ export function TaskList({ tasks, onToggle, onDelete }: { tasks: TaskRecord[]; o
 export const QUESTION_COUNT = QUESTIONS.length;
 
 const styles = StyleSheet.create({
+  progress: { marginBottom: 10 },
+  track: { height: 6, borderRadius: 3, marginTop: 6, overflow: 'hidden' },
+  fill: { height: 6, borderRadius: 3 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap' },
   member: { borderWidth: 1, borderRadius: 10, padding: 8, marginBottom: 8 },

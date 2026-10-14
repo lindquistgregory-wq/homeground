@@ -46,7 +46,15 @@ export function OfflinePackCard({ parcelId, onChange }: { parcelId: string; onCh
       {plan && <Body muted>About {plan.totalTiles.toLocaleString()} map tiles, roughly {plan.estimatedMb} MB{plan.trimmed ? ' (the deepest zoom was trimmed for this large property)' : ''}.</Body>}
       {pack?.cleared && <Body>Your phone cleared the saved maps to free up space. Tap Update pack to download them again.</Body>}
       {pack && !pack.cleared && <Body>{pack.complete ? 'Saved' : 'Partly saved'} {new Date(pack.createdAt).toLocaleDateString()} · {pack.layers.map((l) => `${l.saved.toLocaleString()} of ${l.tiles.toLocaleString()} imagery tiles`).join(', ')}</Body>}
-      {progress && <Body>{progress.stage === 'tiles' ? `Downloading ${progress.done}/${progress.total}…` : 'Updating the Site Profile…'}</Body>}
+      {progress && (
+        <Body>
+          {progress.stage === 'tiles'
+            ? `Downloading ${progress.done}/${progress.total}…`
+            : progress.layersTotal
+              ? `Updating the Site Profile: ${progress.layersDone ?? 0} of ${progress.layersTotal} layers${progress.waiting?.length ? ` (waiting for ${progress.waiting.join(', ')})` : ''}…`
+              : 'Updating the Site Profile…'}
+        </Body>
+      )}
       {!allowed ? (
         <Button title="Offline packs are part of Homestead Pro" kind="secondary" onPress={() => router.push({ pathname: '/paywall', params: { feature: 'offline.parcelPacks', source: 'offline' } })} />
       ) : progress ? (

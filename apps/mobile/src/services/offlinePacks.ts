@@ -69,7 +69,16 @@ export async function planForParcel(parcelId: string): Promise<PackPlan | undefi
   return planPack(areaBbox(p.geometry) as Bbox, OFFLINE_PACK_LAYERS);
 }
 
-export type PackProgress = { done: number; total: number; stage: 'tiles' | 'profile' };
+export type PackProgress = {
+  done: number; total: number; stage: 'tiles' | 'profile';
+  /** During 'profile': layers finished so far, how many there are, and the ones still running. */
+  layersDone?: number; layersTotal?: number; waiting?: string[];
+};
+
+/** Plain names for the Site Profile layers, for progress messages. */
+const LAYER_NAMES: Record<string, string> = {
+  place: 'location', elevation: 'elevation', hardiness: 'hardiness zone', climate: 'frost dates', soils: 'soils', flood: 'flood zone', water: 'streams & ponds',
+};
 
 /**
  * Download (or resume) a pack. Existing tiles are skipped, so a cancelled or failed download picks up
@@ -117,9 +126,16 @@ export async function downloadPack(parcelId: string, onProgress: (p: PackProgres
     throw new Error('Download stopped. Tap Update pack to continue where it left off.');
   }
   // Refresh the Site Profile so the pack carries current data (falls back to the cache offline).
-  onProgress({ done, total, stage: 'profile' });
+  const layersTotal = Object.keys(LAYER_NAMES).length;
+  const running = new Set<string>();
+  let layersDone = 0;
+  onProgress({ done, total, stage: 'profile', layersDone, layersTotal, waiting: [] });
   try {
-    const profile = await buildSiteProfile({ http, zoneTable: bundledZoneTable }, parcel.geometry, { countyFips: parcel.countyFips, zip: parcel.zip });
+    const profile = await buildSiteProfile({ http, zoneTable: bundledZoneTable }, parcel.geometry, { countyFips: parcel.countyFips, zip: parcel.zip }, (layer, status) => {
+      if (status === 'started') running.add(layer);
+      else { running.delete(layer); layersDone++; }
+      onProgress({ done, total, stage: 'profile', layersDone, layersTotal, waiting: [...running].map((l) => LAYER_NAMES[l] ?? l) });
+    });
     await saveSiteProfile(parcelId, profile);
   } catch { /* keep the cached profile */ }
   info.complete = failed === 0;
