@@ -2662,6 +2662,555 @@
    "ediblePortion": 1.0,
    "refuseNote": "SR Legacy refuse 0% (no refuse description)",
    "harvestForm": "extracted honey"
+  },
+  "shallot": {
+   "food": true,
+   "name": "Shallot",
+   "fdcId": 170499,
+   "ndbNumber": "11677",
+   "dataType": "SR Legacy",
+   "description": "Shallots, raw",
+   "per100g": {
+    "kcal": 72,
+    "proteinG": 2.5,
+    "fatG": 0.1,
+    "carbG": 16.8,
+    "fiberG": 3.2,
+    "vitARaeUg": 0,
+    "vitCMg": 8,
+    "calciumMg": 37,
+    "ironMg": 1.2
+   },
+   "ediblePortion": 0.88,
+   "refuseNote": "SR Legacy refuse 12%: Skins",
+   "harvestForm": "cured bulbs"
+  },
+  "fava-bean": {
+   "food": true,
+   "name": "Fava bean",
+   "fdcId": 170377,
+   "ndbNumber": "11088",
+   "dataType": "SR Legacy",
+   "description": "Broadbeans, immature seeds, raw",
+   "per100g": {
+    "kcal": 72,
+    "proteinG": 5.6,
+    "fatG": 0.6,
+    "carbG": 11.7,
+    "fiberG": 4.2,
+    "vitARaeUg": 18,
+    "vitCMg": 33,
+    "calciumMg": 22,
+    "ironMg": 1.9
+   },
+   "ediblePortion": 0.97,
+   "refuseNote": "SR Legacy refuse 3%: Ends",
+   "harvestForm": "fresh shelled beans",
+   "notes": [
+    "SR Legacy weighs immature fava seeds already shelled (refuse 3% = ends), so the yield and edible portion are for shelled beans. Dried favas are 16052."
+   ]
+  },
+  "edamame": {
+   "food": true,
+   "name": "Edamame",
+   "fdcId": 168410,
+   "ndbNumber": "11211",
+   "dataType": "SR Legacy",
+   "description": "Edamame, frozen, unprepared",
+   "per100g": {
+    "kcal": 109,
+    "proteinG": 11.22,
+    "fatG": 4.73,
+    "carbG": 7.61,
+    "fiberG": 4.8,
+    "vitARaeUg": null,
+    "vitCMg": 9.7,
+    "calciumMg": 60,
+    "ironMg": 2.11
+   },
+   "ediblePortion": null,
+   "refuseNote": "SR Legacy's only edamame entry is frozen and shelled (refuse 0%), so the pod share of the harvest weight is unknown.",
+   "harvestForm": "fresh pods",
+   "notes": [
+    "Nutrients are for shelled beans (frozen, unprepared); no fresh in-pod entry exists in SR Legacy."
+   ]
+  },
+  "southern-pea": {
+   "food": true,
+   "name": "Southern pea (cowpea)",
+   "fdcId": 169220,
+   "ndbNumber": "11191",
+   "dataType": "SR Legacy",
+   "description": "Cowpeas (blackeyes), immature seeds, raw",
+   "per100g": {
+    "kcal": 90,
+    "proteinG": 2.95,
+    "fatG": 0.35,
+    "carbG": 18.83,
+    "fiberG": 5,
+    "vitARaeUg": 41,
+    "vitCMg": 2.5,
+    "calciumMg": 126,
+    "ironMg": 1.1
+   },
+   "ediblePortion": 0.51,
+   "refuseNote": "SR Legacy refuse 49%: Pods",
+   "harvestForm": "fresh pods (immature seed, weighed in pod)",
+   "notes": [
+    "Assumes fresh shelling peas; SR refuse is the pods. Dried peas are 16062."
+   ]
+  },
+  "peanut": {
+   "food": true,
+   "name": "Peanut",
+   "fdcId": 172430,
+   "ndbNumber": "16087",
+   "dataType": "SR Legacy",
+   "description": "Peanuts, all types, raw",
+   "per100g": {
+    "kcal": 567,
+    "proteinG": 25.8,
+    "fatG": 49.24,
+    "carbG": 16.13,
+    "fiberG": 8.5,
+    "vitARaeUg": 0,
+    "vitCMg": 0,
+    "calciumMg": 92,
+    "ironMg": 4.58
+   },
+   "ediblePortion": null,
+   "refuseNote": "SR Legacy gives raw kernels only (refuse 0%), so the shell share of the in-shell harvest weight is unknown.",
+   "harvestForm": "dried pods in shell",
+   "notes": [
+    "Nutrients are for raw kernels."
+   ]
+  },
+  "tomatillo": {
+   "food": true,
+   "name": "Tomatillo",
+   "fdcId": 168566,
+   "ndbNumber": "11954",
+   "dataType": "SR Legacy",
+   "description": "Tomatillos, raw",
+   "per100g": {
+    "kcal": 32,
+    "proteinG": 0.96,
+    "fatG": 1.02,
+    "carbG": 5.84,
+    "fiberG": 1.9,
+    "vitARaeUg": 6,
+    "vitCMg": 11.7,
+    "calciumMg": 7,
+    "ironMg": 0.62
+   },
+   "ediblePortion": 1,
+   "refuseNote": "SR Legacy refuse 0% (no refuse description)",
+   "harvestForm": "husked fresh fruit"
+  },
+  "rutabaga": {
+   "food": true,
+   "name": "Rutabaga",
+   "fdcId": 168454,
+   "ndbNumber": "11435",
+   "dataType": "SR Legacy",
+   "description": "Rutabagas, raw",
+   "per100g": {
+    "kcal": 37,
+    "proteinG": 1.08,
+    "fatG": 0.16,
+    "carbG": 8.62,
+    "fiberG": 2.3,
+    "vitARaeUg": 0,
+    "vitCMg": 25,
+    "calciumMg": 43,
+    "ironMg": 0.44
+   },
+   "ediblePortion": 0.85,
+   "refuseNote": "SR Legacy refuse 15%: Parings",
+   "harvestForm": "roots"
+  },
+  "chinese-cabbage": {
+   "food": true,
+   "name": "Chinese (napa) cabbage",
+   "fdcId": 169979,
+   "ndbNumber": "11119",
+   "dataType": "SR Legacy",
+   "description": "Cabbage, chinese (pe-tsai), raw",
+   "per100g": {
+    "kcal": 16,
+    "proteinG": 1.2,
+    "fatG": 0.2,
+    "carbG": 3.23,
+    "fiberG": 1.2,
+    "vitARaeUg": 16,
+    "vitCMg": 27,
+    "calciumMg": 77,
+    "ironMg": 0.31
+   },
+   "ediblePortion": 0.93,
+   "refuseNote": "SR Legacy refuse 7%: Outer leaves and root base",
+   "harvestForm": "fresh heads"
+  },
+  "endive": {
+   "food": true,
+   "name": "Endive and escarole",
+   "fdcId": 168412,
+   "ndbNumber": "11213",
+   "dataType": "SR Legacy",
+   "description": "Endive, raw",
+   "per100g": {
+    "kcal": 17,
+    "proteinG": 1.25,
+    "fatG": 0.2,
+    "carbG": 3.35,
+    "fiberG": 3.1,
+    "vitARaeUg": 108,
+    "vitCMg": 6.5,
+    "calciumMg": 52,
+    "ironMg": 0.83
+   },
+   "ediblePortion": 0.86,
+   "refuseNote": "SR Legacy refuse 14%: Outer leaves and core",
+   "harvestForm": "fresh heads"
+  },
+  "horseradish": {
+   "food": true,
+   "name": "Horseradish",
+   "fdcId": null,
+   "dataType": null,
+   "description": null,
+   "per100g": {
+    "kcal": null,
+    "proteinG": null,
+    "fatG": null,
+    "carbG": null,
+    "fiberG": null,
+    "vitARaeUg": null,
+    "vitCMg": null,
+    "calciumMg": null,
+    "ironMg": null
+   },
+   "ediblePortion": null,
+   "refuseNote": "No raw form in SR Legacy, so no refuse value.",
+   "harvestForm": "roots",
+   "notes": [
+    "SR Legacy has only prepared horseradish (with vinegar), not the raw root, so values are left null."
+   ]
+  },
+  "jerusalem-artichoke": {
+   "food": true,
+   "name": "Jerusalem artichoke",
+   "fdcId": 169236,
+   "ndbNumber": "11226",
+   "dataType": "SR Legacy",
+   "description": "Jerusalem-artichokes, raw",
+   "per100g": {
+    "kcal": 73,
+    "proteinG": 2,
+    "fatG": 0.01,
+    "carbG": 17.44,
+    "fiberG": 1.6,
+    "vitARaeUg": 1,
+    "vitCMg": 4,
+    "calciumMg": 14,
+    "ironMg": 3.4
+   },
+   "ediblePortion": 0.69,
+   "refuseNote": "SR Legacy refuse 31%: Parings",
+   "harvestForm": "tubers"
+  },
+  "lavender": {
+   "food": true,
+   "name": "Lavender",
+   "fdcId": null,
+   "dataType": null,
+   "description": null,
+   "per100g": {
+    "kcal": null,
+    "proteinG": null,
+    "fatG": null,
+    "carbG": null,
+    "fiberG": null,
+    "vitARaeUg": null,
+    "vitCMg": null,
+    "calciumMg": null,
+    "ironMg": null
+   },
+   "ediblePortion": null,
+   "refuseNote": "Not in SR Legacy.",
+   "harvestForm": "fresh flower spikes",
+   "notes": [
+    "Lavender is not in SR Legacy; it is grown mainly for fragrance and small culinary uses. All values null."
+   ]
+  },
+  "tarragon": {
+   "food": true,
+   "name": "Tarragon (French)",
+   "fdcId": null,
+   "dataType": null,
+   "description": null,
+   "per100g": {
+    "kcal": null,
+    "proteinG": null,
+    "fatG": null,
+    "carbG": null,
+    "fiberG": null,
+    "vitARaeUg": null,
+    "vitCMg": null,
+    "calciumMg": null,
+    "ironMg": null
+   },
+   "ediblePortion": null,
+   "refuseNote": "No fresh form in SR Legacy, so no refuse value.",
+   "harvestForm": "fresh cut sprigs",
+   "notes": [
+    "SR Legacy has no fresh tarragon entry, only the dried spice (02041), so values are left null."
+   ]
+  },
+  "fennel": {
+   "food": true,
+   "name": "Fennel (bulb)",
+   "fdcId": 169385,
+   "ndbNumber": "11957",
+   "dataType": "SR Legacy",
+   "description": "Fennel, bulb, raw",
+   "per100g": {
+    "kcal": 31,
+    "proteinG": 1.24,
+    "fatG": 0.2,
+    "carbG": 7.3,
+    "fiberG": 3.1,
+    "vitARaeUg": 48,
+    "vitCMg": 12,
+    "calciumMg": 49,
+    "ironMg": 0.73
+   },
+   "ediblePortion": 0.72,
+   "refuseNote": "SR Legacy refuse 28%: Stalk, leaves and core",
+   "harvestForm": "fresh bulbs",
+   "notes": [
+    "Nutrients are for the bulb; fennel seed (spice) is 02018."
+   ]
+  },
+  "lemon-balm": {
+   "food": true,
+   "name": "Lemon balm",
+   "fdcId": null,
+   "dataType": null,
+   "description": null,
+   "per100g": {
+    "kcal": null,
+    "proteinG": null,
+    "fatG": null,
+    "carbG": null,
+    "fiberG": null,
+    "vitARaeUg": null,
+    "vitCMg": null,
+    "calciumMg": null,
+    "ironMg": null
+   },
+   "ediblePortion": null,
+   "refuseNote": "Not in SR Legacy.",
+   "harvestForm": "fresh cut leaves",
+   "notes": [
+    "Lemon balm is not in SR Legacy. All values null."
+   ]
+  },
+  "apricot": {
+   "food": true,
+   "name": "Apricot",
+   "fdcId": 171697,
+   "ndbNumber": "09021",
+   "dataType": "SR Legacy",
+   "description": "Apricots, raw",
+   "per100g": {
+    "kcal": 48,
+    "proteinG": 1.4,
+    "fatG": 0.39,
+    "carbG": 11.12,
+    "fiberG": 2,
+    "vitARaeUg": 96,
+    "vitCMg": 10,
+    "calciumMg": 13,
+    "ironMg": 0.39
+   },
+   "ediblePortion": 0.93,
+   "refuseNote": "SR Legacy refuse 7%: Pits",
+   "harvestForm": "whole fresh fruit"
+  },
+  "gooseberry": {
+   "food": true,
+   "name": "Gooseberry",
+   "fdcId": 173030,
+   "ndbNumber": "09107",
+   "dataType": "SR Legacy",
+   "description": "Gooseberries, raw",
+   "per100g": {
+    "kcal": 44,
+    "proteinG": 0.88,
+    "fatG": 0.58,
+    "carbG": 10.18,
+    "fiberG": 4.3,
+    "vitARaeUg": 15,
+    "vitCMg": 27.7,
+    "calciumMg": 25,
+    "ironMg": 0.31
+   },
+   "ediblePortion": 1,
+   "refuseNote": "SR Legacy refuse 0% (no refuse description)",
+   "harvestForm": "fresh berries"
+  },
+  "kiwi-hardy": {
+   "food": true,
+   "name": "Hardy kiwi (kiwiberry)",
+   "fdcId": 168153,
+   "ndbNumber": "09148",
+   "dataType": "SR Legacy",
+   "description": "Kiwifruit, green, raw",
+   "per100g": {
+    "kcal": 61,
+    "proteinG": 1.14,
+    "fatG": 0.52,
+    "carbG": 14.66,
+    "fiberG": 3,
+    "vitARaeUg": 4,
+    "vitCMg": 92.7,
+    "calciumMg": 34,
+    "ironMg": 0.31
+   },
+   "ediblePortion": 1,
+   "refuseNote": "Kiwiberries are eaten whole; the SR refuse for fuzzy kiwifruit (skin) does not apply.",
+   "harvestForm": "whole fresh fruit",
+   "notes": [
+    "SR Legacy has no kiwiberry (Actinidia arguta); nutrients are for green fuzzy kiwifruit (A. deliciosa) as the nearest entry."
+   ]
+  },
+  "muscadine": {
+   "food": true,
+   "name": "Muscadine grape",
+   "fdcId": 173040,
+   "ndbNumber": "09129",
+   "dataType": "SR Legacy",
+   "description": "Grapes, muscadine, raw",
+   "per100g": {
+    "kcal": 57,
+    "proteinG": 0.81,
+    "fatG": 0.47,
+    "carbG": 13.93,
+    "fiberG": 3.9,
+    "vitARaeUg": 3,
+    "vitCMg": 6.5,
+    "calciumMg": 37,
+    "ironMg": 0.26
+   },
+   "ediblePortion": 0.96,
+   "refuseNote": "SR Legacy refuse 4%: Seeds",
+   "harvestForm": "fresh grapes"
+  },
+  "aronia": {
+   "food": true,
+   "name": "Aronia",
+   "fdcId": null,
+   "dataType": null,
+   "description": null,
+   "per100g": {
+    "kcal": null,
+    "proteinG": null,
+    "fatG": null,
+    "carbG": null,
+    "fiberG": null,
+    "vitARaeUg": null,
+    "vitCMg": null,
+    "calciumMg": null,
+    "ironMg": null
+   },
+   "ediblePortion": null,
+   "refuseNote": "Not in SR Legacy.",
+   "harvestForm": "fresh berries",
+   "notes": [
+    "Aronia (Aronia melanocarpa) is not in SR Legacy. All values null."
+   ]
+  },
+  "serviceberry": {
+   "food": true,
+   "name": "Serviceberry",
+   "fdcId": null,
+   "dataType": null,
+   "description": null,
+   "per100g": {
+    "kcal": null,
+    "proteinG": null,
+    "fatG": null,
+    "carbG": null,
+    "fiberG": null,
+    "vitARaeUg": null,
+    "vitCMg": null,
+    "calciumMg": null,
+    "ironMg": null
+   },
+   "ediblePortion": null,
+   "refuseNote": "Not in SR Legacy.",
+   "harvestForm": "fresh berries",
+   "notes": [
+    "Serviceberry (Amelanchier) is not in SR Legacy. All values null."
+   ]
+  },
+  "pecan": {
+   "food": true,
+   "name": "Pecan",
+   "fdcId": 170182,
+   "ndbNumber": "12142",
+   "dataType": "SR Legacy",
+   "description": "Nuts, pecans",
+   "per100g": {
+    "kcal": 691,
+    "proteinG": 9.17,
+    "fatG": 71.97,
+    "carbG": 13.86,
+    "fiberG": 9.6,
+    "vitARaeUg": 3,
+    "vitCMg": 1.1,
+    "calciumMg": 70,
+    "ironMg": 2.53
+   },
+   "ediblePortion": 0.53,
+   "refuseNote": "SR Legacy refuse 47%: Shells",
+   "harvestForm": "dried nuts in shell",
+   "notes": [
+    "Nutrients are for the kernel; refuse = shells, so the edible fraction applies to in-shell weight."
+   ]
+  },
+  "hairy-vetch": {
+   "food": false,
+   "name": "Hairy vetch",
+   "harvestForm": null,
+   "notes": [
+    "Cover crop; not a human food. No SR Legacy entry."
+   ]
+  },
+  "oats": {
+   "food": false,
+   "name": "Oats (cover crop)",
+   "harvestForm": null,
+   "notes": [
+    "Grown as a cover crop (no yield in plant list); not counted as food."
+   ]
+  },
+  "zinnia": {
+   "food": false,
+   "name": "Zinnia",
+   "harvestForm": null,
+   "notes": [
+    "Ornamental and pollinator flower; not a food."
+   ]
+  },
+  "marigold": {
+   "food": false,
+   "name": "Marigold",
+   "harvestForm": null,
+   "notes": [
+    "Ornamental and pollinator flower; not counted as food."
+   ]
   }
  },
  "dri": {

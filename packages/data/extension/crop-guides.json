@@ -533,6 +533,188 @@
    "title": "Blueberry",
    "verified_by": "fetch",
    "checked": "2026-09-28"
+  },
+  "shallot": {
+   "url": "https://extension.usu.edu/yardandgarden/research/shallots-in-the-garden",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow Shallots in Your Garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "fava-bean": {
+   "url": "https://ucanr.edu/site/uc-master-gardeners-santa-clara-county/fava-beans",
+   "publisher": "UC Master Gardener Program (University of California)",
+   "title": "Fava Beans",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "edamame": {
+   "url": "https://extension.oregonstate.edu/catalog/pub/pnw-525-edamame",
+   "publisher": "Oregon State University Extension Service",
+   "title": "Edamame",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "southern-pea": {
+   "url": "https://extension.umd.edu/resource/growing-southern-peas-home-garden",
+   "publisher": "University of Maryland Extension",
+   "title": "Growing Southern Peas in a Home Garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "peanut": {
+   "url": "https://hgic.clemson.edu/factsheet/peanut/",
+   "publisher": "Clemson Cooperative Extension Home & Garden Information Center",
+   "title": "Peanut",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "tomatillo": {
+   "url": "https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/growing-tomatillos-and-ground-cherries",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing tomatillos and ground cherries in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "rutabaga": {
+   "url": "https://extension.umn.edu/vegetables/growing-turnips-and-rutabagas",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing turnips and rutabagas in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "chinese-cabbage": {
+   "url": "https://extension.umn.edu/vegetables/growing-chinese-cabbage-and-bok-choy",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing Chinese cabbage and bok choy in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "endive": {
+   "url": "https://extension.umn.edu/vegetables/growing-lettuce-endive-and-radicchio",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing lettuce, endive and radicchio in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "horseradish": {
+   "url": "https://extension.umn.edu/vegetables/growing-horseradish",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing horseradish in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "jerusalem-artichoke": {
+   "url": "https://hgic.clemson.edu/a-re-acquaintance-with-sunchokes-aka-jerusalem-artichokes/",
+   "publisher": "Clemson Cooperative Extension Home & Garden Information Center",
+   "title": "A Re-acquaintance with Sunchokes aka Jerusalem Artichokes",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "lavender": {
+   "url": "https://extension.usu.edu/yardandgarden/research/english-lavender-in-the-garden",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow English Lavender in Your Garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "tarragon": {
+   "url": "https://extension.illinois.edu/herbs/tarragon-french",
+   "publisher": "University of Illinois Extension",
+   "title": "Tarragon: French",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "fennel": {
+   "url": "https://extension.illinois.edu/herbs/fennel",
+   "publisher": "University of Illinois Extension",
+   "title": "Fennel",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "lemon-balm": {
+   "url": "https://extension.illinois.edu/herbs/lemon-balm",
+   "publisher": "University of Illinois Extension",
+   "title": "Lemon Balm",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "apricot": {
+   "url": "https://extension.usu.edu/yardandgarden/research/apricots-in-the-home-garden",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow Apricots in Your Home Garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "gooseberry": {
+   "url": "https://extension.umn.edu/fruit/growing-currants-and-gooseberries-home-garden",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing currants and gooseberries in the home garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "kiwi-hardy": {
+   "url": "https://extension.umn.edu/fruit/kiwiberry",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing kiwiberry in the home garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "muscadine": {
+   "url": "https://content.ces.ncsu.edu/muscadine-grapes-in-the-home-garden",
+   "publisher": "NC State Extension",
+   "title": "Muscadine Grapes in the Home Garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "aronia": {
+   "url": "https://extension.umd.edu/resources/yard-garden/fruit/chokeberries",
+   "publisher": "University of Maryland Extension",
+   "title": "Chokeberries",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "serviceberry": {
+   "url": "https://extension.umn.edu/trees-and-shrubs/serviceberry",
+   "publisher": "University of Minnesota Extension",
+   "title": "Serviceberry",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "pecan": {
+   "url": "https://content.ces.ncsu.edu/growing-pecans-in-north-carolina",
+   "publisher": "NC State Extension",
+   "title": "Growing Pecans in North Carolina",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "hairy-vetch": {
+   "url": "https://www.sare.org/publications/managing-cover-crops-profitably/legume-cover-crops/hairy-vetch/",
+   "publisher": "SARE (USDA Sustainable Agriculture Research and Education)",
+   "title": "Hairy Vetch",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "oats": {
+   "url": "https://www.sare.org/publications/managing-cover-crops-profitably/nonlegume-cover-crops/oats/",
+   "publisher": "SARE (USDA Sustainable Agriculture Research and Education)",
+   "title": "Oats",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "zinnia": {
+   "url": "https://extension.umn.edu/flowers/zinnia",
+   "publisher": "University of Minnesota Extension",
+   "title": "Zinnia",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "marigold": {
+   "url": "https://extension.umn.edu/flowers/marigolds",
+   "publisher": "University of Minnesota Extension",
+   "title": "Marigolds",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
   }
  }
 }
