@@ -51,7 +51,14 @@ const CAMERA_PADDING = { top: 40, right: 40, bottom: 40, left: 40 };
 const SENSOR_PIN_PAINT: CircleLayerSpecification['paint'] = { 'circle-color': '#4ea8f2', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 };
 // The OpenFreeMap style serves Noto Sans glyphs only; the MapLibre default font stack would render nothing.
 const SENSOR_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, 1.1], 'text-anchor': 'top' };
-const SENSOR_LABEL_PAINT: SymbolLayerSpecification['paint'] = { 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 };
+const OBJECT_PIN_PAINT: CircleLayerSpecification['paint'] = {
+  'circle-color': ['case', ['==', ['get', 'selected'], 1], '#4ea8f2', '#ffffff'],
+  'circle-radius': ['case', ['==', ['get', 'selected'], 1], 8, 6],
+  'circle-stroke-color': '#000000',
+  'circle-stroke-width': 1.5,
+};
+const OBJECT_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-offset': [0, 1.2], 'text-anchor': 'top', 'text-optional': true };
+const SENSOR_LABEL_PAINT: SymbolLayerSpecification['paint'] ={ 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 };
 
 export default function DesignScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -227,6 +234,30 @@ export default function DesignScreen() {
     };
   }, [design, frame, selectedId]);
 
+  // A pin and label at each object's centre: small beds are only a few pixels across at parcel zoom.
+  const objectPins = useMemo(() => {
+    if (!objectsGeo) return null;
+    return {
+      type: 'FeatureCollection' as const,
+      features: objectsGeo.features.map((f) => {
+        const ring = f.geometry.coordinates[0]!.slice(0, -1);
+        const lon = ring.reduce((s, p) => s + p[0]!, 0) / ring.length;
+        const lat = ring.reduce((s, p) => s + p[1]!, 0) / ring.length;
+        return { type: 'Feature' as const, geometry: { type: 'Point' as const, coordinates: [lon, lat] }, properties: f.properties };
+      }),
+    };
+  }, [objectsGeo]);
+
+  const onObjectPress = (e: { stopPropagation(): void; nativeEvent: { features: Array<{ properties?: { id?: unknown } | null }> } }) => {
+    if (placing || moving) return; // let the map handle placement taps
+    e.stopPropagation(); // otherwise the Map's onPress deselects straight away
+    const fid = e.nativeEvent.features[0]?.properties?.id;
+    if (typeof fid === 'string') {
+      setSelectedId(fid);
+      setTab('selected');
+    }
+  };
+
   const heatGeo = useMemo(() => (analysis && sun && ent.has('sun.heatmaps') ? heatmapGeoJSON(analysis, sun.hours) : null), [analysis, sun, ent]);
   const [contourGeo, setContourGeo] = useState<ReturnType<typeof contourGeoJSON> | null>(null);
   useEffect(() => {
@@ -316,19 +347,17 @@ export default function DesignScreen() {
             <GeoJSONSource
               id="objects"
               data={objectsGeo}
-              hitbox={{ top: 8, right: 8, bottom: 8, left: 8 }}
-              onPress={(e) => {
-                if (placing || moving) return; // let the map handle placement taps
-                e.stopPropagation(); // otherwise the Map's onPress deselects straight away
-                const fid = e.nativeEvent.features[0]?.properties?.id;
-                if (typeof fid === 'string') {
-                  setSelectedId(fid);
-                  setTab('selected');
-                }
-              }}
+              hitbox={{ top: 16, right: 16, bottom: 16, left: 16 }}
+              onPress={onObjectPress}
             >
-              <Layer type="fill" id="obj-fill" paint={{ 'fill-color': ['case', ['==', ['get', 'existing'], 1], '#9e9e9e', '#ffffff'], 'fill-opacity': 0.35 }} />
-              <Layer type="line" id="obj-line" paint={{ 'line-color': ['case', ['==', ['get', 'selected'], 1], '#4ea8f2', '#ffffff'], 'line-width': ['case', ['==', ['get', 'selected'], 1], 3, 1.5] }} />
+              <Layer type="fill" id="obj-fill" paint={{ 'fill-color': ['case', ['==', ['get', 'existing'], 1], '#9e9e9e', '#ffffff'], 'fill-opacity': 0.5 }} />
+              <Layer type="line" id="obj-line" paint={{ 'line-color': ['case', ['==', ['get', 'selected'], 1], '#4ea8f2', '#ffffff'], 'line-width': ['case', ['==', ['get', 'selected'], 1], 3, 2] }} />
+            </GeoJSONSource>
+          )}
+          {objectPins && (
+            <GeoJSONSource id="object-pins" data={objectPins} hitbox={{ top: 20, right: 20, bottom: 20, left: 20 }} onPress={onObjectPress}>
+              <Layer type="circle" id="obj-pin" paint={OBJECT_PIN_PAINT} />
+              <Layer type="symbol" id="obj-label" layout={OBJECT_LABEL_LAYOUT} paint={SENSOR_LABEL_PAINT} />
             </GeoJSONSource>
           )}
           {sensorPins && (
