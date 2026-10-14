@@ -73,7 +73,16 @@ function Screens() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <Stack screenOptions={{ contentStyle: { backgroundColor: t.bg, paddingBottom: insets.bottom }, headerTintColor: t.accent }}>
+    <Stack
+      screenOptions={{
+        contentStyle: { backgroundColor: t.bg, paddingBottom: insets.bottom },
+        // Header in the app's own theme (it otherwise stays white in dark mode): title in the text colour, back arrow in the accent.
+        headerStyle: { backgroundColor: t.bg },
+        headerShadowVisible: false,
+        headerTitleStyle: { color: t.text },
+        headerTintColor: t.accent,
+      }}
+    >
       <Stack.Screen name="index" options={{ title: 'Plotwright' }} />
       <Stack.Screen name="locate" options={{ title: 'Find your property' }} />
       <Stack.Screen name="boundary" options={{ title: 'Property boundary' }} />
