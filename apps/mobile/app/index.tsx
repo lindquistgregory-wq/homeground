@@ -1,29 +1,14 @@
-import { formatArea, formatDoy } from '@plotwright/core';
+import { formatArea } from '@plotwright/core';
 import type { SiteProfile } from '@plotwright/providers';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Body, Button, Card, useTheme } from '../src/components/ui';
 import { ParcelMap } from '../src/components/ParcelMap';
+import { FactChips } from '../src/components/facts';
 import { getSiteProfile, listParcels, type ParcelRecord } from '../src/db/parcels';
 import { useSettings } from '../src/services/settings';
 import { useEntitlements } from '../src/billing/entitlements';
-
-/** The few facts worth seeing at a glance, from the saved Site Profile (skipped when a layer is unavailable). */
-function keyFacts(p: SiteProfile | undefined): string[] {
-  if (!p) return [];
-  const facts: string[] = [];
-  if (p.hardiness.status === 'ok') facts.push(`Zone ${p.hardiness.value.zone}`);
-  if (p.climate.status === 'ok' && !p.climate.value.frost.dates.freezeRare) {
-    const last = p.climate.value.frost.dates.lastSpring[32][50];
-    const first = p.climate.value.frost.dates.firstFall[32][50];
-    if (last !== null) facts.push(`Last frost ${formatDoy(last)}`);
-    if (first !== null) facts.push(`First frost ${formatDoy(first)}`);
-  }
-  const soil = p.soils.status === 'ok' ? p.soils.value.units[0]?.name : undefined;
-  if (soil) facts.push(soil.split(',')[0]!);
-  return facts;
-}
 
 export default function Home() {
   const t = useTheme();
@@ -61,7 +46,6 @@ export default function Home() {
         }
         renderItem={({ item }) => {
           const profile = profiles[item.id];
-          const facts = keyFacts(profile);
           return (
             <View style={[styles.property, { backgroundColor: t.card, borderColor: t.border }]}>
               <Pressable accessibilityRole="button" accessibilityLabel={`Open the site profile for ${item.name}`} onPress={() => open('/profile/[id]', item.id)}>
@@ -75,13 +59,7 @@ export default function Home() {
                     {formatArea(item.areaM2, units)}
                     {profile?.place.countyName ? ` · ${profile.place.countyName}` : ''}
                   </Body>
-                  {facts.length > 0 && (
-                    <View style={styles.facts}>
-                      {facts.map((f) => (
-                        <Text key={f} style={[styles.fact, { color: t.text, borderColor: t.border }]}>{f}</Text>
-                      ))}
-                    </View>
-                  )}
+                  <FactChips profile={profile} />
                 </View>
               </Pressable>
               <View style={[styles.actions, { borderTopColor: t.border }]}>
@@ -123,8 +101,6 @@ const styles = StyleSheet.create({
   thumb: { height: 160 },
   propertyBody: { padding: 14, gap: 4 },
   propertyName: { fontSize: 20, fontWeight: '700' },
-  facts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  fact: { fontSize: 13, borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   actions: { flexDirection: 'row', borderTopWidth: 1 },
   action: { flex: 1, alignItems: 'center', paddingVertical: 14 },
   actionText: { fontSize: 16, fontWeight: '600' },

@@ -1,6 +1,6 @@
 /** Small shared UI pieces. Colours meet WCAG AA against their backgrounds (§11 accessibility). */
 import type { Attribution, Layer } from '@plotwright/core';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 
 export function useTheme() {
@@ -70,9 +70,15 @@ export function ConfidenceBadge({ a }: { a: Attribution }) {
   );
 }
 
-/** Renders a Site Profile layer: its content with source/licence/date, or an explicit unavailable state. */
-export function LayerCard<T>({ title, layer, children }: { title: string; layer: Layer<T> | undefined; children: (v: T) => ReactNode }) {
+/**
+ * Renders a Site Profile layer: its content with source/licence/date, or an explicit unavailable state.
+ * With `summary`, the card starts collapsed to that one line and expands on tap.
+ */
+export function LayerCard<T>({ title, layer, children, summary }: {
+  title: string; layer: Layer<T> | undefined; children: (v: T) => ReactNode; summary?: (v: T) => string;
+}) {
   const t = useTheme();
+  const [open, setOpen] = useState(false);
   if (!layer) {
     return (
       <Card title={title}>
@@ -89,6 +95,16 @@ export function LayerCard<T>({ title, layer, children }: { title: string; layer:
     );
   }
   const a = layer.attribution;
+  if (summary && !open) {
+    return (
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded: false }} accessibilityHint="Shows the details and sources" onPress={() => setOpen(true)}>
+        <Card title={title} right={<ConfidenceBadge a={a} />}>
+          <Body>{summary(layer.value)}</Body>
+          <Text style={[styles.more, { color: t.accent }]}>Details ▾</Text>
+        </Card>
+      </Pressable>
+    );
+  }
   return (
     <Card title={title} right={<ConfidenceBadge a={a} />}>
       {children(layer.value)}
@@ -99,6 +115,11 @@ export function LayerCard<T>({ title, layer, children }: { title: string; layer:
         {a.source}{a.resolution ? ` · ${a.resolution}` : ''} · retrieved {a.retrievedAt.slice(0, 10)}
       </Text>
       <Text style={[styles.source, { color: t.muted }]}>{a.license}</Text>
+      {summary && (
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: true }} onPress={() => setOpen(false)}>
+          <Text style={[styles.more, { color: t.accent }]}>Less ▴</Text>
+        </Pressable>
+      )}
     </Card>
   );
 }
@@ -116,4 +137,5 @@ const styles = StyleSheet.create({
   badge: { fontSize: 12, borderWidth: 1, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, overflow: 'hidden' },
   note: { fontSize: 13, lineHeight: 18, marginTop: 4 },
   source: { fontSize: 12, marginTop: 6 },
+  more: { fontSize: 14, fontWeight: '600', marginTop: 8 },
 });

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { OfflinePackCard } from '../../src/components/OfflinePack';
 import { ParcelMap } from '../../src/components/ParcelMap';
+import { FactChips } from '../../src/components/facts';
 import { deletePack, type PackInfo } from '../../src/services/offlinePacks';
 import { Body, Button, Card, LayerCard, LEGAL_DISCLAIMER, useTheme } from '../../src/components/ui';
 import { deleteParcel, getParcel, getSiteProfile, saveSiteProfile, type ParcelRecord } from '../../src/db/parcels';
@@ -77,11 +78,16 @@ export default function Profile() {
           {parcel.boundaryMeta.medianGpsAccuracyM ? ` · GPS ±${Math.round(parcel.boundaryMeta.medianGpsAccuracyM)} m` : ''}
         </Body>
         {shown?.place?.countyName && <Body muted>{shown.place.countyName}</Body>}
+        <FactChips profile={shown} />
         {profile && <Body muted>Profile built {new Date(profile.computedAt).toLocaleString()}</Body>}
         {loading.length > 0 && <Body muted>Fetching: {loading.filter((l) => l !== 'starting').join(', ') || 'starting'}…</Body>}
       </Card>
 
-      <LayerCard title="Elevation" layer={shown?.elevation}>
+      <LayerCard
+        title="Elevation"
+        layer={shown?.elevation}
+        summary={(e) => `${formatElevation(e.centroidM, units)} at the centre · ${ft ? `${Math.round(mToFt(e.reliefM))} ft` : `${Math.round(e.reliefM)} m`} of relief`}
+      >
         {(e) => (
           <Body>
             {formatElevation(e.centroidM, units)} at the centre · {formatElevation(e.minM, units)}–{formatElevation(e.maxM, units)} across
@@ -99,7 +105,17 @@ export default function Profile() {
         )}
       </LayerCard>
 
-      <LayerCard title="Frost dates (adjusted to your elevation)" layer={shown?.climate}>
+      <LayerCard
+        title="Frost dates (adjusted to your elevation)"
+        layer={shown?.climate}
+        summary={(c) => {
+          const d = c.frost.dates;
+          if (d.freezeRare) return 'Freezes are rare here.';
+          const last = d.lastSpring[32][50], first = d.firstFall[32][50];
+          return [last !== null ? `Last frost ${formatDoy(last)}` : null, first !== null ? `first frost ${formatDoy(first)}` : null,
+            d.freezeFreeDays !== null ? `${d.freezeFreeDays}-day season` : null].filter(Boolean).join(' · ') || 'Median dates and ranges';
+        }}
+      >
         {(c) =>
           c.frost.dates.freezeRare ? (
             <Body>Freezes are rare here: nearby stations don't record a 32 °F freeze in most years.</Body>
@@ -114,7 +130,17 @@ export default function Profile() {
         }
       </LayerCard>
 
-      <LayerCard title="Soils" layer={shown?.soils}>
+      <LayerCard
+        title="Soils"
+        layer={shown?.soils}
+        summary={(s) => {
+          const u = s.units[0];
+          if (!u) return 'No soil map units here.';
+          const parts = [`${u.percentOfParcel !== undefined ? `${Math.round(u.percentOfParcel)}% ` : ''}${(u.name ?? u.symbol ?? u.mukey).split(',')[0]}`,
+            u.surface?.pH !== undefined ? `pH ${u.surface.pH}` : null, u.drainageClass ?? null];
+          return parts.filter(Boolean).join(' · ') + (s.units.length > 1 ? ` · +${s.units.length - 1} more` : '');
+        }}
+      >
         {(s) => (
           <View>
             {s.units.slice(0, 6).map((u) => (
