@@ -449,12 +449,21 @@ export default function DesignScreen() {
             </View>
             {summary && sun && (
               <Card title={`Direct sun, ${PERIOD_LABELS[period]}`}>
+                {/* Before the numbers, so a wooded lot reading "full sun" isn't taken at face value. */}
+                {!ent.has('layers.canopyShade') && (
+                  <View style={{ marginBottom: 8 }}>
+                    <Text style={{ color: t.warn, fontSize: 15, lineHeight: 21 }}>
+                      Existing trees aren't counted: only terrain, buildings and trees you've added. Wooded areas will read as sunnier than they are.
+                    </Text>
+                    <Button title="Add trees" kind="secondary" accessibilityHint="Opens the object library to place trees, which cast shade" onPress={() => { setTab('add'); setLibraryOpen(true); }} />
+                  </View>
+                )}
                 <Body>Full sun (6 h+): {formatArea(summary.full * summary.cellAreaM2, units)}</Body>
                 <Body>Part sun (3–6 h): {formatArea(summary.part * summary.cellAreaM2, units)}</Body>
                 <Body>Shade (under 3 h): {formatArea(summary.shade * summary.cellAreaM2, units)}</Body>
                 <Body muted>At most {sun.possibleHours.toFixed(1)} h of sun above your horizon that day. Grid {analysis!.ground.cell.toFixed(1)} m · computed in {sun.ms} ms ({sun.engine === 'native' ? 'native engine' : 'JavaScript engine'}).</Body>
                 {!ent.has('sun.heatmaps') && <Button title="Sun-hour heatmaps: see plans or unlock for a day" kind="secondary" onPress={() => router.push({ pathname: '/paywall', params: { feature: 'sun.heatmaps', source: 'design' } })} />}
-                {!ent.has('layers.canopyShade') && <Body muted>Tree shade from satellite canopy heights is part of Homestead Pro. Trees you place yourself always cast shade.</Body>}
+                {!ent.has('layers.canopyShade') && <Body muted>Tree heights from satellite data are part of Homestead Pro.</Body>}
               </Card>
             )}
             <Legend />
