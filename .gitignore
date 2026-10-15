@@ -9,3 +9,7 @@ coverage/
 apps/mobile/ios/
 apps/mobile/android/
 .env*
+
+# Store screenshots show a real property; generate them outside the repo (scripts/make-assets.ts --shots).
+docs/store/raw/
+docs/store/screenshots/
