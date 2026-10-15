@@ -11,6 +11,7 @@ import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Chip, StaleProfileNotice } from '../../src/components/plants';
 import { EmptyState } from '../../src/components/kit';
+import { PlantArt } from '../../src/components/PlantArt';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { alertsEnabled, alertsForParcel, type ParcelAlerts } from '../../src/services/alerts';
 import { activePlantings, bedName, calendarFor } from '../../src/services/garden';
@@ -81,7 +82,7 @@ export default function CalendarScreen() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       {state.profileStale && <StaleProfileNotice parcelId={state.parcel.id} />}
-      <Card title="Weather alerts">
+      <Card title="Weather alerts" icon="weather-lightning-rainy">
         {!state.profile ? <Body muted>Build the site profile first.</Body>
           : alertsError ? <Body muted>Couldn’t check the forecast ({alertsError}).</Body>
           : !alerts ? <ActivityIndicator accessibilityLabel="Checking the forecast" />
@@ -100,7 +101,7 @@ export default function CalendarScreen() {
 
       <SensorCard parcelId={state.parcel.id} profile={state.profile} year={year} />
 
-      <Card title="Timing">
+      <Card title="Timing" icon="clock-outline">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
           <Chip label="Cautious" active={risk === 'cautious'} onPress={() => setRisk('cautious')} />
           <Chip label="Typical" active={risk === 'typical'} onPress={() => setRisk('typical')} />
@@ -121,16 +122,19 @@ export default function CalendarScreen() {
           action="Open Design" onAction={() => router.push({ pathname: '/design/[id]', params: { id: state.parcel.id } })} />
       ) : (
         <>
-          <Card title="Next 6 weeks">
+          <Card title="Next 6 weeks" icon="calendar-clock">
             {soon.length ? soon.map((e, i) => (
-              <View key={i} style={{ marginBottom: 8 }}>
-                <Text style={{ color: t.text, fontWeight: '600' }}>{plantById(e.plantId)?.commonName}: {e.label}</Text>
-                <Body muted>{formatDoy(e.start)}{e.end !== e.start ? ` – ${formatDoy(e.end)}` : ''} · {e.basis}</Body>
+              <View key={i} style={{ flexDirection: 'row', gap: 12, marginBottom: 10 }}>
+                {plantById(e.plantId) && <PlantArt plant={plantById(e.plantId)!} size={40} />}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: t.text, fontWeight: '600' }}>{plantById(e.plantId)?.commonName}: {e.label}</Text>
+                  <Body muted>{formatDoy(e.start)}{e.end !== e.start ? ` – ${formatDoy(e.end)}` : ''} · {e.basis}</Body>
+                </View>
               </View>
             )) : <Body muted>No tasks in the next six weeks.</Body>}
           </Card>
 
-          <Card title={`Season ${year}`}>
+          <Card title={`Season ${year}`} icon="calendar-month">
             {[...byMonth.keys()].sort((a, b) => a - b).map((m) => (
               <View key={m} style={{ marginBottom: 10 }}>
                 <Text style={{ color: t.accent, fontWeight: '700' }} accessibilityRole="header">{MONTHS[m]}</Text>
@@ -141,7 +145,7 @@ export default function CalendarScreen() {
             ))}
           </Card>
 
-          <Card title="Where it’s planted">
+          <Card title="Where it’s planted" icon="map-marker-outline">
             {cals.map((c) => (
               <View key={c.plantId} style={{ marginBottom: 6 }}>
                 <Body>{plantById(c.plantId)?.commonName}: {c.beds.join(', ')}</Body>
@@ -181,7 +185,7 @@ function SensorCard({ parcelId, profile, year }: { parcelId: string; profile?: S
   if (!info) return null;
   const mm = (v: number) => (imperial ? `${(v / 25.4).toFixed(2)} in` : `${Math.round(v)} mm`);
   return (
-    <Card title="From your sensors">
+    <Card title="From your sensors" icon="thermometer">
       {!info.any ? (
         <View>
           <Body muted>Add a thermometer, soil sensor or weather station to fine-tune planting dates, watering and frost alerts with your own readings.</Body>

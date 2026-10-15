@@ -13,6 +13,7 @@ import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { BedGridEditor } from '../../src/components/bedGrid';
 import { SearchField } from '../../src/components/kit';
+import { PlantArt } from '../../src/components/PlantArt';
 import { Chip, FactorList, LayoutSvg, StaleProfileNotice, VerdictBadge } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { deletePlanting, savePlanting, type Planting, type PlantingStatus } from '../../src/db/plantings';
@@ -140,7 +141,7 @@ export default function BedPlanner() {
       <Body muted>{formatArea(areaM2, units)}{cond?.covered ? ' · covered growing space' : ''}</Body>
 
       {state.profileStale && <StaleProfileNotice parcelId={state.parcel.id} />}
-      <Card title="Conditions in this bed">
+      <Card title="Conditions in this bed" icon="weather-partly-cloudy">
         {!cond ? (
           sunError ? <Body muted>Sun model unavailable: {sunError}</Body> : <ActivityIndicator accessibilityLabel="Modeling sun for this bed" />
         ) : (
@@ -168,7 +169,7 @@ export default function BedPlanner() {
         )}
       </Card>
 
-      <Card title={`In this bed (${year})`}>
+      <Card title={`In this bed (${year})`} icon="sprout-outline">
         {bedPlantings.length === 0 && <Body muted>Nothing planned yet. Pick a plant below.</Body>}
         {bedPlantings.map((p) => {
           const plant = plantById(p.plantId);
@@ -194,7 +195,7 @@ export default function BedPlanner() {
       {!isTreeSpot(bed) && gridPlantings.length > 0 && (() => {
         const grid = bedGrid(bed.width, bed.length);
         return (
-          <Card title="Bed layout (1 ft squares)">
+          <Card title="Bed layout (1 ft squares)" icon="grid">
             {grid.cells > MAX_GRID_CELLS
               ? <Body muted>This bed is {grid.cols} × {grid.rows} ft ({grid.cells} squares), too big to lay out square by square on a phone. Use the row layout under each plant below.</Body>
               : <BedGridEditor grid={grid} plantings={gridPlantings} onSave={async (changes) => {
@@ -205,7 +206,7 @@ export default function BedPlanner() {
         );
       })()}
 
-      <Card title="What grows best here">
+      <Card title="What grows best here" icon="star-outline">
         {!cond ? <ActivityIndicator /> : (
           <View>
             <Body muted>Ranked for this bed’s sun, soil and slope and your property’s climate.</Body>
@@ -226,6 +227,7 @@ export default function BedPlanner() {
               return (
                 <View key={s.plantId} style={[styles.rank, { borderColor: t.border }]}>
                   <View style={styles.rankHead}>
+                    <PlantArt plant={plant} size={40} />
                     <Text onPress={() => setOpen(isOpen ? null : s.plantId)} accessibilityRole="button" accessibilityState={{ expanded: isOpen }} accessibilityHint="Shows reasons, layout and yield" style={{ color: t.text, fontSize: 16, fontWeight: '600', flex: 1 }}>
                       {plant.commonName} {isOpen ? '▾' : '▸'}
                     </Text>
