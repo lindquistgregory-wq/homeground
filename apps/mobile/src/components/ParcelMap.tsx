@@ -23,12 +23,14 @@ export interface ParcelMapProps {
   style?: object;
   /** A saved offline pack's imagery: file:// tile template and deepest saved zoom. */
   offlineImagery?: { template: string; maxZoom: number };
+  /** Put the map logo and attribution button in the top corners (for thumbnails with a caption along the bottom). */
+  ornamentsTop?: boolean;
 }
 
 const PARCEL = '#f2c14e';
 const DRAFT = '#4ea8f2';
 
-export function ParcelMap({ center, zoom = 17, boundary, candidates = [], draft = [], showImagery = true, markers = [], onPress, style, offlineImagery }: ParcelMapProps) {
+export function ParcelMap({ center, zoom = 17, boundary, candidates = [], draft = [], showImagery = true, markers = [], onPress, style, offlineImagery, ornamentsTop }: ParcelMapProps) {
   const bounds = boundary ? bbox(boundary) : undefined;
   const draftLine = draft.length >= 2 ? [...draft, ...(draft.length >= 3 ? [draft[0]!] : [])] : [];
 
@@ -38,6 +40,7 @@ export function ParcelMap({ center, zoom = 17, boundary, candidates = [], draft 
         style={StyleSheet.absoluteFill}
         mapStyle={OPENFREEMAP_STYLE_URL}
         attribution
+        {...(ornamentsTop ? { logoPosition: { top: 8, left: 8 }, attributionPosition: { top: 8, right: 8 } } : {})}
         onPress={(e) => {
           const [lon, lat] = e.nativeEvent.lngLat;
           onPress?.(lon, lat);

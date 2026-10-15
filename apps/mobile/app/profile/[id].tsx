@@ -10,6 +10,7 @@ import { SITE_PROFILE_VERSION, buildSiteProfile, type SiteProfile } from '@plotw
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { OWN_CLOUD } from '../../src/sync/userCloud';
 import { Text } from '../../src/components/Text';
 import { OfflinePackCard } from '../../src/components/OfflinePack';
 import { ParcelMap } from '../../src/components/ParcelMap';
@@ -201,7 +202,9 @@ export default function Profile() {
         title="Delete this property"
         kind="secondary"
         onPress={() =>
-          Alert.alert('Delete property?', 'This removes the boundary and profile from this device and marks them deleted on your other devices. Older synced copies stay in your iCloud until you use “Delete all my data”.', [
+          Alert.alert('Delete property?', OWN_CLOUD
+            ? `This removes the boundary and profile from this device and marks them deleted on your other devices. Older synced copies stay in your ${OWN_CLOUD} until you use “Delete all my data”.`
+            : 'This removes the boundary and profile from this device.', [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Delete', style: 'destructive', onPress: async () => { await deletePack(parcel.id).catch(() => undefined); await deleteParcel(parcel.id); router.replace('/'); } },
           ])

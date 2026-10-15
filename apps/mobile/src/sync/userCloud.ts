@@ -2,6 +2,7 @@
  * Wires @plotwright/core's sync engine to SQLite (LocalStore) and the native user-cloud module
  * (CloudTransport). Nothing here talks to a developer server.
  */
+import { Platform } from 'react-native';
 import { syncOnce, type ChangeBatch, type CloudTransport, type LocalStore, type SyncCollection, type SyncRecord } from '@plotwright/core';
 import { UserSync } from '@plotwright/user-sync';
 import { getDb, kvGet, kvSet } from '../db/database';
@@ -218,6 +219,9 @@ export async function wipeCloudData(): Promise<'done' | 'deferred' | 'none'> {
     return 'deferred';
   }
 }
+
+/** The user's own cloud that sync uses on this platform, or null where sync isn't built yet (Android). */
+export const OWN_CLOUD: string | null = Platform.OS === 'ios' ? 'iCloud' : null;
 
 export async function cloudSyncAvailable(): Promise<boolean> {
   try {

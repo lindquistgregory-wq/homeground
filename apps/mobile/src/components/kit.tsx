@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon, type IconName } from './Icon';
 import { Text, TextInput } from './Text';
-import { tapFeedback, useTheme } from './ui';
+import { Button, tapFeedback, useTheme } from './ui';
 
 /** A round icon-only button. `label` is read by screen readers and shown as a long-press hint. */
 export function IconButton({ icon, label, onPress, tone = 'soft', size = 48 }: {
@@ -87,6 +87,25 @@ export function ListRow({ icon, title, detail, onPress }: { icon: IconName; titl
   );
 }
 
+/** A friendly "nothing here yet" panel: a big icon, a title, one sentence and one action. */
+export function EmptyState({ icon, title, text, action, onAction, art }: {
+  icon: IconName; title: string; text: string; action?: string; onAction?: () => void; art?: ReactNode;
+}) {
+  const t = useTheme();
+  return (
+    <View style={[styles.empty, { backgroundColor: t.card, borderColor: t.border }]}>
+      {art ?? (
+        <View style={[styles.emptyIcon, { backgroundColor: t.accentSoft }]}>
+          <Icon name={icon} size={40} color={t.accent} />
+        </View>
+      )}
+      <Text style={[styles.emptyTitle, { color: t.text }]} accessibilityRole="header">{title}</Text>
+      <Text style={[styles.emptyText, { color: t.muted }]}>{text}</Text>
+      {action && onAction ? <View style={{ alignSelf: 'stretch' }}><Button title={action} onPress={onAction} /></View> : null}
+    </View>
+  );
+}
+
 /** A one-line search box with a magnifier and a clear button. */
 export function SearchField({ value, onChangeText, placeholder, accessibilityLabel }: {
   value: string; onChangeText: (s: string) => void; placeholder: string; accessibilityLabel: string;
@@ -106,6 +125,10 @@ export function SearchField({ value, onChangeText, placeholder, accessibilityLab
 }
 
 const styles = StyleSheet.create({
+  empty: { alignItems: 'center', gap: 10, borderRadius: 20, borderWidth: 1, padding: 20, marginBottom: 14 },
+  emptyIcon: { width: 84, height: 84, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
+  emptyText: { fontSize: 15, lineHeight: 21, textAlign: 'center' },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 14, paddingLeft: 12, paddingRight: 4, minHeight: 50 },
   searchInput: { flex: 1, fontSize: 16, paddingVertical: 8 },
   tile: { flexGrow: 1, flexBasis: 96, minHeight: 104, borderRadius: 16, padding: 12, alignItems: 'center', justifyContent: 'center', gap: 6 },
