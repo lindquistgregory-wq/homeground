@@ -3,14 +3,15 @@ import { DATA_SOURCES } from '@plotwright/data';
 import { Linking, ScrollView } from 'react-native';
 import { Text } from '../src/components/Text';
 import { Body, Card, useTheme } from '../src/components/ui';
+import { OWN_CLOUD } from '../src/sync/userCloud';
 
 export default function DataSources() {
   const t = useTheme();
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       <Body muted>
-        Plotwright runs on free public data. Your location, boundary and profile stay on this device and in your own iCloud
-        or Google Drive. The services below receive only the coordinates or boundary needed to answer each request.
+        Plotwright runs on free public data. Your location, boundary and profile stay on this device{OWN_CLOUD ? ` and in your own ${OWN_CLOUD}` : ''}.
+        The services below receive only the coordinates or boundary needed to answer each request.
       </Body>
       {DATA_SOURCES.map((s) => (
         <Card key={s.id} title={s.name}>

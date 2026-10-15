@@ -10,6 +10,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Chip, StaleProfileNotice } from '../../src/components/plants';
+import { EmptyState } from '../../src/components/kit';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { alertsEnabled, alertsForParcel, type ParcelAlerts } from '../../src/services/alerts';
 import { activePlantings, bedName, calendarFor } from '../../src/services/garden';
@@ -115,10 +116,9 @@ export default function CalendarScreen() {
       </Card>
 
       {cals.length === 0 ? (
-        <Card title="Nothing planned yet">
-          <Body>Add crops to your beds in the bed planner (open Design, tap a bed, then “Plan this bed”).</Body>
-          <Button title="Open design" onPress={() => router.push({ pathname: '/design/[id]', params: { id: state.parcel.id } })} />
-        </Card>
+        <EmptyState icon="sprout-outline" title="Nothing planned yet"
+          text="Add crops to a bed (Design, tap a bed, Plan this bed) and their sowing, planting and harvest dates appear here."
+          action="Open Design" onAction={() => router.push({ pathname: '/design/[id]', params: { id: state.parcel.id } })} />
       ) : (
         <>
           <Card title="Next 6 weeks">

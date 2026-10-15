@@ -91,7 +91,7 @@ function Screens() {
         animation: 'slide_from_right',
       })}
     >
-      <Stack.Screen name="index" options={{ title: 'Plotwright' }} />
+      <Stack.Screen name="index" options={{ title: 'Home', headerShown: false }} />
       <Stack.Screen name="locate" options={{ title: 'Find your property' }} />
       <Stack.Screen name="boundary" options={{ title: 'Property boundary' }} />
       <Stack.Screen name="profile/[id]" options={{ title: 'Site profile' }} />

@@ -7,6 +7,8 @@ import { EXPOSURE_LABEL, formatMetric } from '../../src/components/sensorFormat'
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { EmptyState } from '../../src/components/kit';
+import { OWN_CLOUD } from '../../src/sync/userCloud';
 import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
@@ -72,11 +74,11 @@ export default function Sensors() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
-      <Body muted>Readings stay on your phone (daily summaries sync to your own iCloud). Station keys are kept in the phone’s keychain.</Body>
-      {rows.length === 0 && (
-        <Card title="No sensors yet">
-          <Body>Cheap Bluetooth thermometers (Govee, SwitchBot, Xiaomi, Inkbird, RuuviTag, BTHome), plant sensors (Xiaomi Flower Care), and home weather stations (Ecowitt, Ambient, Davis, Tempest) all work. Readings sharpen planting dates, watering and frost alerts.</Body>
-        </Card>
+      {rows.length === 0 ? (
+        <EmptyState icon="thermometer-bluetooth" title="No sensors yet"
+          text="Bluetooth thermometers, plant sensors and home weather stations sharpen planting dates, watering and frost alerts. Most common brands work." />
+      ) : (
+        <Body muted>Readings stay on your phone{OWN_CLOUD ? ` (daily summaries sync to your own ${OWN_CLOUD})` : ''}. Station keys are kept in the phone’s secure storage.</Body>
       )}
       {groups.filter((g) => g.items.length || g.title).map((g, gi) => (
         <View key={gi}>
@@ -101,18 +103,20 @@ export default function Sensors() {
         </View>
       ))}
       {busy && <Body muted>{busy}</Body>}
-      <Button title="Collect readings now" onPress={collect} disabled={!!busy || rows.length === 0} />
+      {rows.length > 0 && <Button icon="refresh" title="Collect readings now" onPress={collect} disabled={!!busy} />}
       <Button
+        icon="bluetooth"
         title="Add a Bluetooth sensor"
-        kind="secondary"
+        kind={rows.length ? "secondary" : "primary"}
         onPress={() => (bleFull ? Alert.alert('Sensor limit', `Your plan includes ${ent.limits.bleSensors} Bluetooth sensor${ent.limits.bleSensors === 1 ? '' : 's'}. Upgrade for more.`) : router.push({ pathname: '/sensors/scan', params: { parcelId } }))}
       />
       <Button
+        icon="weather-partly-cloudy"
         title="Connect a weather station"
         kind="secondary"
         onPress={() => (stationFull ? Alert.alert('Station limit', ent.limits.stationAccounts ? `Your plan includes ${ent.limits.stationAccounts} station.` : 'Weather stations are part of Grower and Homestead Pro.') : router.push({ pathname: '/sensors/station', params: { parcelId } }))}
       />
-      <Button title="Import readings from a CSV file" kind="secondary" onPress={() => router.push({ pathname: '/sensors/import', params: { parcelId } })} />
+      <Button icon="file-delimited-outline" title="Import readings from a CSV file" kind="secondary" onPress={() => router.push({ pathname: '/sensors/import', params: { parcelId } })} />
     </ScrollView>
   );
 }
