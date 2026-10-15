@@ -13,6 +13,9 @@ import type { ParcelAnalysis, SunResult } from './analysis';
 
 /** Design objects you can plant in: beds, rows, containers, orchard spots. */
 const TREE_SPOTS = new Set(['fruit-tree-dwarf', 'fruit-tree-semi', 'fruit-tree-std', 'nut-tree']);
+
+/** Tree spots hold one tree, so they get no square-foot grid. */
+export const isTreeSpot = (o: DesignObject): boolean => TREE_SPOTS.has(o.kind);
 /** Beds filled with bought or amended soil: native drainage and texture matter much less. */
 const RAISED = new Set(['raised-bed', 'raised-bed-l', 'round-bed', 'keyhole-bed', 'sfg-grid', 'container', 'vertical-tower', 'herb-spiral', 'hugel']);
 /** Covered growing space: frost dates and rain don't apply in the usual way. */
