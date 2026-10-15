@@ -35,8 +35,8 @@ export function BedGridEditor({ grid, plantings, onSave }: {
   const dirty = plantings.some((p) => JSON.stringify(layout[p.id] ?? []) !== JSON.stringify(initial[p.id] ?? []));
   const free = grid.cells - owner.size;
 
-  // Card and screen padding take about 64 px; squares stay between 24 and 56 px so they remain tappable.
-  const cell = Math.max(24, Math.min(56, Math.floor((width - 64) / grid.cols)));
+  // Card and screen padding take about 64 px; squares stay between 24 and 72 px so they remain tappable.
+  const cell = Math.max(24, Math.min(72, Math.floor((width - 64) / grid.cols)));
   const showLabels = cell >= 30;
 
   const place = (cells: Cell[]) => { if (active) setLayout((l) => assignCells(l, active, cells)); };
@@ -86,7 +86,7 @@ export function BedGridEditor({ grid, plantings, onSave }: {
         })}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={grid.cols * cell > width - 64} contentContainerStyle={{ paddingVertical: 8 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={grid.cols * cell > width - 64} contentContainerStyle={{ paddingVertical: 8, flexGrow: 1, justifyContent: 'center' }}>
         <View accessibilityLabel={`Bed grid, ${grid.cols} squares across and ${grid.rows} long`} style={{ borderWidth: 2, borderColor: t.dark ? '#6b5640' : '#8b6b4a' }}>
           {Array.from({ length: grid.rows }, (_, r) => (
             <View key={r} style={{ flexDirection: 'row' }}>
