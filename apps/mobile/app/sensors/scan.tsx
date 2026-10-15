@@ -5,7 +5,8 @@
 import { METRIC_LABEL, type Exposure, type Metric } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../../src/components/Text';
 import { Chip } from '../../src/components/plants';
 import { EXPOSURE_LABEL, formatMetric } from '../../src/components/sensorFormat';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';

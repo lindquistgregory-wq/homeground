@@ -1,6 +1,7 @@
 /** In-app attribution & licensing screen (§11). Content comes from @plotwright/data/sources. */
 import { DATA_SOURCES } from '@plotwright/data';
-import { Linking, ScrollView, Text } from 'react-native';
+import { Linking, ScrollView } from 'react-native';
+import { Text } from '../src/components/Text';
 import { Body, Card, useTheme } from '../src/components/ui';
 
 export default function DataSources() {

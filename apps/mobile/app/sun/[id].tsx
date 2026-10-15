@@ -7,7 +7,8 @@ import { daySunSamples, formatLength, horizonAt, keySunDates, solarDayOf, sunTim
 import * as Location from 'expo-location';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import Svg, { Circle, G, Line, Path, Text as SvgText } from 'react-native-svg';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';

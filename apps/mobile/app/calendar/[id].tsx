@@ -6,7 +6,8 @@
 import { formatDoy, plantById, upcomingTasks, type PlantCalendar } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Chip, StaleProfileNotice } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';

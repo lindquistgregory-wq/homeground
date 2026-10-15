@@ -1,8 +1,9 @@
 /** Key Site Profile facts as chips, shared by the home screen's property cards and the Site Profile summary. */
 import { formatDoy } from '@plotwright/core';
 import type { SiteProfile } from '@plotwright/providers';
-import { StyleSheet, Text, View } from 'react-native';
-import { useTheme } from './ui';
+import { StyleSheet, View } from 'react-native';
+import type { IconName } from './Icon';
+import { Pill } from './kit';
 
 /** The few facts worth seeing at a glance (skipped when a layer is missing or unavailable). */
 export function keyFacts(p: Partial<SiteProfile> | null | undefined): string[] {
@@ -20,20 +21,19 @@ export function keyFacts(p: Partial<SiteProfile> | null | undefined): string[] {
   return facts;
 }
 
+const factIcon = (f: string): IconName =>
+  f.startsWith('Zone') ? 'thermometer' : f.startsWith('Last frost') ? 'snowflake' : f.startsWith('First frost') ? 'snowflake-alert' : 'shovel';
+
 export function FactChips({ profile }: { profile: Partial<SiteProfile> | null | undefined }) {
-  const t = useTheme();
   const facts = keyFacts(profile);
   if (!facts.length) return null;
   return (
     <View style={styles.facts}>
-      {facts.map((f) => (
-        <Text key={f} style={[styles.fact, { color: t.text, borderColor: t.border }]}>{f}</Text>
-      ))}
+      {facts.map((f) => <Pill key={f} icon={factIcon(f)} text={f} tone={f.startsWith('Zone') ? 'accent' : 'neutral'} />)}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   facts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  fact: { fontSize: 13, borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
 });

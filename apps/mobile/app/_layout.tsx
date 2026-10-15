@@ -1,3 +1,4 @@
+import { Inter_400Regular, Inter_400Regular_Italic, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -10,6 +11,8 @@ import { useSettings } from '../src/services/settings';
 import { firstStoreCheck, useEntitlements } from '../src/billing/entitlements';
 import { syncNow } from '../src/sync/userCloud';
 import { useTheme } from '../src/components/ui';
+import { TAB_ROUTES, TabBar } from '../src/components/TabBar';
+import { FONTS } from '../src/components/Text';
 // Registers the background alert task at startup (the OS may launch the app headless to run it).
 import { checkAlerts } from '../src/services/alerts';
 import { collectOnOpen } from '../src/services/ble';
@@ -22,6 +25,8 @@ import { configureMapCache } from '../src/services/offlinePacks';
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
+  // Bundled fonts load from the app package in a few milliseconds; a failure falls back to the system font.
+  const [fontsLoaded, fontError] = useFonts({ Inter_400Regular, Inter_400Regular_Italic, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
   const t = useTheme();
   const path = usePathname();
   useEffect(() => { if (ready) track('screen_view', { screen: screenName(path) }); }, [path, ready]);
@@ -52,7 +57,7 @@ export default function RootLayout() {
     })();
   }, []);
 
-  if (!ready) {
+  if (!ready || (!fontsLoaded && !fontError)) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.bg }}>
         <ActivityIndicator accessibilityLabel="Loading Plotwright" />
@@ -73,15 +78,18 @@ function Screens() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   return (
+    <View style={{ flex: 1, backgroundColor: t.bg }}>
     <Stack
-      screenOptions={{
-        contentStyle: { backgroundColor: t.bg, paddingBottom: insets.bottom },
+      screenOptions={({ route }) => ({
+        // Screens with the tab bar leave the system-bar inset to the bar itself.
+        contentStyle: { backgroundColor: t.bg, paddingBottom: TAB_ROUTES.has(route.name) ? 0 : insets.bottom },
         // Header in the app's own theme (it otherwise stays white in dark mode): title in the text colour, back arrow in the accent.
         headerStyle: { backgroundColor: t.bg },
         headerShadowVisible: false,
-        headerTitleStyle: { color: t.text },
+        headerTitleStyle: { color: t.text, fontFamily: FONTS.bold, fontWeight: 'normal' },
         headerTintColor: t.accent,
-      }}
+        animation: 'slide_from_right',
+      })}
     >
       <Stack.Screen name="index" options={{ title: 'Plotwright' }} />
       <Stack.Screen name="locate" options={{ title: 'Find your property' }} />
@@ -100,9 +108,11 @@ function Screens() {
       <Stack.Screen name="sensors/[id]" options={{ title: 'Sensor' }} />
       <Stack.Screen name="planner/[id]" options={{ title: 'Homestead planner' }} />
       <Stack.Screen name="data-sources" options={{ title: 'Data sources' }} />
-      <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+      <Stack.Screen name="settings" options={{ title: 'More' }} />
       <Stack.Screen name="paywall" options={{ title: 'Plans', presentation: 'modal' }} />
     </Stack>
+    <TabBar />
+    </View>
   );
 }
 

@@ -4,7 +4,8 @@ import {
   type Activity, type DesignDraft, type HomesteadGoals, type HomesteadPlan, type HouseholdMember, type PhaseId, type PlanItem, type Question, type TaskDraft,
 } from '@plotwright/core';
 import { useState } from 'react';
-import { Alert, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from './Text';
 import type { DraftRow, StoredMessage, TaskRecord } from '../db/planner';
 import { Chip } from './plants';
 import { Body, Button, Card, useTheme } from './ui';

@@ -4,10 +4,12 @@ import { validateUserEndpoint } from '@plotwright/providers';
 import { UserSync } from '@plotwright/user-sync';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Platform, ScrollView, Share, StyleSheet, TextInput } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, Share, StyleSheet } from 'react-native';
+import { TextInput } from '../src/components/Text';
 import { StubBillingAdapter, billing } from '../src/billing/adapter';
 import { useEntitlements } from '../src/billing/entitlements';
 import { Body, Button, Card, useTheme } from '../src/components/ui';
+import { ListRow } from '../src/components/kit';
 import { deleteAllLocalData } from '../src/db/database';
 import { listSensors } from '../src/db/sensors';
 import { deleteSecrets } from '../src/services/secrets';
@@ -94,12 +96,17 @@ export default function Settings() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
-      <Card title="Units">
+      <Card title="Explore" icon="compass-outline">
+        <ListRow icon="database-outline" title="Data sources" detail="Where every map layer and number comes from" onPress={() => router.push('/data-sources')} />
+        <ListRow icon="star-circle-outline" title="Plans" detail="What each plan includes" onPress={() => router.push({ pathname: '/paywall', params: { source: 'settings' } })} />
+      </Card>
+
+      <Card title="Units" icon="ruler">
         <Button title={units === 'imperial' ? '✓ Imperial (ft, acres, °F)' : 'Imperial (ft, acres, °F)'} kind={units === 'imperial' ? 'primary' : 'secondary'} onPress={() => setUnits('imperial')} />
         <Button title={units === 'metric' ? '✓ Metric (m, ha, °C)' : 'Metric (m, ha, °C)'} kind={units === 'metric' ? 'primary' : 'secondary'} onPress={() => setUnits('metric')} />
       </Card>
 
-      <Card title="Frost & weather alerts">
+      <Card title="Frost & weather alerts" icon="bell-ring-outline">
         <Body>
           Notifies you when the National Weather Service forecast threatens crops you’ve marked as planted: frost or freeze for
           tender crops, extreme heat, and strong wind for tall crops. Checked on this device (about twice a day when your phone
