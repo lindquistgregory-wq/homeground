@@ -7,9 +7,11 @@ import { BrowseBanner } from '../../src/ads/useAds';
 import { scorePlant, searchPlants, type PlantKind, type PlantSpec, type Suitability } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { Chip, VerdictBadge } from '../../src/components/plants';
 import { Body, useTheme } from '../../src/components/ui';
+import { SearchField } from '../../src/components/kit';
 import { useGarden } from '../../src/services/useGarden';
 
 const KINDS: Array<{ key: PlantKind | 'all'; label: string }> = [
@@ -35,11 +37,7 @@ export default function PlantLibrary() {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ padding: 16, paddingBottom: 4 }}>
-        <TextInput
-          value={q} onChangeText={setQ} placeholder="Search plants (name, Latin name or family)" placeholderTextColor={t.muted}
-          accessibilityLabel="Search plants" autoCorrect={false}
-          style={[styles.search, { color: t.text, borderColor: t.border, backgroundColor: t.card }]}
-        />
+        <SearchField value={q} onChangeText={setQ} placeholder="Search plants" accessibilityLabel="Search plants by name, Latin name or family" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
           {KINDS.map((k) => <Chip key={k.key} label={k.label} active={kind === k.key} onPress={() => setKind(k.key)} />)}
         </ScrollView>
@@ -73,6 +71,5 @@ export default function PlantLibrary() {
 }
 
 const styles = StyleSheet.create({
-  search: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, minHeight: 44, fontSize: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 8 },
 });

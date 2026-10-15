@@ -2,7 +2,8 @@
 import { formatDoy, type BedLayout, type CalendarEvent, type Factor, type PlantCalendar, type Suitability } from '@plotwright/core';
 import type { ExtensionLink } from '@plotwright/data';
 import { router } from 'expo-router';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import Svg, { Circle, Rect } from 'react-native-svg';
 import { Body, useTheme } from './ui';
 
@@ -106,8 +107,8 @@ export function Chip({ label, active, onPress, disabled }: { label: string; acti
   const t = useTheme();
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: active, disabled: !!disabled }} disabled={disabled} onPress={onPress}
-      style={[styles.chip, { borderColor: active ? t.accent : t.border, backgroundColor: active ? t.accent : 'transparent', opacity: disabled ? 0.5 : 1 }]}>
-      <Text style={{ color: active ? (t.dark ? '#10200a' : '#ffffff') : t.text, fontWeight: '600' }}>{label}</Text>
+      style={[styles.chip, { borderColor: active ? t.accent : t.border, backgroundColor: active ? t.accentSoft : t.card, opacity: disabled ? 0.5 : 1 }]}>
+      <Text style={{ color: active ? t.accent : t.text, fontWeight: '600' }}>{active ? '✓ ' : ''}{label}</Text>
     </Pressable>
   );
 }
@@ -118,5 +119,5 @@ const styles = StyleSheet.create({
   mark: { width: 16, fontWeight: '700', fontSize: 15 },
   event: { marginBottom: 10 },
   notice: { borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 12 },
-  chip: { borderWidth: 1, borderRadius: 22, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center', marginRight: 6, marginBottom: 6 },
+  chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 16, minHeight: 44, justifyContent: 'center', marginRight: 6, marginBottom: 6 },
 });

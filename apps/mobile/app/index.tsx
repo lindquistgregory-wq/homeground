@@ -2,10 +2,12 @@ import { formatArea } from '@plotwright/core';
 import type { SiteProfile } from '@plotwright/providers';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../src/components/Text';
 import { Body, Button, Card, useTheme } from '../src/components/ui';
 import { ParcelMap } from '../src/components/ParcelMap';
 import { FactChips } from '../src/components/facts';
+import { Icon, type IconName } from '../src/components/Icon';
 import { getSiteProfile, listParcels, type ParcelRecord } from '../src/db/parcels';
 import { useSettings } from '../src/services/settings';
 import { useEntitlements } from '../src/billing/entitlements';
@@ -37,7 +39,7 @@ export default function Home() {
         keyExtractor={(p) => p.id}
         contentContainerStyle={{ padding: 16 }}
         ListEmptyComponent={
-          <Card title="Welcome">
+          <Card title="Welcome" icon="sprout">
             <Body>
               Plotwright builds a profile of your actual land (elevation, soils, frost dates, flood zones and water) from free
               public data, so every recommendation fits your parcel rather than just your ZIP code.
@@ -47,7 +49,7 @@ export default function Home() {
         renderItem={({ item }) => {
           const profile = profiles[item.id];
           return (
-            <View style={[styles.property, { backgroundColor: t.card, borderColor: t.border }]}>
+            <View style={[styles.property, { backgroundColor: t.card }, t.dark ? { borderColor: t.border, borderWidth: 1 } : styles.shadow]}>
               <Pressable accessibilityRole="button" accessibilityLabel={`Open the site profile for ${item.name}`} onPress={() => open('/profile/[id]', item.id)}>
                 {/* The map is a picture here: touches go to the card, not to panning the map. */}
                 <View pointerEvents="none" style={styles.thumb}>
@@ -63,9 +65,13 @@ export default function Home() {
                 </View>
               </Pressable>
               <View style={[styles.actions, { borderTopColor: t.border }]}>
-                {([['Design', '/design/[id]'], ['Calendar', '/calendar/[id]'], ['Planner', '/planner/[id]']] as const).map(([label, path]) => (
-                  <Pressable key={label} accessibilityRole="button" accessibilityLabel={`${label} for ${item.name}`} onPress={() => open(path, item.id)} style={styles.action}>
-                    <Text style={[styles.actionText, { color: t.accent }]}>{label}</Text>
+                {([['Design', '/design/[id]', 'pencil-ruler'], ['Calendar', '/calendar/[id]', 'calendar-month'], ['Planner', '/planner/[id]', 'lightbulb-on-outline']] as const).map(([label, path, icon]) => (
+                  <Pressable key={label} accessibilityRole="button" accessibilityLabel={`${label} for ${item.name}`} onPress={() => open(path, item.id)}
+                    style={({ pressed }) => [styles.action, { backgroundColor: pressed ? t.surface : 'transparent' }]}>
+                    <View style={[styles.actionIcon, { backgroundColor: t.accentSoft }]}>
+                      <Icon name={icon as IconName} size={22} color={t.accent} />
+                    </View>
+                    <Text style={[styles.actionText, { color: t.text }]}>{label}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -84,18 +90,12 @@ export default function Home() {
               </Text>
             ) : (
               <Button
+                icon={parcels.length ? 'map-marker-plus-outline' : 'map-search-outline'}
                 title={parcels.length ? 'Add another property' : 'Find your property'}
                 onPress={() => router.push('/locate')}
                 accessibilityHint="Search an address, use GPS, or tap the map"
               />
             )}
-            <View style={styles.links}>
-              {([['Plants', '/plants'], ['Settings', '/settings'], ['Data sources', '/data-sources']] as const).map(([label, href]) => (
-                <Pressable key={label} accessibilityRole="button" onPress={() => router.push(href)} style={[styles.link, { borderColor: t.border }]}>
-                  <Text style={[styles.linkText, { color: t.accent }]}>{label}</Text>
-                </Pressable>
-              ))}
-            </View>
           </View>
         }
       />
@@ -105,15 +105,14 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  property: { borderWidth: 1, borderRadius: 12, overflow: 'hidden', marginBottom: 16 },
-  thumb: { height: 160 },
-  propertyBody: { padding: 14, gap: 4 },
-  propertyName: { fontSize: 20, fontWeight: '700' },
-  actions: { flexDirection: 'row', borderTopWidth: 1 },
-  action: { flex: 1, alignItems: 'center', paddingVertical: 14 },
-  actionText: { fontSize: 16, fontWeight: '600' },
+  property: { borderRadius: 20, overflow: 'hidden', marginBottom: 16 },
+  shadow: { elevation: 3, shadowColor: '#1b2a1e', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+  thumb: { height: 170 },
+  propertyBody: { padding: 16, gap: 4 },
+  propertyName: { fontSize: 22, fontWeight: '700' },
+  actions: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 6 },
+  action: { flex: 1, alignItems: 'center', paddingVertical: 8, gap: 4, borderRadius: 14, marginHorizontal: 4 },
+  actionIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  actionText: { fontSize: 14, fontWeight: '600' },
   limit: { fontSize: 15, textAlign: 'center', marginTop: 4 },
-  links: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 10, marginTop: 20 },
-  link: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10 },
-  linkText: { fontSize: 15, fontWeight: '600' },
 });

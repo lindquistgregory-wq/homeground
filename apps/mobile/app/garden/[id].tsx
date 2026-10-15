@@ -8,9 +8,11 @@ import {
 } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { BedGridEditor } from '../../src/components/bedGrid';
+import { SearchField } from '../../src/components/kit';
 import { Chip, FactorList, LayoutSvg, StaleProfileNotice, VerdictBadge } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { deletePlanting, savePlanting, type Planting, type PlantingStatus } from '../../src/db/plantings';
@@ -207,11 +209,9 @@ export default function BedPlanner() {
         {!cond ? <ActivityIndicator /> : (
           <View>
             <Body muted>Ranked for this bed’s sun, soil and slope and your property’s climate.</Body>
-            <TextInput
-              value={q} onChangeText={setQ} placeholder={`Search all ${ranked.length} plants for this spot`} placeholderTextColor={t.muted}
-              accessibilityLabel="Search plants for this bed" autoCorrect={false}
-              style={[styles.search, { color: t.text, borderColor: t.border, backgroundColor: t.card }]}
-            />
+            <View style={{ marginTop: 8, marginBottom: 4 }}>
+              <SearchField value={q} onChangeText={setQ} placeholder={`Search all ${ranked.length} plants`} accessibilityLabel={`Search all ${ranked.length} plants for this spot`} />
+            </View>
             {matchIds && visible.length === 0 && elsewhere.length === 0 && <Body muted>No plants match “{q}”.</Body>}
             {elsewhere.length > 0 && (
               <Body muted>
@@ -282,7 +282,6 @@ function compass(deg: number): string {
 }
 
 const styles = StyleSheet.create({
-  search: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, minHeight: 44, fontSize: 16, marginTop: 8, marginBottom: 4 },
   planting: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8, flexWrap: 'wrap' },
   rank: { borderTopWidth: 1, paddingVertical: 10 },
   rankHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },

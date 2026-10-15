@@ -10,7 +10,8 @@ import { findParcel, reverseCensus, type ParcelCandidate } from '@plotwright/pro
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { TextInput } from '../src/components/Text';
 import { georeferenceWith, pickBoundaryFile, type CrsChoice } from '../src/boundary/importFile';
 import { ParcelMap } from '../src/components/ParcelMap';
 import { Body, Button, Card, LEGAL_DISCLAIMER, useTheme } from '../src/components/ui';

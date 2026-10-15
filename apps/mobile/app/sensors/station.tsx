@@ -5,7 +5,8 @@
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../../src/components/Text';
 import { ambientDevices, ecowittLocal, ecowittRealtime, isLocalAddress, weatherLinkCurrent, weatherLinkLive, weatherLinkStations, type StationDevice } from '@plotwright/providers';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Chip } from '../../src/components/plants';

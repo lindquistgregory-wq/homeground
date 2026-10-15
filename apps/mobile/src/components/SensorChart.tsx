@@ -1,5 +1,6 @@
 /** Small line chart for sensor readings (react-native-svg). Shows min/max band for daily data. */
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import Svg, { Line, Path } from 'react-native-svg';
 import { useTheme } from './ui';
 

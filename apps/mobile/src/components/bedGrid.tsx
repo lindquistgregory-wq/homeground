@@ -5,7 +5,8 @@
  */
 import { assignCells, cellKey, cellsInGrid, plantById, plantsInSquares, type BedGrid, type Cell } from '@plotwright/core';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Text } from './Text';
 import type { Planting } from '../db/plantings';
 import { Body, Button, useTheme } from './ui';
 

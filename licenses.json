@@ -1,6 +1,16 @@
 {
   "$comment": "Every npm dependency must be listed here with a licence that allows free commercial use. `pnpm check:licenses` fails CI otherwise. Re-verify when adding or upgrading.",
   "packages": {
+    "@expo-google-fonts/inter": {
+      "license": "MIT AND OFL-1.1",
+      "commercialUse": true,
+      "note": "Inter typeface, bundled; SIL Open Font License allows embedding in commercial apps"
+    },
+    "@expo/vector-icons": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Icon fonts bundled in the app (MaterialCommunityIcons); no network use"
+    },
     "@maplibre/maplibre-react-native": {
       "license": "MIT",
       "commercialUse": true,
@@ -51,6 +61,16 @@
     "expo-file-system": {
       "license": "MIT",
       "commercialUse": true
+    },
+    "expo-font": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Loads the bundled Inter and icon fonts"
+    },
+    "expo-haptics": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Light vibration on taps"
     },
     "expo-iap": {
       "license": "MIT",
