@@ -3,7 +3,7 @@
  * control is at least 48 dp tall (or wide) for outdoor, gloved use, and carries its own label for
  * screen readers.
  */
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon, type IconName } from './Icon';
 import { Text, TextInput } from './Text';
@@ -87,6 +87,25 @@ export function ListRow({ icon, title, detail, onPress }: { icon: IconName; titl
   );
 }
 
+/**
+ * Explanations, methods and sources tucked behind a small "How this is worked out ⓘ" toggle, so a
+ * card leads with the answer. Every number keeps its source: it is one tap away, never removed.
+ */
+export function MoreInfo({ children, label = 'How this is worked out' }: { children: ReactNode; label?: string }) {
+  const t = useTheme();
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={{ marginTop: 8 }}>
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen((o) => !o)} hitSlop={8}
+        style={styles.moreRow}>
+        <Icon name={open ? 'information' : 'information-outline'} size={18} color={t.accent} />
+        <Text style={{ color: t.accent, fontWeight: '600', fontSize: 14 }}>{open ? 'Hide details' : label}</Text>
+      </Pressable>
+      {open && <View style={[styles.moreBody, { backgroundColor: t.surface }]}>{children}</View>}
+    </View>
+  );
+}
+
 /** Facts in a two-column grid: icon, small label, bold value (e.g. Sun · 6+ hours). */
 export function FactGrid({ items }: { items: Array<{ icon: IconName; label: string; value: string }> }) {
   const t = useTheme();
@@ -143,6 +162,8 @@ export function SearchField({ value, onChangeText, placeholder, accessibilityLab
 }
 
 const styles = StyleSheet.create({
+  moreRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32 },
+  moreBody: { borderRadius: 12, padding: 12, gap: 6, marginTop: 4 },
   factGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   fact: { flexGrow: 1, flexBasis: '45%', flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10 },
   factLabel: { fontSize: 12, fontWeight: '500' },

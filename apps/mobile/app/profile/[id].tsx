@@ -15,6 +15,7 @@ import { Text } from '../../src/components/Text';
 import { OfflinePackCard } from '../../src/components/OfflinePack';
 import { ParcelMap } from '../../src/components/ParcelMap';
 import { FactChips } from '../../src/components/facts';
+import { MoreInfo, Tile, TileRow } from '../../src/components/kit';
 import { deletePack, type PackInfo } from '../../src/services/offlinePacks';
 import { Body, Button, Card, LayerCard, LEGAL_DISCLAIMER, useTheme } from '../../src/components/ui';
 import { deleteParcel, getParcel, getSiteProfile, saveSiteProfile, type ParcelRecord } from '../../src/db/parcels';
@@ -68,25 +69,26 @@ export default function Profile() {
       <View style={styles.map}>
         <ParcelMap boundary={parcel.geometry} offlineImagery={pack?.imagery} />
       </View>
-      <Body muted>{LEGAL_DISCLAIMER}</Body>
-
-      <Card title={parcel.name}>
+      <Card title={parcel.name} icon="map-marker-radius-outline">
         <Body>
-          {formatArea(parcel.areaM2, units)} · perimeter {profile ? formatLength(profile.perimeterM, units) : '…'}
+          {formatArea(parcel.areaM2, units)} · perimeter {profile ? formatLength(profile.perimeterM, units) : '…'}{shown?.place?.countyName ? ` · ${shown.place.countyName}` : ''}
         </Body>
-        <Body muted>
-          Boundary: {parcel.boundarySource}
-          {parcel.boundaryMeta.attribution ? ` (${parcel.boundaryMeta.attribution})` : ''}
-          {parcel.boundaryMeta.medianGpsAccuracyM ? ` · GPS ±${Math.round(parcel.boundaryMeta.medianGpsAccuracyM)} m` : ''}
-        </Body>
-        {shown?.place?.countyName && <Body muted>{shown.place.countyName}</Body>}
         <FactChips profile={shown} />
-        {profile && <Body muted>Profile built {new Date(profile.computedAt).toLocaleString()}</Body>}
         {loading.length > 0 && <Body muted>Fetching: {loading.filter((l) => l !== 'starting').join(', ') || 'starting'}…</Body>}
+        <MoreInfo label="Boundary and sources">
+          <Body muted>
+            Boundary: {parcel.boundarySource}
+            {parcel.boundaryMeta.attribution ? ` (${parcel.boundaryMeta.attribution})` : ''}
+            {parcel.boundaryMeta.medianGpsAccuracyM ? ` · GPS ±${Math.round(parcel.boundaryMeta.medianGpsAccuracyM)} m` : ''}
+          </Body>
+          {profile && <Body muted>Profile built {new Date(profile.computedAt).toLocaleString()}</Body>}
+        </MoreInfo>
+        <Text style={{ color: t.muted, fontSize: 12, marginTop: 6 }}>{LEGAL_DISCLAIMER}</Text>
       </Card>
 
       <LayerCard
         title="Elevation"
+        icon="image-filter-hdr"
         layer={shown?.elevation}
         summary={(e) => `${formatElevation(e.centroidM, units)} at the centre · ${ft ? `${Math.round(mToFt(e.reliefM))} ft` : `${Math.round(e.reliefM)} m`} of relief`}
       >
@@ -98,7 +100,7 @@ export default function Profile() {
         )}
       </LayerCard>
 
-      <LayerCard title="Hardiness zone" layer={shown?.hardiness}>
+      <LayerCard title="Hardiness zone" icon="thermometer" layer={shown?.hardiness} summary={(z) => `Zone ${z.zone}`}>
         {(z) => (
           <Body>
             Zone {z.zone}
@@ -109,6 +111,7 @@ export default function Profile() {
 
       <LayerCard
         title="Frost dates (adjusted to your elevation)"
+        icon="snowflake"
         layer={shown?.climate}
         summary={(c) => {
           const d = c.frost.dates;
@@ -134,6 +137,7 @@ export default function Profile() {
 
       <LayerCard
         title="Soils"
+        icon="shovel"
         layer={shown?.soils}
         summary={(s) => {
           const u = s.units[0];
@@ -164,11 +168,12 @@ export default function Profile() {
         )}
       </LayerCard>
 
-      <LayerCard title="Flood hazard" layer={shown?.flood}>
+      <LayerCard title="Flood hazard" icon="home-flood" layer={shown?.flood} summary={(f) => f.headline}>
         {(f) => <Body>{f.headline}</Body>}
       </LayerCard>
 
-      <LayerCard title="Streams & ponds" layer={shown?.water}>
+      <LayerCard title="Streams & ponds" icon="waves" layer={shown?.water}
+        summary={(w) => w.nearest ? `Nearest ${w.nearest.kind === 'stream' ? 'stream' : 'pond or lake'} ${formatLength(w.nearest.distanceM, units)} away · ${w.features.length} nearby` : 'None mapped nearby'}>
         {(w) =>
           w.nearest ? (
             <Body>
@@ -183,21 +188,29 @@ export default function Profile() {
       </LayerCard>
 
       {profile && (
-        <Card title="Aerial imagery">
-          <Body muted>{profile.imagery.captureNote}</Body>
-          <Body muted>{profile.imagery.attribution}</Body>
+        <Card title="Aerial imagery" icon="satellite-variant">
+          <Body>{profile.imagery.attribution}</Body>
+          <MoreInfo label="When it was flown">
+            <Body muted>{profile.imagery.captureNote}</Body>
+          </MoreInfo>
         </Card>
       )}
 
       <OfflinePackCard parcelId={parcel.id} onChange={setPack} />
 
-      <Button title="Plan my homestead" onPress={() => router.push({ pathname: '/planner/[id]', params: { id: parcel.id } })} accessibilityHint="Guided questions or on-device AI chat, then a phased plan" />
-      <Button title="Design your land" kind="secondary" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcel.id } })} />
-      <Button title="Planting calendar & alerts" kind="secondary" onPress={() => router.push({ pathname: '/calendar/[id]', params: { id: parcel.id } })} />
-      <Button title="What grows here: plant library" kind="secondary" onPress={() => router.push({ pathname: '/plants', params: { parcelId: parcel.id } })} />
-      <Button title="Sensors & weather station" kind="secondary" onPress={() => router.push({ pathname: '/sensors', params: { parcelId: parcel.id } })} />
-      <Button title="Sun path & sun check" kind="secondary" onPress={() => router.push({ pathname: '/sun/[id]', params: { id: parcel.id } })} />
-      <Button title={loading.length ? 'Updating…' : 'Refresh site profile'} onPress={() => compute(parcel, true)} disabled={loading.length > 0} />
+      <TileRow>
+        <Tile icon="lightbulb-on-outline" label="Planner" caption="Phased plan" onPress={() => router.push({ pathname: '/planner/[id]', params: { id: parcel.id } })} />
+        <Tile icon="pencil-ruler" label="Design" caption="Layout" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcel.id } })} />
+        <Tile icon="calendar-month" label="Calendar" caption="Dates & alerts" onPress={() => router.push({ pathname: '/calendar/[id]', params: { id: parcel.id } })} />
+      </TileRow>
+      <View style={{ height: 10 }} />
+      <TileRow>
+        <Tile icon="sprout-outline" label="Plants" caption="What grows" onPress={() => router.push({ pathname: '/plants', params: { parcelId: parcel.id } })} />
+        <Tile icon="thermometer" label="Sensors" caption="Readings" onPress={() => router.push({ pathname: '/sensors', params: { parcelId: parcel.id } })} />
+        <Tile icon="weather-sunset" label="Sun path" caption="Sun check" onPress={() => router.push({ pathname: '/sun/[id]', params: { id: parcel.id } })} />
+      </TileRow>
+      <View style={{ height: 8 }} />
+      <Button icon="refresh" kind="secondary" title={loading.length ? 'Updating…' : 'Refresh site profile'} onPress={() => compute(parcel, true)} disabled={loading.length > 0} />
       <Button
         title="Delete this property"
         kind="secondary"
