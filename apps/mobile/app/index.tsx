@@ -12,6 +12,8 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { FactChips } from '../src/components/facts';
 import { Icon, type IconName } from '../src/components/Icon';
 import { FieldScene } from '../src/components/Illustration';
+import { PlantArt } from '../src/components/PlantArt';
+import { plantById } from '@plotwright/core';
 import { EmptyState, Tile, TileRow } from '../src/components/kit';
 import { ParcelMap } from '../src/components/ParcelMap';
 import { Text } from '../src/components/Text';
@@ -159,10 +161,13 @@ export default function Home() {
                   </Body>
                 ) : tasks.slice(0, 4).map((e, i) => (
                   <View key={i} style={[styles.task, i > 0 && { borderTopColor: t.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                    <View style={[styles.taskIcon, { backgroundColor: t.accentSoft }]}><Icon name={TASK_ICON[e.kind]} size={20} color={t.accent} /></View>
+                    {plantById(e.plantId) ? <PlantArt plant={plantById(e.plantId)!} size={42} /> : <View style={[styles.taskIcon, { backgroundColor: t.accentSoft }]}><Icon name={TASK_ICON[e.kind]} size={20} color={t.accent} /></View>}
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: t.text, fontWeight: '600', fontSize: 15 }}>{e.plantName}</Text>
-                      <Text style={{ color: t.muted, fontSize: 13 }}>{e.label}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Icon name={TASK_ICON[e.kind]} size={14} color={t.muted} />
+                        <Text style={{ color: t.muted, fontSize: 13 }}>{e.label}</Text>
+                      </View>
                     </View>
                     <Text style={{ color: e.start <= d ? t.accent : t.muted, fontSize: 13, fontWeight: '600' }}>
                       {e.start <= d ? `Now – ${formatDoy(e.end)}` : formatDoy(e.start)}

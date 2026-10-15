@@ -87,6 +87,24 @@ export function ListRow({ icon, title, detail, onPress }: { icon: IconName; titl
   );
 }
 
+/** Facts in a two-column grid: icon, small label, bold value (e.g. Sun · 6+ hours). */
+export function FactGrid({ items }: { items: Array<{ icon: IconName; label: string; value: string }> }) {
+  const t = useTheme();
+  return (
+    <View style={styles.factGrid}>
+      {items.map((f) => (
+        <View key={f.label} style={[styles.fact, { backgroundColor: t.surface }]} accessible accessibilityLabel={`${f.label}: ${f.value}`}>
+          <Icon name={f.icon} size={20} color={t.accent} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.factLabel, { color: t.muted }]}>{f.label}</Text>
+            <Text style={[styles.factValue, { color: t.text }]}>{f.value}</Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /** A friendly "nothing here yet" panel: a big icon, a title, one sentence and one action. */
 export function EmptyState({ icon, title, text, action, onAction, art }: {
   icon: IconName; title: string; text: string; action?: string; onAction?: () => void; art?: ReactNode;
@@ -125,6 +143,10 @@ export function SearchField({ value, onChangeText, placeholder, accessibilityLab
 }
 
 const styles = StyleSheet.create({
+  factGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  fact: { flexGrow: 1, flexBasis: '45%', flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10 },
+  factLabel: { fontSize: 12, fontWeight: '500' },
+  factValue: { fontSize: 15, fontWeight: '700' },
   empty: { alignItems: 'center', gap: 10, borderRadius: 20, borderWidth: 1, padding: 20, marginBottom: 14 },
   emptyIcon: { width: 84, height: 84, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   emptyTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center' },

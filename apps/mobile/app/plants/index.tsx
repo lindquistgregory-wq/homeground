@@ -12,6 +12,7 @@ import { Text } from '../../src/components/Text';
 import { Chip, VerdictBadge } from '../../src/components/plants';
 import { Body, useTheme } from '../../src/components/ui';
 import { SearchField } from '../../src/components/kit';
+import { PlantArt } from '../../src/components/PlantArt';
 import { useGarden } from '../../src/services/useGarden';
 
 const KINDS: Array<{ key: PlantKind | 'all'; label: string }> = [
@@ -54,6 +55,7 @@ export default function PlantLibrary() {
             onPress={() => router.push({ pathname: '/plants/[plantId]', params: parcelId ? { plantId: p.id, parcelId } : { plantId: p.id } })}
             style={[styles.row, { backgroundColor: t.card, borderColor: t.border }]}
           >
+            <PlantArt plant={p} size={52} />
             <View style={{ flex: 1 }}>
               <Text style={{ color: t.text, fontSize: 16, fontWeight: '600' }}>{p.commonName}</Text>
               <Text style={{ color: t.muted, fontStyle: 'italic' }}>{p.scientificName}</Text>
@@ -71,5 +73,5 @@ export default function PlantLibrary() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, padding: 10, marginBottom: 8 },
 });
