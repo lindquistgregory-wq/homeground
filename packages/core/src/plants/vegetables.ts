@@ -6,7 +6,7 @@ import type { PlantSpec } from './types';
 
 const SOL = 'Solanaceae', BRA = 'Brassicaceae', CUC = 'Cucurbitaceae', FAB = 'Fabaceae', AMA = 'Amaranthaceae',
   API = 'Apiaceae', AMY = 'Amaryllidaceae', AST = 'Asteraceae', POA = 'Poaceae', MAL = 'Malvaceae', CON = 'Convolvulaceae',
-  ASP = 'Asparagaceae', POL = 'Polygonaceae';
+  ASP = 'Asparagaceae', POL = 'Polygonaceae', BAS = 'Basellaceae';
 
 const BRASSICA_PESTS = ['cabbage worms', 'flea beetles', 'aphids', 'cabbage root maggot'];
 const BRASSICA_DISEASES = ['black rot', 'clubroot', 'downy mildew'];
@@ -30,6 +30,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'pepper-sweet', commonName: 'Sweet pepper', scientificName: 'Capsicum annuum', family: SOL, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['bell pepper', 'capsicum'],
     season: 'warm', frost: 'tender', heat: 'medium', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [60, 90], maturityFrom: 'transplant',
     germination: { minSoilF: 60, optimalF: [75, 85], days: [8, 20] },
@@ -43,6 +44,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'pepper-hot', commonName: 'Hot pepper', scientificName: 'Capsicum spp. (mostly C. annuum)', family: SOL, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['chile', 'chili', 'jalapeño', 'jalapeno', 'cayenne'],
     season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [65, 100], maturityFrom: 'transplant',
     germination: { minSoilF: 60, optimalF: [75, 85], days: [8, 25] },
@@ -54,6 +56,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'eggplant', commonName: 'Eggplant', scientificName: 'Solanum melongena', family: SOL, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['aubergine'],
     season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [60, 80], maturityFrom: 'transplant',
     germination: { minSoilF: 60, optimalF: [75, 85], days: [7, 14] },
@@ -76,6 +79,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'sweet-potato', commonName: 'Sweet potato', scientificName: 'Ipomoea batatas', family: CON, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['yam'],
     season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [90, 120], maturityFrom: 'transplant',
     sowing: { method: 'transplant', transplantDays: [21, 35], minSoilF: 65 },
@@ -185,6 +189,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'swiss-chard', commonName: 'Swiss chard', scientificName: 'Beta vulgaris (Cicla group)', family: AMA, kind: 'vegetable', lifecycle: 'biennial',
+    aliases: ['chard', 'silverbeet'],
     season: 'cool', frost: 'half-hardy', heat: 'high', sunHours: { min: 4, ideal: 6 },
     daysToMaturity: [50, 60], maturityFrom: 'seed',
     germination: { minSoilF: 40, optimalF: [50, 85], days: [5, 14] },
@@ -195,6 +200,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'beet', commonName: 'Beet', scientificName: 'Beta vulgaris', family: AMA, kind: 'vegetable', lifecycle: 'biennial',
+    aliases: ['beetroot', 'mangel', 'fodder beet'],
     season: 'cool', frost: 'half-hardy', heat: 'medium', sunHours: { min: 5, ideal: 6 },
     daysToMaturity: [50, 70], maturityFrom: 'seed',
     germination: { minSoilF: 40, optimalF: [50, 85], days: [5, 14] },
@@ -227,6 +233,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'turnip', commonName: 'Turnip', scientificName: 'Brassica rapa (Rapifera group)', family: BRA, kind: 'vegetable', lifecycle: 'biennial',
+    aliases: ['turnip greens', 'forage turnip'],
     season: 'cool', frost: 'hardy', heat: 'low', sunHours: { min: 5, ideal: 6 },
     daysToMaturity: [40, 60], maturityFrom: 'seed',
     germination: { minSoilF: 40, optimalF: [60, 85], days: [3, 10] },
@@ -280,6 +287,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'scallion', commonName: 'Green onion', scientificName: 'Allium fistulosum', family: AMY, kind: 'vegetable', lifecycle: 'perennial',
+    aliases: ['spring onion', 'bunching onion'],
     season: 'cool', frost: 'very-hardy', heat: 'medium', sunHours: { min: 5, ideal: 6 },
     daysToMaturity: [60, 70], maturityFrom: 'seed',
     germination: { minSoilF: 35, optimalF: [50, 85], days: [7, 14] },
@@ -290,6 +298,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'pea', commonName: 'Garden pea', scientificName: 'Pisum sativum', family: FAB, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['snow pea', 'snap pea', 'sugar snap', 'english pea'],
     season: 'cool', frost: 'hardy', heat: 'low', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [55, 70], maturityFrom: 'seed',
     germination: { minSoilF: 40, optimalF: [55, 75], days: [7, 14] },
@@ -302,6 +311,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'bean-bush', commonName: 'Snap bean (bush)', scientificName: 'Phaseolus vulgaris', family: FAB, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['green bean', 'string bean', 'wax bean'],
     season: 'warm', frost: 'tender', heat: 'medium', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [50, 60], maturityFrom: 'seed',
     germination: { minSoilF: 60, optimalF: [70, 85], days: [6, 10] },
@@ -313,6 +323,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'bean-pole', commonName: 'Snap bean (pole)', scientificName: 'Phaseolus vulgaris', family: FAB, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['green bean', 'runner bean', 'string bean'],
     season: 'warm', frost: 'tender', heat: 'medium', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [60, 70], maturityFrom: 'seed',
     germination: { minSoilF: 60, optimalF: [70, 85], days: [6, 10] },
@@ -325,6 +336,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'bean-dry', commonName: 'Dry bean', scientificName: 'Phaseolus vulgaris', family: FAB, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['pinto', 'kidney bean', 'black bean', 'navy bean', 'field bean'],
     season: 'warm', frost: 'tender', heat: 'medium', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [85, 105], maturityFrom: 'seed',
     germination: { minSoilF: 60, optimalF: [70, 85], days: [6, 10] },
@@ -336,6 +348,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'bean-lima', commonName: 'Lima bean', scientificName: 'Phaseolus lunatus', family: FAB, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['butter bean'],
     season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [65, 90], maturityFrom: 'seed',
     germination: { minSoilF: 65, optimalF: [75, 85], days: [7, 14] },
@@ -357,6 +370,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'squash-summer', commonName: 'Summer squash / zucchini', scientificName: 'Cucurbita pepo', family: CUC, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['zucchini', 'courgette', 'yellow squash', 'pattypan'],
     season: 'warm', frost: 'tender', heat: 'medium', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [45, 60], maturityFrom: 'seed',
     germination: { minSoilF: 60, optimalF: [70, 95], days: [3, 10] },
@@ -367,6 +381,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'squash-winter', commonName: 'Winter squash', scientificName: 'Cucurbita maxima / moschata / pepo', family: CUC, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['butternut', 'acorn squash', 'spaghetti squash', 'hubbard'],
     season: 'warm', frost: 'tender', heat: 'medium', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [80, 110], maturityFrom: 'seed',
     germination: { minSoilF: 60, optimalF: [70, 95], days: [3, 10] },
@@ -399,6 +414,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'muskmelon', commonName: 'Cantaloupe / muskmelon', scientificName: 'Cucumis melo', family: CUC, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['honeydew', 'melon'],
     season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 6, ideal: 10 },
     daysToMaturity: [70, 90], maturityFrom: 'seed',
     germination: { minSoilF: 65, optimalF: [75, 95], days: [3, 10] },
@@ -409,6 +425,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'corn', commonName: 'Sweet corn', scientificName: 'Zea mays', family: POA, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['maize'],
     season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 6, ideal: 10 },
     daysToMaturity: [65, 90], maturityFrom: 'seed', gddToMaturity: 1500, gddBaseF: 50,
     germination: { minSoilF: 50, optimalF: [60, 95], days: [5, 10] },
@@ -442,6 +459,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'arugula', commonName: 'Arugula', scientificName: 'Eruca vesicaria subsp. sativa', family: BRA, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['rocket'],
     season: 'cool', frost: 'hardy', heat: 'low', sunHours: { min: 4, ideal: 6 },
     daysToMaturity: [30, 40], maturityFrom: 'seed',
     germination: { minSoilF: 40, optimalF: [55, 75], days: [4, 7] },
@@ -452,6 +470,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'bok-choy', commonName: 'Bok choy', scientificName: 'Brassica rapa (Chinensis group)', family: BRA, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['pak choi'],
     season: 'cool', frost: 'half-hardy', heat: 'low', sunHours: { min: 4, ideal: 6 },
     daysToMaturity: [45, 60], maturityFrom: 'seed',
     germination: { minSoilF: 40, optimalF: [60, 85], days: [4, 7] },
@@ -462,6 +481,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'mustard-greens', commonName: 'Mustard greens', scientificName: 'Brassica juncea', family: BRA, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['mizuna', 'mustard'],
     season: 'cool', frost: 'hardy', heat: 'low', sunHours: { min: 4, ideal: 6 },
     daysToMaturity: [30, 45], maturityFrom: 'seed',
     germination: { minSoilF: 40, optimalF: [60, 85], days: [4, 7] },
@@ -502,6 +522,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'fava-bean', commonName: 'Fava bean', scientificName: 'Vicia faba', family: FAB, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['broad bean'],
     season: 'cool', frost: 'hardy', heat: 'low', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [80, 100], maturityFrom: 'seed',
     germination: { minSoilF: 40, optimalF: [50, 70], days: [7, 14] },
@@ -526,6 +547,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'southern-pea', commonName: 'Southern pea (cowpea)', scientificName: 'Vigna unguiculata', family: FAB, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['black-eyed pea', 'crowder pea', 'field pea', 'cowpea'],
     season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [60, 90], maturityFrom: 'seed',
     germination: { minSoilF: 60, optimalF: [70, 85], days: [5, 10] },
@@ -538,6 +560,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'peanut', commonName: 'Peanut', scientificName: 'Arachis hypogaea', family: FAB, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['groundnut', 'goober'],
     season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [110, 150], maturityFrom: 'seed',
     germination: { minSoilF: 65, optimalF: [75, 90], days: [7, 14] },
@@ -561,6 +584,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'rutabaga', commonName: 'Rutabaga', scientificName: 'Brassica napus (Napobrassica group)', family: BRA, kind: 'vegetable', lifecycle: 'biennial',
+    aliases: ['swede'],
     season: 'cool', frost: 'hardy', heat: 'low', sunHours: { min: 6, ideal: 8 },
     daysToMaturity: [80, 100], maturityFrom: 'seed',
     germination: { minSoilF: 40, optimalF: [60, 85], days: [5, 10] },
@@ -573,6 +597,7 @@ export const VEGETABLES: PlantSpec[] = [
   },
   {
     id: 'chinese-cabbage', commonName: 'Chinese (napa) cabbage', scientificName: 'Brassica rapa (Pekinensis group)', family: BRA, kind: 'vegetable', lifecycle: 'annual',
+    aliases: ['napa cabbage', 'wombok'],
     season: 'cool', frost: 'half-hardy', heat: 'low', sunHours: { min: 5, ideal: 6 },
     daysToMaturity: [55, 80], maturityFrom: 'seed',
     germination: { minSoilF: 40, optimalF: [65, 80], days: [4, 7] },
@@ -615,5 +640,94 @@ export const VEGETABLES: PlantSpec[] = [
     spacingIn: { inRow: 18, betweenRows: 36 }, heightIn: 96, spreadIn: 24, zones: [3, 9],
     humidityDisease: 'low', diseases: ['white mold'], pests: ['few serious'], yieldLb: { per: '10ft-row', range: [15, 35] },
     notes: ['Spreads hard: any tuber left in the ground resprouts. Grow it in a contained bed.', 'Stalks reach 6–10 ft; plant on the north side. Dig tubers after frost kills the tops.'],
+  },
+  {
+    id: 'artichoke', commonName: 'Globe artichoke', scientificName: 'Cynara cardunculus var. scolymus', family: AST, kind: 'vegetable', lifecycle: 'perennial',
+    season: 'cool', frost: 'half-hardy', heat: 'medium', sunHours: { min: 6, ideal: 8 },
+    daysToMaturity: [85, 110], maturityFrom: 'transplant',
+    germination: { minSoilF: 50, optimalF: [70, 80], days: [10, 20] },
+    sowing: { method: 'transplant', indoorStartWeeks: [10, 8], transplantDays: [-21, 0], minSoilF: 50 },
+    harvestWindowDays: 60, water: 'medium', soil: { pH: [6.0, 7.5], drainage: 'well-drained' },
+    spacingIn: { inRow: 36, betweenRows: 48 }, heightIn: 48, spreadIn: 48, zones: [7, 11],
+    humidityDisease: 'medium', diseases: ['gray mold (Botrytis)', 'powdery mildew'], pests: ['aphids', 'slugs', 'artichoke plume moth'],
+    yieldLb: { per: '10ft-row', range: [3, 8] },
+    notes: ['Grown as an annual north of zone 7: choose Imperial Star and set transplants out early, since young plants need 10+ days below 50 °F to form buds the first year.', 'Cut buds at full size while the bracts are still tight.'],
+    aliases: ['artichoke'],
+  },
+  {
+    id: 'celeriac', commonName: 'Celeriac (celery root)', scientificName: 'Apium graveolens var. rapaceum', family: API, kind: 'vegetable', lifecycle: 'biennial',
+    season: 'cool', frost: 'half-hardy', heat: 'low', sunHours: { min: 5, ideal: 6 },
+    daysToMaturity: [100, 120], maturityFrom: 'transplant',
+    germination: { minSoilF: 40, optimalF: [60, 75], days: [14, 21] },
+    sowing: { method: 'transplant', indoorStartWeeks: [12, 10], transplantDays: [7, 21], minSoilF: 50 },
+    harvestWindowDays: 45, water: 'high', soil: { pH: [6.0, 7.0], drainage: 'moist' },
+    spacingIn: { inRow: 8, betweenRows: 24 }, perSquareFoot: 1, heightIn: 24, spreadIn: 12,
+    humidityDisease: 'medium', diseases: ['early blight (Cercospora)', 'late blight (Septoria)'], pests: ['carrot rust fly', 'slugs'],
+    yieldLb: { per: '10ft-row', range: [8, 15] },
+    notes: ['Seed needs light to germinate: press it onto the surface. Steady water all season; any check in growth shrinks the root.', 'Roots keep in the ground under straw into early winter.'],
+  },
+  {
+    id: 'radicchio', commonName: 'Radicchio (chicory)', scientificName: 'Cichorium intybus', family: AST, kind: 'vegetable', lifecycle: 'biennial',
+    season: 'cool', frost: 'hardy', heat: 'low', sunHours: { min: 4, ideal: 6 },
+    daysToMaturity: [60, 85], maturityFrom: 'transplant',
+    germination: { minSoilF: 45, optimalF: [65, 70], days: [5, 10] },
+    sowing: { method: 'transplant', indoorStartWeeks: [6, 4], transplantDays: [-14, 14], fallDaysBeforeFirstFrost: [85, 70], minSoilF: 45 },
+    harvestWindowDays: 21, water: 'medium', soil: { pH: [6.0, 6.8], drainage: 'well-drained' },
+    spacingIn: { inRow: 10, betweenRows: 18 }, perSquareFoot: 1, heightIn: 12, spreadIn: 12,
+    humidityDisease: 'medium', diseases: ['tipburn', 'bottom rot'], pests: ['slugs', 'aphids'], companions: ['lettuce'],
+    yieldLb: { per: '10ft-row', range: [4, 7] },
+    notes: ['Heads best as a fall crop; summer heat above about 75 °F makes it bitter and quick to bolt.', 'Too much nitrogen stops tight heads from forming.'],
+    aliases: ['chicory', 'treviso'],
+  },
+  {
+    id: 'malabar-spinach', commonName: 'Malabar spinach', scientificName: 'Basella alba', family: BAS, kind: 'vegetable', lifecycle: 'annual',
+    season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 4, ideal: 8 },
+    daysToMaturity: [70, 85], maturityFrom: 'seed',
+    germination: { minSoilF: 65, optimalF: [70, 85], days: [10, 21] },
+    sowing: { method: 'either', indoorStartWeeks: [6, 5], transplantDays: [14, 28], directSowDays: [14, 35], minSoilF: 65 },
+    harvestWindowDays: 90, water: 'high', soil: { pH: [6.0, 6.8], drainage: 'moist' },
+    spacingIn: { inRow: 12, betweenRows: 36 }, heightIn: 72, spreadIn: 18,
+    humidityDisease: 'low', diseases: ['Cercospora leaf spot'], pests: ['root-knot nematodes'],
+    yieldLb: { per: '10ft-row', range: [8, 15] },
+    notes: ['A climbing summer green for when true spinach bolts: give it a trellis. Growth is slow until nights stay warm.', 'Soak seed overnight; dry soil makes the leaves bitter. Pick tips often.'],
+    aliases: ['vine spinach', 'basella'],
+  },
+  {
+    id: 'ground-cherry', commonName: 'Ground cherry', scientificName: 'Physalis pruinosa', family: SOL, kind: 'vegetable', lifecycle: 'annual',
+    season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 6, ideal: 8 },
+    daysToMaturity: [65, 75], maturityFrom: 'transplant',
+    germination: { minSoilF: 65, optimalF: [70, 85], days: [7, 21] },
+    sowing: { method: 'transplant', indoorStartWeeks: [7, 5], transplantDays: [14, 21], minSoilF: 60 },
+    harvestWindowDays: 60, water: 'medium', soil: { pH: [6.0, 6.8], drainage: 'well-drained' },
+    spacingIn: { inRow: 24, betweenRows: 36 }, heightIn: 24, spreadIn: 36,
+    humidityDisease: 'low', diseases: ['Verticillium wilt', 'early blight'], pests: ['Colorado potato beetle', 'flea beetles', 'spider mites'],
+    yieldLb: { per: '10ft-row', range: [5, 10] },
+    notes: ['Ripe fruit drops in a tan, papery husk: mulch with straw to catch it. Only eat ripe fruit; leaves and green fruit are toxic.', 'Self-seeds freely. Rotate away from tomatoes, peppers and potatoes.'],
+    aliases: ['husk cherry', 'husk tomato', 'cape gooseberry'],
+  },
+  {
+    id: 'yardlong-bean', commonName: 'Yardlong bean', scientificName: 'Vigna unguiculata subsp. sesquipedalis', family: FAB, kind: 'vegetable', lifecycle: 'annual',
+    season: 'warm', frost: 'tender', heat: 'high', sunHours: { min: 6, ideal: 8 },
+    daysToMaturity: [60, 80], maturityFrom: 'seed',
+    germination: { minSoilF: 60, optimalF: [70, 90], days: [6, 10] },
+    sowing: { method: 'direct', directSowDays: [14, 42], minSoilF: 65 },
+    harvestWindowDays: 45, water: 'medium', soil: { pH: [6.0, 7.0], drainage: 'well-drained' },
+    spacingIn: { inRow: 6, betweenRows: 36 }, heightIn: 96, spreadIn: 18, pollination: 'self',
+    humidityDisease: 'low', diseases: ['Fusarium wilt', 'root rot'], pests: ['aphids', 'stink bugs', 'pod borers'],
+    yieldLb: { per: '10ft-row', range: [5, 10] },
+    notes: ['Vines run 8–10 ft: needs a tall trellis. Pick pods at 12–18 in, while still pencil-thin, every day or two.', 'Needs real heat; pods suffer chilling injury in the 40s °F. Excess nitrogen delays flowering.'],
+    aliases: ['asparagus bean', 'long bean', 'snake bean'],
+  },
+  {
+    id: 'sorrel', commonName: 'Garden sorrel', scientificName: 'Rumex acetosa', family: POL, kind: 'vegetable', lifecycle: 'perennial',
+    season: 'perennial', frost: 'very-hardy', heat: 'low', sunHours: { min: 4, ideal: 6 },
+    daysToMaturity: [50, 60], maturityFrom: 'seed',
+    germination: { minSoilF: 50, optimalF: [60, 70], days: [7, 14] },
+    sowing: { method: 'either', indoorStartWeeks: [4, 3], transplantDays: [-14, 7], directSowDays: [-21, 0], minSoilF: 50 },
+    harvestWindowDays: 150, water: 'medium', soil: { pH: [5.5, 6.8], drainage: 'well-drained' },
+    spacingIn: { inRow: 12, betweenRows: 18 }, perSquareFoot: 1, heightIn: 24, spreadIn: 12, zones: [3, 9],
+    humidityDisease: 'low', diseases: ['leaf spot', 'rust'], pests: ['slugs', 'aphids'],
+    yieldLb: { per: '10ft-row', range: [3, 6] },
+    notes: ['Lemony leaves from early spring to frost; cut seed stalks as they appear, like rhubarb. Young leaves are the most tender.', 'High in oxalic acid: eat in moderation. Not the weedy sheep sorrel (R. acetosella).'],
   },
 ];

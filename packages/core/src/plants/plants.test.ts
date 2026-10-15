@@ -41,7 +41,8 @@ test('plant database integrity', () => {
     if (pl.sowing.indoorStartWeeks) assert.ok(pl.sowing.indoorStartWeeks[0] >= pl.sowing.indoorStartWeeks[1], `${where} indoor weeks are [earliest, latest]`);
     if (pl.germination) assert.ok(pl.germination.minSoilF <= pl.germination.optimalF[0], `${where} germination`);
     if (pl.lifecycle === 'perennial' && pl.kind !== 'vegetable' && pl.kind !== 'herb') assert.ok(pl.zones, `${where} perennial needs zones`);
-    if (pl.kind === 'fruit-tree' && pl.id !== 'fig') assert.ok(pl.chillHours, `${where} fruit tree needs chill hours`);
+    // Fig, pomegranate and subtropical evergreens (citrus, avocado: zone 8+) have no real chill requirement.
+    if (pl.kind === 'fruit-tree' && !['fig', 'pomegranate'].includes(pl.id) && !(pl.zones && pl.zones[0] >= 8)) assert.ok(pl.chillHours, `${where} fruit tree needs chill hours`);
     for (const c of [...(pl.companions ?? []), ...(pl.avoidNear ?? [])]) assert.ok(PLANTS.some((q) => q.id === c), `${where} references unknown ${c}`);
     assert.ok(pl.spacingIn.inRow > 0 && pl.spacingIn.betweenRows >= pl.spacingIn.inRow * 0.5, `${where} spacing`);
   }

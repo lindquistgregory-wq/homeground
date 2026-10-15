@@ -1,5 +1,5 @@
 /**
- * Plant library (§7.1): 76 vegetables, herbs, fruit and cover crops. With a property selected, each
+ * Plant library (§7.1): every vegetable, herb, fruit, nut, cover crop and flower in PLANTS. With a property selected, each
  * plant shows how well it fits the property's climate (zone, season length, heat, chill, humidity);
  * bed-level fit (sun, soil) is in the bed planner.
  */
@@ -14,7 +14,7 @@ import { useGarden } from '../../src/services/useGarden';
 
 const KINDS: Array<{ key: PlantKind | 'all'; label: string }> = [
   { key: 'all', label: 'All' }, { key: 'vegetable', label: 'Vegetables' }, { key: 'herb', label: 'Herbs' }, { key: 'berry', label: 'Berries' },
-  { key: 'vine-fruit', label: 'Vines' }, { key: 'fruit-tree', label: 'Fruit trees' }, { key: 'nut-tree', label: 'Nut trees' }, { key: 'cover-crop', label: 'Cover crops' },
+  { key: 'vine-fruit', label: 'Vines' }, { key: 'fruit-tree', label: 'Fruit trees' }, { key: 'nut-tree', label: 'Nut trees' }, { key: 'cover-crop', label: 'Cover crops' }, { key: 'field-crop', label: 'Grains & forage' },
 ];
 
 export default function PlantLibrary() {

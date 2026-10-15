@@ -715,6 +715,251 @@
    "title": "Marigolds",
    "verified_by": "fetch",
    "checked": "2026-10-14"
+  },
+  "artichoke": {
+   "url": "https://extension.usu.edu/yardandgarden/research/artichoke-in-the-garden",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow Artichoke in Your Garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "celeriac": {
+   "url": "https://www.uaex.uada.edu/publications/PDF/FSA-6080.pdf",
+   "publisher": "University of Arkansas Cooperative Extension Service",
+   "title": "Celeriac (Home Gardening Series, FSA6080)",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "radicchio": {
+   "url": "https://extension.usu.edu/yardandgarden/research/chicory-in-the-garden",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow Chicory in Your Garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "malabar-spinach": {
+   "url": "https://ask.ifas.ufl.edu/publication/HS1371",
+   "publisher": "UF/IFAS Extension (University of Florida)",
+   "title": "Florida Cultivation Guide for Malabar Spinach",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "ground-cherry": {
+   "url": "https://extension.psu.edu/growing-ground-cherries",
+   "publisher": "Penn State Extension",
+   "title": "Growing Ground Cherries",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "yardlong-bean": {
+   "url": "https://ask.ifas.ufl.edu/publication/HS1268",
+   "publisher": "UF/IFAS Extension (University of Florida)",
+   "title": "Long Bean—an Asian Vegetable Emerging in Florida",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "sorrel": {
+   "url": "https://extension.umn.edu/vegetables/growing-sorrel",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing sorrel in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "quince": {
+   "url": "https://extension.psu.edu/quince-an-autumn-fruit",
+   "publisher": "Penn State Extension",
+   "title": "Quince: An Autumn Fruit",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "asian-pear": {
+   "url": "https://plants.ces.ncsu.edu/plants/pyrus-pyrifolia/",
+   "publisher": "NC State Extension",
+   "title": "Pyrus pyrifolia (Asian pear), Extension Gardener Plant Toolbox",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "mulberry": {
+   "url": "https://www.aces.edu/blog/topics/forestry/native-fruits-red-mulberry-morus-rubra/",
+   "publisher": "Alabama Cooperative Extension System",
+   "title": "Native Fruits: Red Mulberry (Morus rubra)",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "pomegranate": {
+   "url": "https://hgic.clemson.edu/factsheet/pomegranate-punica-granatum-how-to-grow-care-for-and-enjoy-in-south-carolina/",
+   "publisher": "Clemson Cooperative Extension Home & Garden Information Center",
+   "title": "Pomegranate (Punica granatum): How to Grow, Care for, and Enjoy in South Carolina",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "jujube": {
+   "url": "https://aggie-horticulture.tamu.edu/fruit-nut/fact-sheets/jujube/",
+   "publisher": "Texas A&M AgriLife Extension",
+   "title": "Jujube",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "satsuma": {
+   "url": "https://ask.ifas.ufl.edu/publication/CH116",
+   "publisher": "UF/IFAS Extension (University of Florida)",
+   "title": "The Satsuma Mandarin",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "lemon": {
+   "url": "https://ask.ifas.ufl.edu/publication/HS402",
+   "publisher": "UF/IFAS Extension (University of Florida)",
+   "title": "Lemon Growing in the Florida Home Landscape",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "orange": {
+   "url": "https://ask.ifas.ufl.edu/publication/HS132",
+   "publisher": "UF/IFAS Extension (University of Florida)",
+   "title": "Citrus Culture in the Home Landscape",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "avocado": {
+   "url": "https://ask.ifas.ufl.edu/publication/MG213",
+   "publisher": "UF/IFAS Extension (University of Florida)",
+   "title": "Avocado Growing in the Florida Home Landscape",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "olive": {
+   "url": "https://plants.ces.ncsu.edu/plants/olea-europaea/",
+   "publisher": "NC State Extension",
+   "title": "Olea europaea (olive), Extension Gardener Plant Toolbox",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "walnut-english": {
+   "url": "https://extension.usu.edu/yardandgarden/research/walnuts-in-the-home-orchard",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow Walnuts in Your Yard",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "walnut-black": {
+   "url": "https://fieldreport.caes.uga.edu/features/did-you-know-you-can-grow-black-walnut/",
+   "publisher": "University of Georgia Cooperative Extension",
+   "title": "Did you know you can grow: Black walnut",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "chestnut": {
+   "url": "https://plants.ces.ncsu.edu/plants/castanea-mollissima/",
+   "publisher": "NC State Extension",
+   "title": "Castanea mollissima (Chinese chestnut), Extension Gardener Plant Toolbox",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "almond": {
+   "url": "https://extension.usu.edu/yardandgarden/research/almonds-in-the-home-garden",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow Almonds in Your Garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "cranberry": {
+   "url": "https://www.umass.edu/agriculture-food-environment/home-lawn-garden/fact-sheets/homeowners-guide-to-cranberry-vine-propagation",
+   "publisher": "UMass Amherst Extension (Center for Agriculture, Food, and the Environment)",
+   "title": "Homeowners’ Guide to Cranberry Vine Propagation",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "honeyberry": {
+   "url": "https://extension.usu.edu/yardandgarden/research/haskap-in-the-garden",
+   "publisher": "USU Extension (Utah State University)",
+   "title": "How to Grow Haskap (Blue Honeysuckle) in Your Garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "kiwi-fuzzy": {
+   "url": "https://extension.oregonstate.edu/catalog/em-9322-growing-kiwifruit-your-home-garden",
+   "publisher": "Oregon State University Extension Service",
+   "title": "Growing kiwifruit in your home garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "maypop": {
+   "url": "https://www.aces.edu/blog/topics/forestry/native-fruits-maypop/",
+   "publisher": "Alabama Cooperative Extension System",
+   "title": "Native Fruits: Maypop",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "wheat": {
+   "url": "https://pueblo.extension.colostate.edu/growing-wheat-in-your-home-garden/",
+   "publisher": "Colorado State University Extension",
+   "title": "Growing Wheat in Your Home Garden",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "barley": {
+   "url": "https://cropsandsoils.extension.wisc.edu/articles/spring-barley/",
+   "publisher": "University of Wisconsin–Madison Division of Extension",
+   "title": "Spring Barley",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "sorghum": {
+   "url": "https://extension.oregonstate.edu/catalog/em-8794-dryland-cropping-systems-grain-sorghum",
+   "publisher": "Oregon State University Extension Service",
+   "title": "Dryland cropping systems: Grain sorghum",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "corn-field": {
+   "url": "https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/growing-popcorn",
+   "publisher": "University of Minnesota Extension",
+   "title": "Growing popcorn in home gardens",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "soybean": {
+   "url": "https://content.ces.ncsu.edu/north-carolina-soybean-production-guide/soybean-planting-decisions",
+   "publisher": "NC State Extension",
+   "title": "North Carolina Soybean Production Guide: Planting Decisions",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "chickpea": {
+   "url": "https://extension.oregonstate.edu/catalog/pub/em-8791-dryland-cropping-systems-chickpea-production-guide",
+   "publisher": "Oregon State University Extension Service",
+   "title": "Dryland Cropping Systems: Chickpea Production Guide",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "alfalfa": {
+   "url": "https://extension.missouri.edu/publications/g4550",
+   "publisher": "University of Missouri Extension",
+   "title": "Alfalfa",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "red-clover": {
+   "url": "https://extension.missouri.edu/publications/g4638",
+   "publisher": "University of Missouri Extension",
+   "title": "Red Clover",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "timothy": {
+   "url": "https://extension.umaine.edu/publications/2265e/",
+   "publisher": "University of Maine Cooperative Extension",
+   "title": "Maine Forage Facts: Timothy (Bulletin #2265)",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
+  },
+  "sorghum-sudangrass": {
+   "url": "https://extension.psu.edu/planting-forage-sorghum-sudangrass-and-sorghum-sudangrass",
+   "publisher": "Penn State Extension",
+   "title": "Planting Forage Sorghum, Sudangrass, and Sorghum-Sudangrass",
+   "verified_by": "fetch",
+   "checked": "2026-10-14"
   }
  }
 }
