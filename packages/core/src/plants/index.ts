@@ -8,6 +8,7 @@ export * from './seasonModel';
 export * from './calendar';
 export * from './suitability';
 export * from './garden';
+export * from './bedGrid';
 
 /** Every bundled plant. */
 export const PLANTS: PlantSpec[] = [...VEGETABLES, ...HERBS, ...FRUIT, ...COVER_CROPS, ...FIELD_CROPS];

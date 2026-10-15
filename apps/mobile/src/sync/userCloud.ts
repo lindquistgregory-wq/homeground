@@ -145,12 +145,12 @@ const store: LocalStore = {
       const d = (rec.data ?? {}) as Record<string, unknown>;
       const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
       await db.runAsync(
-        `INSERT INTO plantings (id, parcel_id, design_id, bed_object_id, plant_id, variety, year, share, status, planted_on, notes, created_at, updated_hlc, deleted)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO plantings (id, parcel_id, design_id, bed_object_id, plant_id, variety, year, share, status, planted_on, notes, cells, created_at, updated_hlc, deleted)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET plant_id = excluded.plant_id, variety = excluded.variety, year = excluded.year, share = excluded.share,
-           status = excluded.status, planted_on = excluded.planted_on, notes = excluded.notes, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
+           status = excluded.status, planted_on = excluded.planted_on, notes = excluded.notes, cells = excluded.cells, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
         rec.id, String(d.parcel_id ?? ''), String(d.design_id ?? ''), String(d.bed_object_id ?? ''), String(d.plant_id ?? ''), str(d.variety),
-        Number(d.year ?? new Date().getFullYear()), Number(d.share ?? 1), String(d.status ?? 'planned'), str(d.planted_on), str(d.notes),
+        Number(d.year ?? new Date().getFullYear()), Number(d.share ?? 1), String(d.status ?? 'planned'), str(d.planted_on), str(d.notes), str(d.cells),
         String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
       );
     } else if (rec.collection === 'designs') {

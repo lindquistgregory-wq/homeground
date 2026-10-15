@@ -1,3 +1,4 @@
+import type { Cell } from '@plotwright/core';
 import { getDb } from './database';
 import { clock, newId } from '../services/identity';
 
@@ -15,18 +16,30 @@ export interface Planting {
   status: PlantingStatus;
   plantedOn?: string;
   notes?: string;
+  /** Square-foot cells in the bed this planting occupies ([col, row]); undefined = not placed yet. */
+  cells?: Cell[];
   createdAt: string;
 }
 
 interface Row {
   id: string; parcel_id: string; design_id: string; bed_object_id: string; plant_id: string; variety: string | null;
-  year: number; share: number; status: PlantingStatus; planted_on: string | null; notes: string | null; created_at: string;
+  year: number; share: number; status: PlantingStatus; planted_on: string | null; notes: string | null; cells: string | null; created_at: string;
 }
 
 const fromRow = (r: Row): Planting => ({
   id: r.id, parcelId: r.parcel_id, designId: r.design_id, bedObjectId: r.bed_object_id, plantId: r.plant_id, variety: r.variety ?? undefined,
-  year: r.year, share: r.share, status: r.status, plantedOn: r.planted_on ?? undefined, notes: r.notes ?? undefined, createdAt: r.created_at,
+  year: r.year, share: r.share, status: r.status, plantedOn: r.planted_on ?? undefined, notes: r.notes ?? undefined, cells: parseCells(r.cells), createdAt: r.created_at,
 });
+
+export function parseCells(json: string | null | undefined): Cell[] | undefined {
+  if (!json) return undefined;
+  try {
+    const v: unknown = JSON.parse(json);
+    return Array.isArray(v) ? v.filter((c): c is Cell => Array.isArray(c) && c.length === 2 && c.every(Number.isInteger)) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export async function plantingsForParcel(parcelId: string): Promise<Planting[]> {
   const db = await getDb();
@@ -43,12 +56,12 @@ export async function savePlanting(p: Omit<Planting, 'id' | 'createdAt'> & { id?
   const rec: Planting = { ...p, id: p.id ?? newId(), createdAt: p.createdAt ?? new Date().toISOString() };
   const hlc = clock().tick();
   await db.runAsync(
-    `INSERT INTO plantings (id, parcel_id, design_id, bed_object_id, plant_id, variety, year, share, status, planted_on, notes, created_at, updated_hlc, deleted)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+    `INSERT INTO plantings (id, parcel_id, design_id, bed_object_id, plant_id, variety, year, share, status, planted_on, notes, cells, created_at, updated_hlc, deleted)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
      ON CONFLICT(id) DO UPDATE SET plant_id = excluded.plant_id, variety = excluded.variety, year = excluded.year, share = excluded.share,
-       status = excluded.status, planted_on = excluded.planted_on, notes = excluded.notes, updated_hlc = excluded.updated_hlc, deleted = 0`,
+       status = excluded.status, planted_on = excluded.planted_on, notes = excluded.notes, cells = excluded.cells, updated_hlc = excluded.updated_hlc, deleted = 0`,
     rec.id, rec.parcelId, rec.designId, rec.bedObjectId, rec.plantId, rec.variety ?? null, rec.year, rec.share, rec.status,
-    rec.plantedOn ?? null, rec.notes ?? null, rec.createdAt, hlc,
+    rec.plantedOn ?? null, rec.notes ?? null, rec.cells ? JSON.stringify(rec.cells) : null, rec.createdAt, hlc,
   );
   await db.runAsync('INSERT OR REPLACE INTO sync_pending (collection, id, hlc) VALUES (?, ?, ?)', 'plantings', rec.id, hlc);
   return rec;

@@ -193,6 +193,10 @@ const MIGRATIONS: string[] = [
   `
   ALTER TABLE designs ADD COLUMN scenario TEXT;
   `,
+  // 7 — bed layout: the 1 × 1 ft squares a planting occupies, JSON [[col, row], ...] (see core bedGrid).
+  `
+  ALTER TABLE plantings ADD COLUMN cells TEXT;
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;

@@ -4,17 +4,18 @@
  * the DEM. Plants are ranked with reasons, and each can be laid out to scale with a yield estimate.
  */
 import {
-  PLANTS, estimateYieldLb, searchPlants, footprintAreaM2, formatArea, layoutBed, plantById, rankPlants, rotationAdvice, type PlantSpec, type Suitability,
+  MAX_GRID_CELLS, PLANTS, bedGrid, estimateYieldLb, searchPlants, footprintAreaM2, formatArea, layoutBed, plantById, rankPlants, rotationAdvice, type PlantSpec, type Suitability,
 } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useEntitlements } from '../../src/billing/entitlements';
+import { BedGridEditor } from '../../src/components/bedGrid';
 import { Chip, FactorList, LayoutSvg, StaleProfileNotice, VerdictBadge } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { deletePlanting, savePlanting, type Planting, type PlantingStatus } from '../../src/db/plantings';
 import { computeSun, loadAnalysis, type ParcelAnalysis, type SunResult } from '../../src/services/analysis';
-import { activePlantings, bedConditions, bedHistory, bedName, cropShadeObjects, cropShadeSeason, plantsForSpot, type BedReport } from '../../src/services/garden';
+import { activePlantings, bedConditions, bedHistory, bedName, cropShadeObjects, cropShadeSeason, isTreeSpot, plantsForSpot, type BedReport } from '../../src/services/garden';
 import { useGarden } from '../../src/services/useGarden';
 import { calibratedSunHours } from '@plotwright/core';
 import { listSensors } from '../../src/db/sensors';
@@ -44,6 +45,8 @@ export default function BedPlanner() {
   const bed = bedIndex >= 0 ? state!.design.objects[bedIndex]! : null;
   const name = bed ? bedName(bed, bedIndex) : 'this bed';
   const bedPlantings = useMemo(() => state?.plantings.filter((p) => p.bedObjectId === bedId) ?? [], [state, bedId]);
+  // The grid shows this year's crops that are still in the bed.
+  const gridPlantings = useMemo(() => bedPlantings.filter((p) => p.year === year && (p.status === 'planned' || p.status === 'planted')), [bedPlantings, year]);
 
   // Terrain + growing-season sun, with other beds' tall crops shading this one (but not its own).
   useEffect(() => {
@@ -185,6 +188,20 @@ export default function BedPlanner() {
           <Button title="Planting calendar" kind="secondary" onPress={() => router.push({ pathname: '/calendar/[id]', params: { id: state.parcel.id } })} />
         )}
       </Card>
+
+      {!isTreeSpot(bed) && gridPlantings.length > 0 && (() => {
+        const grid = bedGrid(bed.width, bed.length);
+        return (
+          <Card title="Bed layout (1 ft squares)">
+            {grid.cells > MAX_GRID_CELLS
+              ? <Body muted>This bed is {grid.cols} × {grid.rows} ft ({grid.cells} squares), too big to lay out square by square on a phone. Use the row layout under each plant below.</Body>
+              : <BedGridEditor grid={grid} plantings={gridPlantings} onSave={async (changes) => {
+                  for (const { planting, cells } of changes) await savePlanting({ ...planting, cells });
+                  await reload();
+                }} />}
+          </Card>
+        );
+      })()}
 
       <Card title="What grows best here">
         {!cond ? <ActivityIndicator /> : (
