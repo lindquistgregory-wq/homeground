@@ -3,7 +3,7 @@
  * get warnings (boundary, setbacks, slope, overlaps), keep versions, and export.
  */
 import {
-  Camera, GeoJSONSource, Layer, Map, RasterSource, type CameraRef, type CircleLayerSpecification, type FillLayerSpecification,
+  Camera, GeoJSONSource, Layer, Map, Marker, RasterSource, type CameraRef, type CircleLayerSpecification, type FillLayerSpecification,
   type LineLayerSpecification, type MapRef, type SymbolLayerSpecification,
 } from '@maplibre/maplibre-react-native';
 import {
@@ -19,7 +19,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
-import { Body, Button, Card, useTheme } from '../../src/components/ui';
+import { Body, Button, Card, tapFeedback, useTheme } from '../../src/components/ui';
+import { Icon } from '../../src/components/Icon';
+import { CATEGORY_COLOR, objectIcon } from '../../src/components/objectIcons';
 import { getParcel, getSiteProfile, type ParcelRecord } from '../../src/db/parcels';
 import { createScenario, deleteScenario, getOrCreateDesign, listScenarios, listVersions, saveDesign, saveVersion } from '../../src/db/designs';
 import { getPack } from '../../src/services/offlinePacks';
@@ -52,13 +54,7 @@ const CAMERA_PADDING = { top: 40, right: 40, bottom: 40, left: 40 };
 const SENSOR_PIN_PAINT: CircleLayerSpecification['paint'] = { 'circle-color': '#4ea8f2', 'circle-radius': 5, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 };
 // The OpenFreeMap style serves Noto Sans glyphs only; the MapLibre default font stack would render nothing.
 const SENSOR_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, 1.1], 'text-anchor': 'top' };
-const OBJECT_PIN_PAINT: CircleLayerSpecification['paint'] = {
-  'circle-color': ['case', ['==', ['get', 'selected'], 1], '#4ea8f2', '#ffffff'],
-  'circle-radius': ['case', ['==', ['get', 'selected'], 1], 8, 6],
-  'circle-stroke-color': '#000000',
-  'circle-stroke-width': 1.5,
-};
-const OBJECT_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-offset': [0, 1.2], 'text-anchor': 'top', 'text-optional': true };
+const OBJECT_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = { 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-offset': [0, 1.7], 'text-anchor': 'top', 'text-optional': true };
 const SENSOR_LABEL_PAINT: SymbolLayerSpecification['paint'] ={ 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 };
 
 export default function DesignScreen() {
@@ -163,6 +159,7 @@ export default function DesignScreen() {
   };
 
   // ---------- map interaction ----------
+  const badgeTapAt = useRef(0);
   const onMapPress = (lon: number, lat: number) => {
     if (!design || !frame) return;
     const snapped = snapToGridM(frame, [lon, lat], 0.25);
@@ -193,6 +190,8 @@ export default function DesignScreen() {
       setMoving(false);
       return;
     }
+    // A tap on an object's icon badge also reaches the map underneath; keep that selection.
+    if (Date.now() - badgeTapAt.current < 600) return;
     setSelectedId(null);
   };
 
@@ -230,7 +229,7 @@ export default function DesignScreen() {
       features: design.objects.map((o) => ({
         type: 'Feature' as const,
         geometry: { type: 'Polygon' as const, coordinates: [footprintLonLat(o, frame)] },
-        properties: { id: o.id, selected: o.id === selectedId ? 1 : 0, existing: o.existing ? 1 : 0, label: o.label ?? objectType(o.kind)?.name ?? o.kind },
+        properties: { id: o.id, selected: o.id === selectedId ? 1 : 0, existing: o.existing ? 1 : 0, label: o.label ?? objectType(o.kind)?.name ?? o.kind, kind: o.kind, category: objectType(o.kind)?.category ?? '' },
       })),
     };
   }, [design, frame, selectedId]);
@@ -254,7 +253,9 @@ export default function DesignScreen() {
   const onObjectPress = (e: { stopPropagation(): void; nativeEvent: { features: Array<{ properties?: { id?: unknown } | null }> } }) => {
     if (placing || moving) return; // let the map handle placement taps
     e.stopPropagation(); // otherwise the Map's onPress deselects straight away
-    const fid = e.nativeEvent.features[0]?.properties?.id;
+    selectObject(e.nativeEvent.features[0]?.properties?.id);
+  };
+  const selectObject = (fid: unknown) => {
     if (typeof fid === 'string') {
       setSelectedId(fid);
       setTab('selected');
@@ -367,10 +368,30 @@ export default function DesignScreen() {
           )}
           {objectPins && (
             <GeoJSONSource id="object-pins" data={objectPins} hitbox={{ top: 20, right: 20, bottom: 20, left: 20 }} onPress={onObjectPress}>
-              <Layer type="circle" id="obj-pin" paint={OBJECT_PIN_PAINT} />
               <Layer type="symbol" id="obj-label" layout={OBJECT_LABEL_LAYOUT} paint={SENSOR_LABEL_PAINT} />
             </GeoJSONSource>
           )}
+          {/* Each object's icon badge, coloured by category (beds green, water blue, animals amber …). */}
+          {objectPins?.features.map((f) => {
+            const sel = f.properties.selected === 1;
+            const size = sel ? 40 : 32;
+            return (
+              <Marker key={f.properties.id} id={`pin-${f.properties.id}`} lngLat={f.geometry.coordinates as [number, number]}
+                onPress={() => { if (!placing && !moving) { badgeTapAt.current = Date.now(); tapFeedback(); selectObject(f.properties.id); } }}>
+                <View
+                  accessibilityRole="button"
+                  accessibilityLabel={`${f.properties.label}${sel ? ', selected' : ''}`}
+                  style={{
+                    width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: f.properties.existing ? '#757575' : CATEGORY_COLOR[f.properties.category] ?? '#2f7d32',
+                    borderWidth: sel ? 3 : 2, borderColor: sel ? '#4ea8f2' : '#ffffff', elevation: 4,
+                  }}
+                >
+                  <Icon name={objectIcon(f.properties.kind, f.properties.category)} size={sel ? 22 : 18} color="#ffffff" />
+                </View>
+              </Marker>
+            );
+          })}
           {sensorPins && (
             <GeoJSONSource id="sensor-pins" data={sensorPins}>
               <Layer type="circle" id="sensor-pin" paint={SENSOR_PIN_PAINT} />

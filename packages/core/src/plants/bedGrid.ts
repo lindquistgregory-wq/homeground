@@ -64,3 +64,43 @@ export function assignCells(layout: Record<string, Cell[]>, plantingId: string, 
   if (!remove) out[plantingId] = [...(out[plantingId] ?? []), ...cells.map((c) => [c[0], c[1]] as Cell)];
   return out;
 }
+
+/** A plant drawn in the bed: centre (x, y) and diameter in square-foot units from the bed's top-left. */
+export interface PlantMark { x: number; y: number; size: number }
+
+/**
+ * Where to draw each plant in a planting's squares. Small crops sit several to a square on an even
+ * sub-grid (4 lettuces, 16 carrots). A crop needing k × k squares gets one plant per full k × k
+ * block of its squares, then one per leftover group of k² squares, so the count always equals
+ * plantsInSquares(plant, squares).plants.
+ */
+export function plantMarks(plant: PlantSpec, cells: readonly Cell[]): PlantMark[] {
+  const fit = plantsInSquares(plant, 1);
+  const sorted = [...cells].sort((a, b) => a[1] - b[1] || a[0] - b[0]);
+  if (!fit.squaresPerPlant) {
+    const n = fit.perSquare ?? 1, side = Math.ceil(Math.sqrt(n));
+    const out: PlantMark[] = [];
+    for (const [c, r] of sorted)
+      for (let i = 0; i < n; i++) out.push({ x: c + ((i % side) + 0.5) / side, y: r + (Math.floor(i / side) + 0.5) / side, size: 0.9 / side });
+    return out;
+  }
+  const spp = fit.squaresPerPlant, k = Math.round(Math.sqrt(spp));
+  const mine = new Set(sorted.map(cellKey));
+  const claimed = new Set<string>();
+  const out: PlantMark[] = [];
+  for (const [c, r] of sorted) {
+    if (claimed.has(cellKey([c, r]))) continue;
+    const block: Cell[] = [];
+    for (let dr = 0; dr < k; dr++) for (let dc = 0; dc < k; dc++) block.push([c + dc, r + dr]);
+    if (block.every((b) => mine.has(cellKey(b)) && !claimed.has(cellKey(b)))) {
+      block.forEach((b) => claimed.add(cellKey(b)));
+      out.push({ x: c + k / 2, y: r + k / 2, size: k * 0.9 });
+    }
+  }
+  const rest = sorted.filter((cell) => !claimed.has(cellKey(cell)));
+  for (let i = 0; i + spp <= rest.length; i += spp) {
+    const group = rest.slice(i, i + spp);
+    out.push({ x: group.reduce((s, g) => s + g[0] + 0.5, 0) / spp, y: group.reduce((s, g) => s + g[1] + 0.5, 0) / spp, size: k * 0.9 });
+  }
+  return out;
+}
