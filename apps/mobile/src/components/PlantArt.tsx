@@ -29,7 +29,7 @@ const Calyx = ({ cx = 24, cy = 14 }: { cx?: number; cy?: number }) => (
   <Path d={`M${cx} ${cy - 4} L${cx + 2} ${cy} L${cx + 7} ${cy - 1} L${cx + 3} ${cy + 2} L${cx + 5} ${cy + 6} L${cx} ${cy + 3} L${cx - 5} ${cy + 6} L${cx - 3} ${cy + 2} L${cx - 7} ${cy - 1} L${cx - 2} ${cy} Z`} fill={LEAF} />
 );
 
-function draw(a: ArtSpec): ReactNode {
+export function drawPlant(a: ArtSpec): ReactNode {
   const m = a.main, dark = shade(m, -0.25), light = shade(m, 0.3);
   switch (a.shape) {
     case 'round':
@@ -356,7 +356,18 @@ export function PlantArt({ plant, size = 48 }: { plant: Pick<PlantSpec, 'id' | '
       importantForAccessibility="no-hide-descendants"
       style={{ width: size, height: size, borderRadius: size * 0.28, backgroundColor: tint, alignItems: 'center', justifyContent: 'center' }}
     >
-      <Svg width={size * 0.86} height={size * 0.86} viewBox="0 0 48 48">{draw(a)}</Svg>
+      <Svg width={size * 0.86} height={size * 0.86} viewBox="0 0 48 48">{drawPlant(a)}</Svg>
     </View>
+  );
+}
+
+/** A plant's picture inside another drawing: centred at (cx, cy), `size` across, with a soft ground shadow. */
+export function PlantGlyph({ plantId, kind, cx, cy, size }: { plantId: string; kind: string; cx: number; cy: number; size: number }) {
+  const s = size / 48;
+  return (
+    <G>
+      <Ellipse cx={cx} cy={cy + size * 0.36} rx={size * 0.36} ry={size * 0.12} fill="#000000" opacity={0.28} />
+      <G transform={`translate(${cx - size / 2} ${cy - size / 2}) scale(${s})`}>{drawPlant(artFor(plantId, kind))}</G>
+    </G>
   );
 }
