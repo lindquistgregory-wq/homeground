@@ -32,7 +32,12 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-mono.png",
+        "backgroundColor": "#2e6b25"
+      }
     },
     "plugins": [
       "expo-router",
@@ -94,10 +99,24 @@
       "./plugins/withAdsKotlinMetadataFix",
       "./plugins/withReleaseSigning",
       "expo-sharing",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/adaptive-icon.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "backgroundColor": "#2e6b25",
+          "dark": {
+            "image": "./assets/adaptive-icon.png",
+            "backgroundColor": "#1f4d22"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "icon": "./assets/icon.png"
   }
 }

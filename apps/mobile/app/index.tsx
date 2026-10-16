@@ -17,7 +17,7 @@ import { plantById } from '@plotwright/core';
 import { EmptyState, Tile, TileRow } from '../src/components/kit';
 import { ParcelMap } from '../src/components/ParcelMap';
 import { Text } from '../src/components/Text';
-import { Body, Button, Card, tapFeedback, useTheme } from '../src/components/ui';
+import { Body, Button, Card, Skeleton, tapFeedback, useTheme } from '../src/components/ui';
 import { useEntitlements } from '../src/billing/entitlements';
 import { getSiteProfile, listParcels, type ParcelRecord } from '../src/db/parcels';
 import { homeSummary, todayDoy, type HomeSummary } from '../src/services/homeSummary';
@@ -74,6 +74,13 @@ export default function Home() {
           <Icon name="sprout" size={26} color={t.accent} />
         </View>
       </View>
+
+      {parcels === null && (
+        <View style={[styles.property, { backgroundColor: t.card, padding: 16 }]}>
+          <View style={{ height: 150, borderRadius: 16, backgroundColor: t.surface, marginBottom: 14 }} />
+          <Skeleton lines={3} label="Loading your properties" />
+        </View>
+      )}
 
       {parcels && parcels.length === 0 && (
         <>

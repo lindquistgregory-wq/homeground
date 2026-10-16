@@ -16,6 +16,11 @@
       "commercialUse": true,
       "note": "Open-source MapLibre Native bindings; no key or tile fees"
     },
+    "@resvg/resvg-js": {
+      "license": "MPL-2.0",
+      "commercialUse": true,
+      "note": "dev only: renders the icon, splash and Play Store images from SVG sources (scripts/make-assets.ts); not shipped in the app"
+    },
     "@types/node": {
       "license": "MIT",
       "commercialUse": true,
@@ -109,6 +114,11 @@
       "license": "MIT",
       "commercialUse": true,
       "note": "System share sheet"
+    },
+    "expo-splash-screen": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Splash screen config plugin (image and colours bundled in the app)"
     },
     "expo-sqlite": {
       "license": "MIT",

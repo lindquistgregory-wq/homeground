@@ -1,0 +1,9 @@
+  <!-- Plotwright mark: a sprout rising from a curved field, with a small sun. Kept inside the adaptive-icon safe circle (r ≈ 312 around the centre). -->
+  <circle cx="664" cy="300" r="46" fill="SUN"/>
+  <path d="M 230 708 Q 512 616 794 708 L 830 790 Q 512 700 194 790 Z" fill="FIELD1"/>
+  <path d="M 194 790 Q 512 700 830 790 L 812 826 Q 512 750 212 826 Z" fill="FIELD2"/>
+  <path d="M 300 712 Q 512 668 724 712 M 262 756 Q 512 704 762 756" stroke="FURROW" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M 512 700 C 512 620 512 540 512 440" stroke="STEM" stroke-width="42" fill="none" stroke-linecap="round"/>
+  <path d="M 506 548 C 428 548 326 498 296 382 C 410 370 492 430 506 548 Z" fill="LEAF1"/>
+  <path d="M 518 470 C 560 376 662 312 768 334 C 748 448 642 498 518 470 Z" fill="LEAF2"/>
+  <path d="M 488 528 C 440 500 380 456 340 404 M 540 452 C 600 410 660 380 728 358" stroke="VEIN" stroke-width="10" fill="none" stroke-linecap="round"/>

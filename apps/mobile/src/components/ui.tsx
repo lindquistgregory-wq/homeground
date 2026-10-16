@@ -1,8 +1,8 @@
 /** Small shared UI pieces. Colours meet WCAG AA against their backgrounds (§11 accessibility). */
 import type { Attribution, Layer } from '@plotwright/core';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import * as Haptics from 'expo-haptics';
-import { ActivityIndicator, Pressable, StyleSheet, View, useColorScheme } from 'react-native';
+import { Animated, Pressable, StyleSheet, View, useColorScheme } from 'react-native';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 
@@ -26,6 +26,30 @@ export function useTheme() {
     warn: dark ? '#f2c14e' : '#8a5a00',
     bad: dark ? '#ff8a80' : '#a8231f',
   };
+}
+
+/**
+ * Loading placeholder: soft bars that pulse where content will appear, so a screen keeps its shape
+ * while data arrives. Announced once to screen readers as "Loading …".
+ */
+export function Skeleton({ lines = 2, label = 'Loading' }: { lines?: number; label?: string }) {
+  const t = useTheme();
+  const pulse = useRef(new Animated.Value(0.45)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.sequence([
+      Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 0.45, duration: 700, useNativeDriver: true }),
+    ]));
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+  return (
+    <View accessible accessibilityLabel={label} accessibilityRole="progressbar" style={{ gap: 8, paddingVertical: 4 }}>
+      {Array.from({ length: lines }, (_, i) => (
+        <Animated.View key={i} style={{ height: 14, borderRadius: 7, width: i === lines - 1 ? '62%' : '100%', backgroundColor: t.surface, opacity: pulse }} />
+      ))}
+    </View>
+  );
 }
 
 /** A light tick on press, so taps feel physical. Fails silently where the device has no haptics. */
@@ -104,7 +128,7 @@ export function LayerCard<T>({ title, layer, children, summary, icon }: {
   if (!layer) {
     return (
       <Card title={title} icon={icon}>
-        <ActivityIndicator accessibilityLabel={`Loading ${title}`} />
+        <Skeleton label={`Loading ${title}`} />
       </Card>
     );
   }
