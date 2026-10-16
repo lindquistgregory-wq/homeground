@@ -172,6 +172,34 @@ export const KIND_ART: Record<string, ArtSpec> = {
   'field-crop': { shape: 'grain', main: '#d4a94a' },
 };
 
-export function artFor(plantId: string, kind: string): ArtSpec {
-  return PLANT_ART[plantId] ?? KIND_ART[kind] ?? { shape: 'leafy', main: G };
+/** Icons the user picked for their own plants (registered by the custom-plant store). */
+let customArt: Record<string, ArtSpec> = {};
+export function setCustomArt(map: Record<string, ArtSpec>): void {
+  customArt = map;
 }
+
+export function artFor(plantId: string, kind: string): ArtSpec {
+  return customArt[plantId] ?? PLANT_ART[plantId] ?? KIND_ART[kind] ?? { shape: 'leafy', main: G };
+}
+
+/** Every shape, in the order the icon picker shows them. */
+export const ART_SHAPES: ArtShape[] = [
+  'round', 'pear', 'lemon', 'berries', 'cluster', 'cherries', 'strawberry', 'bramble', 'melon', 'pumpkin',
+  'bell', 'chili', 'pod', 'long', 'corn', 'carrot', 'roundroot', 'tuber', 'bulb', 'garlic',
+  'stalk', 'leafy', 'cabbage', 'broccoli', 'herb', 'lavender', 'grain', 'nut', 'peanut', 'flower', 'clover', 'tree',
+];
+
+/** Colour swatches for the icon picker: the palette the bundled plants are drawn in. */
+export const ART_COLORS: string[] = [
+  '#e5483b', '#d62d20', '#8e1f4b', '#e0436b', '#f08a24', '#f2c12e', '#f1ece4', '#c9a46a',
+  '#8b5a2b', '#5b2a6e', '#8e4fa0', '#3b4fa0', '#8fd16a', '#4f9a3a', '#2e7d32', '#3f6b4e',
+];
+
+/** Plain-language names for the shapes, for screen readers. */
+export const SHAPE_LABEL: Record<ArtShape, string> = {
+  round: 'Round fruit', pear: 'Pear', lemon: 'Citrus', berries: 'Berries', cluster: 'Grape cluster', cherries: 'Cherries',
+  strawberry: 'Strawberry', bramble: 'Bramble berry', melon: 'Melon', pumpkin: 'Squash', bell: 'Bell pepper', chili: 'Chili',
+  pod: 'Pod', long: 'Long fruit', corn: 'Corn', carrot: 'Taproot', roundroot: 'Round root', tuber: 'Tuber', bulb: 'Bulb',
+  garlic: 'Garlic', stalk: 'Stalk', leafy: 'Leafy green', cabbage: 'Head', broccoli: 'Florets', herb: 'Herb', lavender: 'Flower spike',
+  grain: 'Grain', nut: 'Nut', peanut: 'Peanut', flower: 'Flower', clover: 'Cover crop', tree: 'Tree',
+};

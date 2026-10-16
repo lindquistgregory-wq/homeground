@@ -346,9 +346,9 @@ export function drawPlant(a: ArtSpec): ReactNode {
 }
 
 /** The plant's picture on a rounded tile tinted from its own colour. */
-export function PlantArt({ plant, size = 48 }: { plant: Pick<PlantSpec, 'id' | 'kind'>; size?: number }) {
+export function PlantArt({ plant, size = 48, art }: { plant: Pick<PlantSpec, 'id' | 'kind'>; size?: number; art?: ArtSpec }) {
   const t = useTheme();
-  const a = artFor(plant.id, plant.kind);
+  const a = art ?? artFor(plant.id, plant.kind);
   const tint = t.dark ? shade(a.main, -0.72) : shade(a.main, 0.85);
   return (
     <View

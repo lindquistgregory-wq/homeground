@@ -60,8 +60,8 @@ export class HybridClock {
   }
 }
 
-export type SyncCollection = 'parcels' | 'siteProfiles' | 'designs' | 'plantings' | 'sensors' | 'sensorReadings' | 'plannerGoals' | 'tasks' | 'settings';
-const COLLECTION_ORDER: SyncCollection[] = ['settings', 'parcels', 'siteProfiles', 'designs', 'plantings', 'sensors', 'sensorReadings', 'plannerGoals', 'tasks'];
+export type SyncCollection = 'parcels' | 'siteProfiles' | 'designs' | 'plantings' | 'sensors' | 'sensorReadings' | 'plannerGoals' | 'tasks' | 'settings' | 'customPlants';
+const COLLECTION_ORDER: SyncCollection[] = ['settings', 'customPlants', 'parcels', 'siteProfiles', 'designs', 'plantings', 'sensors', 'sensorReadings', 'plannerGoals', 'tasks'];
 
 export interface SyncRecord<T = unknown> {
   collection: SyncCollection;

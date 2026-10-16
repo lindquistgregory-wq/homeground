@@ -4,7 +4,7 @@
  * the DEM. Plants are ranked with reasons, and each can be laid out to scale with a yield estimate.
  */
 import {
-  MAX_GRID_CELLS, PLANTS, bedGrid, estimateYieldLb, searchPlants, footprintAreaM2, formatArea, layoutBed, plantById, rankPlants, rotationAdvice, type PlantSpec, type Suitability,
+  MAX_GRID_CELLS, allPlants, bedGrid, estimateYieldLb, searchPlants, footprintAreaM2, formatArea, layoutBed, plantById, rankPlants, rotationAdvice, type PlantSpec, type Suitability,
 } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -24,6 +24,7 @@ import { calibratedSunHours } from '@plotwright/core';
 import { listSensors } from '../../src/db/sensors';
 import { getCalibration, type StoredCalibration } from '../../src/services/sunCalibration';
 import { useSettings } from '../../src/services/settings';
+import { useCustomPlants } from '../../src/services/customPlants';
 
 const SHARES: Array<[number, string]> = [[1, 'Whole bed'], [0.5, 'Half'], [0.25, 'Quarter']];
 const STATUS_NEXT: Record<PlantingStatus, PlantingStatus | null> = { planned: 'planted', planted: 'harvested', harvested: null, removed: null };
@@ -35,6 +36,8 @@ export default function BedPlanner() {
   const units = useSettings((s) => s.units);
   const ent = useEntitlements((s) => s.entitlements);
   const { state, error, reload } = useGarden(id);
+  // The user's own plants join the list (and re-rank) as soon as they're added or edited.
+  const customVersion = useCustomPlants((s) => s.version);
   const [analysis, setAnalysis] = useState<ParcelAnalysis | null>(null);
   const [sun, setSun] = useState<SunResult | null>(null);
   const [sunError, setSunError] = useState<string | null>(null);
@@ -97,8 +100,8 @@ export default function BedPlanner() {
 
   const ranked: Suitability[] = useMemo(() => {
     if (!state || !bed || !cond) return [];
-    return rankPlants(plantsForSpot(bed, PLANTS), state.site, cond, name);
-  }, [state, bed, cond, name]);
+    return rankPlants(plantsForSpot(bed, allPlants()), state.site, cond, name);
+  }, [state, bed, cond, name, customVersion]);
 
   if (error) return <Body>{error}</Body>;
   if (!state) return <ActivityIndicator style={{ marginTop: 40 }} accessibilityLabel="Loading bed" />;
@@ -133,7 +136,7 @@ export default function BedPlanner() {
   const matchIds = q.trim() ? new Set(searchPlants(q).map((p) => p.id)) : null;
   const visible = matchIds ? ranked.filter((s) => matchIds.has(s.plantId)) : showAll ? ranked : ranked.slice(0, 15);
   // Matches that don't belong in this kind of spot (trees outside a tree spot), so a search never comes up empty without a reason.
-  const elsewhere = matchIds ? PLANTS.filter((p) => matchIds.has(p.id) && !ranked.some((s) => s.plantId === p.id)) : [];
+  const elsewhere = matchIds ? allPlants().filter((p) => matchIds.has(p.id) && !ranked.some((s) => s.plantId === p.id)) : [];
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>

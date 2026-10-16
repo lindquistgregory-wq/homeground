@@ -2,6 +2,7 @@ import type { PlantSpec } from './types';
 import { VEGETABLES } from './vegetables';
 import { COVER_CROPS, FRUIT, HERBS } from './fruitHerbs';
 import { FIELD_CROPS } from './fieldCrops';
+import { customPlantById, customPlants } from './custom';
 
 export * from './types';
 export * from './seasonModel';
@@ -9,16 +10,23 @@ export * from './calendar';
 export * from './suitability';
 export * from './garden';
 export * from './bedGrid';
+export * from './custom';
 
 /** Every bundled plant. */
 export const PLANTS: PlantSpec[] = [...VEGETABLES, ...HERBS, ...FRUIT, ...COVER_CROPS, ...FIELD_CROPS];
 
 const byId = new Map(PLANTS.map((p) => [p.id, p]));
 export function plantById(id: string): PlantSpec | undefined {
-  return byId.get(id);
+  return byId.get(id) ?? customPlantById(id);
 }
 
-export function searchPlants(query: string, list: PlantSpec[] = PLANTS): PlantSpec[] {
+/** The bundled plants followed by the user's own (see custom.ts). */
+export function allPlants(): PlantSpec[] {
+  const mine = customPlants();
+  return mine.length ? [...PLANTS, ...mine] : PLANTS;
+}
+
+export function searchPlants(query: string, list: PlantSpec[] = allPlants()): PlantSpec[] {
   const q = query.trim().toLowerCase();
   if (!q) return list;
   return list.filter((p) => p.commonName.toLowerCase().includes(q) || p.scientificName.toLowerCase().includes(q) || p.family.toLowerCase().includes(q) || (p.aliases ?? []).some((a) => a.toLowerCase().includes(q)));
