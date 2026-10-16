@@ -5,6 +5,7 @@ import { Alert } from 'react-native';
 import { useEntitlements } from '../billing/entitlements';
 import { deletePack, downloadPack, getPack, planForParcel, type PackInfo, type PackProgress } from '../services/offlinePacks';
 import { Body, Button, Card } from './ui';
+import { MoreInfo } from './kit';
 
 /** Offline parcel pack card for the Site Profile screen (Homestead Pro). */
 export function OfflinePackCard({ parcelId, onChange }: { parcelId: string; onChange?: (p: PackInfo | undefined) => void }) {
@@ -38,12 +39,15 @@ export function OfflinePackCard({ parcelId, onChange }: { parcelId: string; onCh
   };
 
   return (
-    <Card title="Offline pack">
-      <Body muted>
-        Saves aerial imagery for this property (plus a {PACK_BUFFER_M} m margin) and a fresh Site Profile, so the map and profile work
-        without signal. Design, plant guide, sensors and the planner already work offline.
-      </Body>
-      {plan && <Body muted>About {plan.totalTiles.toLocaleString()} map tiles, roughly {plan.estimatedMb} MB{plan.trimmed ? ' (the deepest zoom was trimmed for this large property)' : ''}.</Body>}
+    <Card title="Offline pack" icon="cloud-download-outline">
+      <Body>Keep this property’s map and profile on the phone for places without signal{plan ? ` (about ${plan.estimatedMb} MB)` : ''}.</Body>
+      <MoreInfo label="What gets saved">
+        <Body muted>
+          Aerial imagery for this property (plus a {PACK_BUFFER_M} m margin) and a fresh Site Profile. Design, the plant guide, sensors and
+          the planner already work offline.
+        </Body>
+        {plan && <Body muted>About {plan.totalTiles.toLocaleString()} map tiles, roughly {plan.estimatedMb} MB{plan.trimmed ? ' (the deepest zoom was trimmed for this large property)' : ''}.</Body>}
+      </MoreInfo>
       {pack?.cleared && <Body>Your phone cleared the saved maps to free up space. Tap Update pack to download them again.</Body>}
       {pack && !pack.cleared && <Body>{pack.complete ? 'Saved' : 'Partly saved'} {new Date(pack.createdAt).toLocaleDateString()} · {pack.layers.map((l) => `${l.saved.toLocaleString()} of ${l.tiles.toLocaleString()} imagery tiles`).join(', ')}</Body>}
       {progress && (

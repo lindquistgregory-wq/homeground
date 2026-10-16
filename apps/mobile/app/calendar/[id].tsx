@@ -10,7 +10,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Chip, StaleProfileNotice } from '../../src/components/plants';
-import { EmptyState } from '../../src/components/kit';
+import { EmptyState, MoreInfo, Pill } from '../../src/components/kit';
 import { PlantArt } from '../../src/components/PlantArt';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { alertsEnabled, alertsForParcel, type ParcelAlerts } from '../../src/services/alerts';
@@ -107,13 +107,15 @@ export default function CalendarScreen() {
           <Chip label="Typical" active={risk === 'typical'} onPress={() => setRisk('typical')} />
           <Chip label={ent.has('planting.dynamicScheduling') ? 'Heat-unit harvest dates' : 'Heat-unit dates (Pro)'} active={dynamic} disabled={!ent.has('planting.dynamicScheduling')} onPress={() => setDynamic((d) => !d)} />
         </View>
-        <Body muted>
-          Cautious waits for the 1-in-10-years late frost before setting out frost-tender crops; typical uses the median.
-          {frost?.lastSpring[32][50] != null && ` Median last frost ${formatDoy(frost.lastSpring[32][50]!)}`}
-          {frost?.firstFall[32][50] != null && `, first frost ${formatDoy(frost.firstFall[32][50]!)}.`}
-        </Body>
-        {climate?.status === 'ok' && <Text style={{ color: t.muted, fontSize: 12 }}>{climate.attribution.source}, adjusted to the parcel’s elevation.</Text>}
-        <Text style={{ color: t.muted, fontSize: 12 }}>Soil temperature: {state.soil.label}.</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+          {frost?.lastSpring[32][50] != null && <Pill icon="snowflake" text={`Last frost ${formatDoy(frost.lastSpring[32][50]!)}`} />}
+          {frost?.firstFall[32][50] != null && <Pill icon="snowflake-alert" text={`First frost ${formatDoy(frost.firstFall[32][50]!)}`} />}
+        </View>
+        <MoreInfo>
+          <Body muted>Cautious waits for the 1-in-10-years late frost before setting out frost-tender crops; typical uses the median date.</Body>
+          {climate?.status === 'ok' && <Text style={{ color: t.muted, fontSize: 12 }}>{climate.attribution.source}, adjusted to the parcel’s elevation.</Text>}
+          <Text style={{ color: t.muted, fontSize: 12 }}>Soil temperature: {state.soil.label}.</Text>
+        </MoreInfo>
       </Card>
 
       {cals.length === 0 ? (

@@ -12,7 +12,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-na
 import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { BedGridEditor } from '../../src/components/bedGrid';
-import { SearchField } from '../../src/components/kit';
+import { FactGrid, MoreInfo, Pill, SearchField } from '../../src/components/kit';
 import { PlantArt } from '../../src/components/PlantArt';
 import { Chip, FactorList, LayoutSvg, StaleProfileNotice, VerdictBadge } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
@@ -146,25 +146,37 @@ export default function BedPlanner() {
           sunError ? <Body muted>Sun model unavailable: {sunError}</Body> : <ActivityIndicator accessibilityLabel="Modeling sun for this bed" />
         ) : (
           <View>
-            <Body>
-              Sun: {cond.sunHours !== undefined ? `${cond.sunHours.toFixed(1)} hours of direct sun a day, April–September average` : 'computing…'}
-            </Body>
-            <Body muted>
-              Modeled from terrain, mapped buildings and trees{ent.has('layers.canopyShade') ? ', canopy heights' : ''}, your design and other beds’ tall crops.
-              {lightCal ? ` Calibrated by the light sensor “${lightCal.sensor}” over ${lightCal.cal.clearDays} clear days (×${lightCal.cal.ratio!.toFixed(2)}).` : ' Use a sun check or a light sensor in the bed to confirm.'}
-            </Body>
-            {cond.soil ? (
-              <Body>
-                Soil{cond.raised ? ' under the bed' : ''}: {cond.soilName ?? 'dominant map unit'}{cond.soilPercent !== undefined ? ` (${Math.round(cond.soilPercent)}% of the parcel)` : ''}
-                {[cond.soil.texture, cond.soil.drainageClass, cond.soil.pH !== undefined ? `pH ${cond.soil.pH}` : null].filter(Boolean).length ? ' · ' : ''}
-                {[cond.soil.texture, cond.soil.drainageClass, cond.soil.pH !== undefined ? `pH ${cond.soil.pH}` : null].filter(Boolean).join(' · ')}
+            <FactGrid items={[
+              { icon: 'white-balance-sunny', label: 'Sun (Apr–Sep)', value: cond.sunHours !== undefined ? `${cond.sunHours.toFixed(1)} h a day` : 'Computing…' },
+              { icon: 'shovel', label: cond.raised ? 'Ground below' : 'Soil', value: cond.soil?.texture ?? (cond.soil ? 'Mapped' : 'No data') },
+              { icon: 'flask-outline', label: 'Soil pH', value: cond.soil?.pH !== undefined ? String(cond.soil.pH) : '—' },
+              cond.slopeDeg !== undefined
+                ? { icon: 'slope-uphill', label: 'Slope', value: `${cond.slopeDeg.toFixed(0)}°${cond.aspectDeg !== undefined ? ` ${compass(cond.aspectDeg)}` : ''}` }
+                : { icon: 'water-outline', label: 'Drainage', value: cond.soil?.drainageClass ?? '—' },
+            ]} />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+              {cond.raised && <Pill icon="grid" text="Raised bed" tone="accent" />}
+              {cond.covered && <Pill icon="greenhouse" text="Covered" tone="accent" />}
+              {lightCal && <Pill icon="white-balance-sunny" text="Sensor-calibrated" tone="accent" />}
+              {cond.coldPoolingM !== undefined && cond.coldPoolingM > 1 && <Pill icon="snowflake-alert" text={`Frost pocket (~${cond.coldPoolingM.toFixed(1)} m low)`} tone="warn" />}
+            </View>
+            <MoreInfo>
+              <Body muted>
+                Sun is modeled from terrain, mapped buildings and trees{ent.has('layers.canopyShade') ? ', canopy heights' : ''}, your design and other beds’ tall crops (April–September average).
+                {lightCal ? ` Calibrated by the light sensor “${lightCal.sensor}” over ${lightCal.cal.clearDays} clear days (×${lightCal.cal.ratio!.toFixed(2)}).` : ' A sun check or a light sensor in the bed confirms it.'}
               </Body>
-            ) : <Body muted>Soil data unavailable for this parcel.</Body>}
-            {soilLayer?.status === 'ok' && <Text style={{ color: t.muted, fontSize: 12 }}>{soilLayer.attribution.source}. Soil maps are drawn at field scale; a soil test of this bed is more reliable.</Text>}
-            {cond.slopeDeg !== undefined && <Body>Slope: {cond.slopeDeg.toFixed(0)}°{cond.aspectDeg !== undefined ? `, facing ${compass(cond.aspectDeg)}` : ''}</Body>}
-            {cond.coldPoolingM !== undefined && cond.coldPoolingM > 1 && <Body>Frost pocket: sits ~{cond.coldPoolingM.toFixed(1)} m below its surroundings; expect later spring frosts than the parcel average.</Body>}
-            {cond.raised && <Body muted>Raised or filled bed: drainage and texture come from what you fill it with.</Body>}
-            {cond.covered && <Body muted>Covered beds extend the season by a few weeks at each end; the calendar below still uses outdoor frost dates.</Body>}
+              {cond.soil ? (
+                <Body muted>
+                  Soil{cond.raised ? ' under the bed' : ''}: {cond.soilName ?? 'dominant map unit'}{cond.soilPercent !== undefined ? ` (${Math.round(cond.soilPercent)}% of the parcel)` : ''}
+                  {[cond.soil.texture, cond.soil.drainageClass, cond.soil.pH !== undefined ? `pH ${cond.soil.pH}` : null].filter(Boolean).length ? ' · ' : ''}
+                  {[cond.soil.texture, cond.soil.drainageClass, cond.soil.pH !== undefined ? `pH ${cond.soil.pH}` : null].filter(Boolean).join(' · ')}
+                </Body>
+              ) : <Body muted>Soil data unavailable for this parcel.</Body>}
+              {soilLayer?.status === 'ok' && <Text style={{ color: t.muted, fontSize: 12 }}>{soilLayer.attribution.source}. Soil maps are drawn at field scale; a soil test of this bed is more reliable.</Text>}
+              {cond.coldPoolingM !== undefined && cond.coldPoolingM > 1 && <Body muted>Frost pocket: this spot sits ~{cond.coldPoolingM.toFixed(1)} m below its surroundings, so expect later spring frosts than the parcel average.</Body>}
+              {cond.raised && <Body muted>Raised or filled bed: drainage and texture come from what you fill it with.</Body>}
+              {cond.covered && <Body muted>Covered beds extend the season by a few weeks at each end; the calendar still uses outdoor frost dates.</Body>}
+            </MoreInfo>
           </View>
         )}
       </Card>

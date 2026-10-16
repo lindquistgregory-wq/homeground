@@ -9,7 +9,7 @@ import { TextInput } from '../src/components/Text';
 import { StubBillingAdapter, billing } from '../src/billing/adapter';
 import { useEntitlements } from '../src/billing/entitlements';
 import { Body, Button, Card, useTheme } from '../src/components/ui';
-import { ListRow } from '../src/components/kit';
+import { ListRow, MoreInfo } from '../src/components/kit';
 import { deleteAllLocalData } from '../src/db/database';
 import { listSensors } from '../src/db/sensors';
 import { deleteSecrets } from '../src/services/secrets';
@@ -107,11 +107,14 @@ export default function Settings() {
       </Card>
 
       <Card title="Frost & weather alerts" icon="bell-ring-outline">
-        <Body>
-          Notifies you when the National Weather Service forecast threatens crops you’ve marked as planted: frost or freeze for
-          tender crops, extreme heat, and strong wind for tall crops. Checked on this device (about twice a day when your phone
-          allows background refresh, and whenever you open the app). No account or push server involved.
-        </Body>
+        <Body>Frost, heat and wind warnings for crops you’ve marked as planted.</Body>
+        <MoreInfo label="How alerts work">
+          <Body muted>
+            Uses the National Weather Service forecast: frost or freeze for tender crops, extreme heat, and strong wind for tall
+            crops. Checked on this device about twice a day when your phone allows background refresh, and whenever you open the
+            app. No account or push server involved.
+          </Body>
+        </MoreInfo>
         <Button
           title={alerts ? '✓ Alerts on' : 'Turn on alerts'}
           kind={alerts ? 'primary' : 'secondary'}

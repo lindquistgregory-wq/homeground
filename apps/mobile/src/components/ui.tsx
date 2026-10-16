@@ -96,21 +96,21 @@ export function ConfidenceBadge({ a }: { a: Attribution }) {
  * Renders a Site Profile layer: its content with source/licence/date, or an explicit unavailable state.
  * With `summary`, the card starts collapsed to that one line and expands on tap.
  */
-export function LayerCard<T>({ title, layer, children, summary }: {
-  title: string; layer: Layer<T> | undefined; children: (v: T) => ReactNode; summary?: (v: T) => string;
+export function LayerCard<T>({ title, layer, children, summary, icon }: {
+  title: string; layer: Layer<T> | undefined; children: (v: T) => ReactNode; summary?: (v: T) => string; icon?: IconName;
 }) {
   const t = useTheme();
   const [open, setOpen] = useState(false);
   if (!layer) {
     return (
-      <Card title={title}>
+      <Card title={title} icon={icon}>
         <ActivityIndicator accessibilityLabel={`Loading ${title}`} />
       </Card>
     );
   }
   if (layer.status === 'unavailable') {
     return (
-      <Card title={title} right={<Text style={[styles.badge, { color: t.muted, borderColor: t.muted }]}>unavailable</Text>}>
+      <Card title={title} icon={icon} right={<Text style={[styles.badge, { color: t.muted, borderColor: t.muted }]}>unavailable</Text>}>
         <Body muted>{layer.reason}</Body>
         <Text style={[styles.source, { color: t.muted }]}>Source tried: {layer.source}{layer.retryable ? ' · tap Refresh to try again' : ''}</Text>
       </Card>
@@ -120,7 +120,7 @@ export function LayerCard<T>({ title, layer, children, summary }: {
   if (summary && !open) {
     return (
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: false }} accessibilityHint="Shows the details and sources" onPress={() => setOpen(true)}>
-        <Card title={title} right={<ConfidenceBadge a={a} />}>
+        <Card title={title} icon={icon} right={<ConfidenceBadge a={a} />}>
           <Body>{summary(layer.value)}</Body>
           <Text style={[styles.more, { color: t.accent }]}>Details ▾</Text>
         </Card>
@@ -128,7 +128,7 @@ export function LayerCard<T>({ title, layer, children, summary }: {
     );
   }
   return (
-    <Card title={title} right={<ConfidenceBadge a={a} />}>
+    <Card title={title} icon={icon} right={<ConfidenceBadge a={a} />}>
       {children(layer.value)}
       {a.notes?.map((n, i) => (
         <Text key={i} style={[styles.note, { color: t.muted }]}>• {n}</Text>
