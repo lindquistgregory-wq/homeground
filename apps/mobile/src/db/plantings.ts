@@ -81,6 +81,14 @@ export async function deletePlantingsForBed(designId: string, bedObjectId: strin
   return rows.length;
 }
 
+/** Tombstone every planting of a plant the user deleted from their library. */
+export async function deletePlantingsForPlant(plantId: string): Promise<number> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{ id: string }>('SELECT id FROM plantings WHERE plant_id = ? AND deleted = 0', plantId);
+  for (const r of rows) await deletePlanting(r.id);
+  return rows.length;
+}
+
 /** Tombstone every planting of a deleted parcel so other devices drop them too. */
 export async function deletePlantingsForParcel(parcelId: string): Promise<void> {
   const db = await getDb();

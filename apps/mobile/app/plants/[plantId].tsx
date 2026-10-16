@@ -2,11 +2,11 @@
  * Plant detail (§7): growing facts, a planting calendar personalised to the property's frost dates and
  * soil warming, climate fit with reasons, and links to land-grant extension guides for how-to detail.
  */
-import { plantById, scorePlant } from '@plotwright/core';
+import { isCustomPlantId, plantById, scorePlant } from '@plotwright/core';
 import { cropGuide, stateExtensionHub } from '@plotwright/data';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { Text } from '../../src/components/Text';
 import { BrowseBanner, useNaturalBreakOnLeave } from '../../src/ads/useAds';
 import { useEntitlements } from '../../src/billing/entitlements';
@@ -17,6 +17,10 @@ import { PlantArt } from '../../src/components/PlantArt';
 import { calendarFor } from '../../src/services/garden';
 import { useGarden } from '../../src/services/useGarden';
 import { useSettings } from '../../src/services/settings';
+import { useCustomPlants } from '../../src/services/customPlants';
+import { plantingsUsing } from '../../src/db/customPlants';
+import { deletePlantingsForPlant } from '../../src/db/plantings';
+import { Pill } from '../../src/components/kit';
 
 const inToUnits = (inches: number, imperial: boolean) => (imperial ? `${inches} in` : `${Math.round(inches * 2.54)} cm`);
 
@@ -27,13 +31,27 @@ export default function PlantDetail() {
   const ent = useEntitlements((s) => s.entitlements);
   const { state } = useGarden(parcelId);
   const [risk, setRisk] = useState<'cautious' | 'typical'>('cautious');
+  // Re-read after an edit to one of the user's own plants.
+  useCustomPlants((s) => s.version);
   const plant = plantById(plantId);
+  const mine = isCustomPlantId(plantId);
   useNaturalBreakOnLeave('plant-guide-closed');
 
   const cal = useMemo(() => (plant && state ? calendarFor(plant, state.site, { risk, dynamicGdd: ent.has('planting.dynamicScheduling'), soilF: state.soil.soilF, soilLabel: state.soil.basisLabel }) : null), [plant, state, risk, ent]);
   const fit = useMemo(() => (plant && state ? scorePlant(plant, state.site, {}, undefined, 'your climate') : null), [plant, state]);
 
-  if (!plant) return <Body>Unknown plant.</Body>;
+  if (!plant) return <Body>{mine ? 'This plant was deleted from your library.' : 'Unknown plant.'}</Body>;
+
+  const remove = async () => {
+    const n = await plantingsUsing(plant.id);
+    Alert.alert(`Delete ${plant.commonName}?`,
+      n ? `It’s planned or growing in ${n} bed${n === 1 ? '' : 's'}; those plantings are removed too.` : 'It comes out of your library.',
+      [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: async () => {
+        await deletePlantingsForPlant(plant.id);
+        await useCustomPlants.getState().remove(plant.id);
+        router.back();
+      } }]);
+  };
   const guide = cropGuide(plant.id);
   const hub = stateExtensionHub(state?.profile?.place.stateFips);
   const climate = state?.profile?.climate;
@@ -46,8 +64,15 @@ export default function PlantDetail() {
           <Text style={{ color: t.text, fontSize: 26, fontWeight: '700' }} accessibilityRole="header">{plant.commonName}</Text>
           <Text style={{ color: t.muted, fontStyle: 'italic' }}>{plant.scientificName}</Text>
           <Text style={{ color: t.muted, fontSize: 13 }}>{plant.family}{plant.season !== 'perennial' ? ` · ${plant.season}-season` : ' · perennial'}</Text>
+          {mine && <View style={{ flexDirection: 'row', marginTop: 4 }}><Pill icon="account-outline" text="Your plant" tone="accent" /></View>}
         </View>
       </View>
+      {mine && (
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+          <View style={{ flex: 1 }}><Button title="Edit" icon="pencil-outline" kind="secondary" onPress={() => router.push({ pathname: '/plants/edit', params: { id: plant.id } })} /></View>
+          <View style={{ flex: 1 }}><Button title="Delete" icon="trash-can-outline" kind="secondary" onPress={remove} /></View>
+        </View>
+      )}
 
       <Card title="Growing needs" icon="sprout-outline">
         <FactGrid items={[
@@ -125,6 +150,7 @@ export default function PlantDetail() {
         <Body muted>Land-grant university extension services give free, locally tested advice. Varieties and timing suggested by your state’s service win over the general figures here.</Body>
       </Card>
 
+      {!mine && <Button title="Add my own variety of this" icon="content-copy" kind="secondary" onPress={() => router.push({ pathname: '/plants/edit', params: { from: plant.id } })} />}
       {parcelId && <Button title="Plant it in a bed" kind="secondary" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcelId } })} />}
     </ScrollView>
   );

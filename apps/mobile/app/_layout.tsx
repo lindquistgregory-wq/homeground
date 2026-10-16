@@ -22,6 +22,7 @@ import { initMetrics, track } from '../src/services/metrics';
 import { useAds } from '../src/ads/useAds';
 import { onAlertOpened, openedFromAlert } from '../src/services/alerts';
 import { configureMapCache } from '../src/services/offlinePacks';
+import { useCustomPlants } from '../src/services/customPlants';
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -38,7 +39,9 @@ export default function RootLayout() {
       await getDb();
       await initIdentity();
       // Entitlements resolve from the on-device cache; the store is asked in the background.
-      await Promise.all([useSettings.getState().load(), useEntitlements.getState().init(), initMetrics()]);
+      await Promise.all([useSettings.getState().load(), useEntitlements.getState().init(), initMetrics(),
+        // The user's own plants must be registered before any screen looks a plant up.
+        useCustomPlants.getState().load().catch(() => undefined)]);
       setReady(true);
       configureMapCache();
       // Ads (free plan only): consent first, after the first screen is up; never around a safety alert.
@@ -99,6 +102,7 @@ function Screens() {
       <Stack.Screen name="sun/[id]" options={{ title: 'Sun path' }} />
       <Stack.Screen name="plants/index" options={{ title: 'Plants' }} />
       <Stack.Screen name="plants/[plantId]" options={{ title: 'Plant' }} />
+      <Stack.Screen name="plants/edit" options={{ title: 'Your plant' }} />
       <Stack.Screen name="garden/[id]" options={{ title: 'Bed planner' }} />
       <Stack.Screen name="calendar/[id]" options={{ title: 'Planting calendar' }} />
       <Stack.Screen name="sensors/index" options={{ title: 'Sensors' }} />

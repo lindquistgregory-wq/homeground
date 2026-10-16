@@ -7,6 +7,7 @@ import { syncOnce, type ChangeBatch, type CloudTransport, type LocalStore, type 
 import { UserSync } from '@plotwright/user-sync';
 import { getDb, kvGet, kvSet } from '../db/database';
 import { clock, getDeviceId, newId } from '../services/identity';
+import { useCustomPlants } from '../services/customPlants';
 
 const transport: CloudTransport = {
   async isAvailable() {
@@ -27,6 +28,9 @@ const transport: CloudTransport = {
     return { batches, cursor: r.cursor };
   },
 };
+
+/** Set when a sync brings in another device's custom plants, so the library reloads them. */
+let customPlantsChanged = false;
 
 const store: LocalStore = {
   async get(collection: SyncCollection, id: string): Promise<SyncRecord | undefined> {
@@ -59,6 +63,10 @@ const store: LocalStore = {
     }
     if (collection === 'plantings') {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM plantings WHERE id = ?', id);
+      return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
+    }
+    if (collection === 'customPlants') {
+      const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM custom_plants WHERE id = ?', id);
       return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
     }
     if (collection === 'designs') {
@@ -154,6 +162,14 @@ const store: LocalStore = {
         Number(d.year ?? new Date().getFullYear()), Number(d.share ?? 1), String(d.status ?? 'planned'), str(d.planted_on), str(d.notes), str(d.cells),
         String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
       );
+    } else if (rec.collection === 'customPlants') {
+      const d = (rec.data ?? {}) as Record<string, unknown>;
+      await db.runAsync(
+        `INSERT INTO custom_plants (id, spec, art, created_at, updated_hlc, deleted) VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET spec = excluded.spec, art = excluded.art, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
+        rec.id, String(d.spec ?? '{}'), String(d.art ?? '{}'), String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
+      );
+      customPlantsChanged = true;
     } else if (rec.collection === 'designs') {
       const d = (rec.data ?? {}) as Record<string, unknown>;
       await db.runAsync(
@@ -204,7 +220,12 @@ export async function syncNow() {
     await kvSet('sync.pendingCloudWipe', '0');
     await kvSet('sync.cursor', '');
   }
-  return syncOnce(getDeviceId(), clock(), store, transport, newId);
+  const result = await syncOnce(getDeviceId(), clock(), store, transport, newId);
+  if (customPlantsChanged) {
+    customPlantsChanged = false;
+    await useCustomPlants.getState().load();
+  }
+  return result;
 }
 
 /** Wipe the user's cloud copy. If that fails (offline), remember to retry before the next sync. */

@@ -4,7 +4,7 @@
  * Nothing here touches the network except what the site profile already cached.
  */
 import {
-  OBJECT_LIBRARY, PLANTS, footprintAreaM2, footprintUtm, formatDoy, frameForBoundary, newObject, objectType, pointInAreal, project, scorePlant, unproject,
+  OBJECT_LIBRARY, allPlants, footprintAreaM2, footprintUtm, formatDoy, frameForBoundary, newObject, objectType, pointInAreal, project, scorePlant, unproject,
   type DesignDraft, type DesignObject, type HomesteadGoals, type PlannerContext, type SitePlanInput, type TaskDraft,
 } from '@plotwright/core';
 import { KNOWLEDGE_BASE } from '@plotwright/data';
@@ -45,7 +45,7 @@ async function climateFit(profile: SiteProfile | undefined): Promise<Record<stri
     // humidity is optional
   }
   const site = siteConditions(profile, rh);
-  return Object.fromEntries(PLANTS.map((p) => [p.id, scorePlant(p, site, {}).score]));
+  return Object.fromEntries(allPlants().map((p) => [p.id, scorePlant(p, site, {}).score]));
 }
 
 export function sitePlanInputFrom(parcel: ParcelRecord, profile: SiteProfile | undefined, suitability?: Record<string, number>): SitePlanInput {
@@ -118,7 +118,7 @@ export async function plannerContext(parcelId: string, onGoals?: (g: HomesteadGo
     },
     suitability: async (ids) => {
       if (!fit) return [];
-      const plants = ids ? PLANTS.filter((p) => ids.includes(p.id)) : [...PLANTS].sort((a, b) => (fit[b.id] ?? 0) - (fit[a.id] ?? 0)).slice(0, 12);
+      const plants = ids ? allPlants().filter((p) => ids.includes(p.id)) : [...allPlants()].sort((a, b) => (fit[b.id] ?? 0) - (fit[a.id] ?? 0)).slice(0, 12);
       const site = siteConditions(profile);
       return plants.map((p) => {
         const s = scorePlant(p, site, {}, undefined, 'your climate');
