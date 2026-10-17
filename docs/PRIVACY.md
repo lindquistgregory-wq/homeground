@@ -1,6 +1,6 @@
 # Plotwright privacy policy
 
-_Draft for the owner to review before release. Last updated 2026-09-29. Not legal advice; have it checked for the regions you publish in._
+_Draft for the owner to review before release. Last updated 2026-10-16. Not legal advice; have it checked for the regions you publish in._
 
 Plotwright is a homestead and garden planner. It has **no server of its own** and no user accounts.
 
@@ -23,9 +23,13 @@ Plotwright is a homestead and garden planner. It has **no server of its own** an
 
 Off by default. If you turn on *Keep usage statistics on this phone*, Plotwright counts which screens and features you use and keeps a log of app errors, **on your phone only**. They are never sent anywhere; you can view, share or clear them in Settings. Crash reports reach the developer only if you've allowed your phone to share them (Apple's *Share with App Developers*, Google Play's diagnostics).
 
+## Health-related information
+
+The planner's household details (ages, sex and activity level, used to estimate food needs) and any animal or pet health records are stored **only on your phone and in your own cloud account**. The developer never receives them, and they are never shared with advertisers, affiliate partners or anyone else, or used to choose ads. Safety acknowledgements ("Got it" on a safety note) and your acceptance of the terms are stored the same way.
+
 ## Children
 
-Plotwright is a general-audience app and isn't directed at children. The on-device Gemini Nano features require users to be 18 or older.
+Plotwright is for adults: you must be 18 or older to use it (the on-device Gemini Nano features also require it). It isn't directed at children.
 
 ## Your choices
 

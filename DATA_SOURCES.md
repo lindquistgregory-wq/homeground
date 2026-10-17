@@ -23,6 +23,7 @@ The machine-readable version of this file, used by the app and by CI, is [`packa
 | NWS api.weather.gov | 7-day forecast for frost/heat/wind alerts on what's planted | Public domain | No | Identifying User-Agent with contact email; forecast cached 1 h |
 | NASA POWER RH2M climatology | Summer humidity for disease-pressure warnings | NASA open data; acknowledged | No | One request per 0.5° cell, cached 1 year |
 | Cooperative Extension growing guides (links only) | "How to grow" link per plant + state extension hub | Linked, not copied | No | Opened in the browser; never downloaded by the app. URLs verified 2026-09-28 |
+| Safety notes and plant toxicity (links only) | Sources behind the design-map safety notes (PHMSA 811, EPA private wells, CDC rainwater and backyard poultry, EPA Section 404, FEMA flood maps, U.S. DOE solar, Colorado DWR, California SB 582) and the ASPCA toxic-plant lists | Linked; short facts written for the app | No | Opened in the browser; never fetched by the app. Retrieved 2026-10-16 |
 | USGS Shaded Relief basemap | Hillshade layer in design mode | Public domain | No | Standard tiles |
 | NYS Tax Parcels Public; Wisconsin V12 Statewide Parcels | Parcel boundary lookup | Public web services; display only | No | **Only id and acreage fields are requested.** Owner fields are never downloaded |
 | Parcel endpoints from the remote registry | Parcel boundary lookup | Recorded per entry in `packages/data/registry/parcel-endpoints.json` | No | Hosts vary by county; each entry must carry its licence and attribution before it is merged |

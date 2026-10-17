@@ -95,6 +95,7 @@ export default function CalendarScreen() {
               <Body muted>{active.some((p) => p.status === 'planted') ? 'No frost, heat or wind trouble in the 7-day forecast for what’s planted.' : 'Mark crops as planted in the bed planner to get alerts for them.'}</Body>
             )}
         {alerts?.forecastNote && <Text style={{ color: t.muted, fontSize: 12 }}>{alerts.forecastNote}</Text>}
+        <Text style={{ color: t.muted, fontSize: 12 }}>Not an official warning. For watches and warnings, see weather.gov.</Text>
         <Text style={{ color: t.muted, fontSize: 12 }}>Forecast: National Weather Service (public domain).</Text>
         {notifyOn === false && <Button title="Turn on alert notifications" kind="secondary" onPress={() => router.push('/settings')} />}
       </Card>

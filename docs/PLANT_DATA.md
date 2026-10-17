@@ -33,3 +33,12 @@ The links are opened in the phone's browser. The app makes no request to these s
   - Accuracy: about ±5 days on seasonal thresholds.
 - **Soil temperature** is modeled, not measured. It is mean air temperature lagged 5 days, plus up to +4 °F of solar gain near midsummer, for bare, sunny soil. For Albany it gives 60 °F on May 13 and 65 °F on May 25, in line with regional extension timing for peppers and melons. Mulched or shaded beds run cooler. A sensor or regional soil station, where one is added, overrides the model (`CalendarContext.soilF`).
 - **Chill hours** use the simple 32–45 °F model on a sinusoidal day, 1 Oct – 28 Feb. Expect about ±25%. Orchardists in marginal areas should check a local chill-portion model.
+
+## Toxicity (safety)
+
+`packages/core/src/safety/toxicity.ts` records which library plants are listed as harmful to people, dogs, cats, horses, grazing animals, birds or rabbits, and by which source:
+- the ASPCA Animal Poison Control plant lists for dogs, cats and horses (retrieved 2026-10-16);
+- the ASPCA people-foods page (grapes, the onion family, citrus, nuts, avocado);
+- the plant notes here, checked against each plant's extension guide.
+
+Plant detail shows it as one line, with details on tap. A plant that isn't listed is "not listed in the cited sources", never "safe". The ASPCA lists cover the plant (leaves, stems, seeds); ripe produce can differ. `safety.test.ts` checks that every entry names a real plant and a source.

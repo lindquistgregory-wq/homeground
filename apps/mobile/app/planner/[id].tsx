@@ -180,7 +180,7 @@ export default function Planner() {
       <ScrollView ref={scroll} contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
         {tab === 'talk' && (chatAllowed ? (
           <View>
-            <Body muted>Chatting with {model!.kind === 'native-tools' ? 'Apple’s' : 'Google’s'} AI model on this phone. Nothing is sent anywhere. Figures come from your property’s data and the app’s sourced knowledge base.</Body>
+            <Body muted>Chatting with {model!.kind === 'native-tools' ? 'Apple’s' : 'Google’s'} AI model on this phone. Nothing is sent anywhere. Figures come from your property’s data and the app’s sourced knowledge base. AI can be wrong, so check the sources it shows.</Body>
             {messages.length === 0 && <Card title="Say hello"><Body>Tell the planner about your household and what you’d like from your land, e.g. “We’re a family of three and want most of our vegetables and some eggs.”</Body></Card>}
             <ChatList messages={messages} />
             {thinking && <ActivityIndicator accessibilityLabel="The planner is thinking" />}

@@ -23,9 +23,11 @@ import { useAds } from '../src/ads/useAds';
 import { onAlertOpened, openedFromAlert } from '../src/services/alerts';
 import { configureMapCache } from '../src/services/offlinePacks';
 import { useCustomPlants } from '../src/services/customPlants';
+import { TermsGate, termsAccepted } from '../src/components/TermsGate';
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
+  const [agreed, setAgreed] = useState<boolean | null>(null);
   // Bundled fonts load from the app package in a few milliseconds; a failure falls back to the system font.
   const [fontsLoaded, fontError] = useFonts({ Inter_400Regular, Inter_400Regular_Italic, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
   const t = useTheme();
@@ -42,6 +44,7 @@ export default function RootLayout() {
       await Promise.all([useSettings.getState().load(), useEntitlements.getState().init(), initMetrics(),
         // The user's own plants must be registered before any screen looks a plant up.
         useCustomPlants.getState().load().catch(() => undefined)]);
+      setAgreed(await termsAccepted());
       setReady(true);
       configureMapCache();
       // Ads (free plan only): consent first, after the first screen is up; never around a safety alert.
@@ -71,7 +74,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="auto" />
-      <Screens />
+      {agreed ? <Screens /> : <TermsGate onAccept={() => setAgreed(true)} />}
     </SafeAreaProvider>
   );
 }

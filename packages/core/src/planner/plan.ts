@@ -8,6 +8,7 @@
  */
 import { PLANTS, plantById } from '../plants/index';
 import type { PlantSpec } from '../plants/types';
+import { IN_GROUND_KINDS } from '../safety/notes';
 import { estimateBudget, moneyRange, type Budget, type BudgetItem } from './budget';
 import { estimateFoodCoverage, type CoverageReport, type PlannedFood } from './coverage';
 import type { DraftObject } from './drafts';
@@ -406,6 +407,8 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
   if (goals.hoursPerWeek !== undefined && laborByPhase.year1[0] > goals.hoursPerWeek) {
     warnings.push(`Animal chores alone take about ${rng(laborByPhase.year1)} h/week in year 1, more than the ${goals.hoursPerWeek} h you have, before any gardening.`);
   }
+  // Safety & Liability Review: any plan that digs gets the one-call reminder.
+  if (items.some((i) => i.draft?.some((d) => d.op === 'add' && IN_GROUND_KINDS.has(d.kind)))) warnings.push('Call or click 811 a few working days before any digging: it’s free, and state law requires it.');
   assumptions.push('Garden work isn’t estimated in hours: there’s no reliable published figure for home gardens. Livestock chore times come from extension budgets.');
   if (budget.unknown.length) assumptions.push(`No sourced cost for: ${budget.unknown.join(', ')}.`);
 
