@@ -1,0 +1,153 @@
+{
+ "checked": "2026-10-16",
+ "note": "One care guide per species from Cooperative Extension or a government agency where available. Link out only; do not copy text. URLs were found by search on the date shown and checked for an HTTP response.",
+ "animals": {
+  "laying_hens": {
+   "url": "https://extension.umn.edu/small-scale-poultry/raising-chickens-eggs",
+   "publisher": "UMN Extension",
+   "title": "Raising chickens for eggs",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "dual_purpose_chickens": {
+   "url": "https://livestockconservancy.org/wp-content/uploads/2026/03/PickaBreedChickens2026.pdf",
+   "publisher": "The Livestock Conservancy",
+   "title": "Heritage Chicken Breed Comparison Chart",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "meat_chickens": {
+   "url": "https://extension.psu.edu/a-quick-guide-to-raising-pastured-broilers",
+   "publisher": "Penn State",
+   "title": "A Quick Guide to Raising Pastured Broilers",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "turkeys": {
+   "url": "https://extension.psu.edu/small-flock-turkey-production",
+   "publisher": "Penn State",
+   "title": "Small-Flock Turkey Production",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "ducks_layers": {
+   "url": "https://poultry.extension.org/articles/feeds-and-feeding-of-poultry/feeding-ducks-for-egg-production-kept-in-small-flocks/",
+   "publisher": "extension.org",
+   "title": "Feeding ducks for egg production in small flocks",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "geese": {
+   "url": "https://www.fao.org/3/y4359e/y4359e0b.htm",
+   "publisher": "FAO",
+   "title": "Goose production: brooding and rearing",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "guinea_fowl": {
+   "url": "https://poultry.extension.org/articles/poultry-management/raising-guinea-fowl/",
+   "publisher": "extension.org",
+   "title": "Raising guinea fowl in small and backyard flocks",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "coturnix_quail": {
+   "url": "https://extension.msstate.edu/agriculture/livestock/poultry/incubation-duration-periods",
+   "publisher": "Mississippi State Extension",
+   "title": "Incubation duration periods",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "meat_rabbits": {
+   "url": "https://extension.umaine.edu/publications/1044e/",
+   "publisher": "Bulletin #1044 Backyard Production of Meat Rabbits in Maine",
+   "title": "Bulletin #1044 Backyard Production of Meat Rabbits in Maine",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "dairy_goats": {
+   "url": "https://extension.psu.edu/dairy-goat-production",
+   "publisher": "Penn State",
+   "title": "Dairy Goat Production",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "meat_goats": {
+   "url": "https://extension.psu.edu/meat-goat-production",
+   "publisher": "Penn State",
+   "title": "Meat Goat Production",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "fiber_goats": {
+   "url": "https://www.umass.edu/agriculture-food-environment/crops-dairy-livestock-equine/fact-sheets/angora-goat-shearing",
+   "publisher": "UMass Amherst",
+   "title": "Angora Goat Shearing",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "sheep": {
+   "url": "https://extension.umaine.edu/publications/2186e/",
+   "publisher": "UMaine",
+   "title": "Bulletin #2186 Are You Thinking of Raising Sheep?",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "feeder_pigs": {
+   "url": "https://extension.psu.edu/raising-small-groups-of-pigs",
+   "publisher": "Penn State",
+   "title": "Raising Small Groups of Pigs",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "beef_cattle": {
+   "url": "https://extension.colostate.edu/resource/livestock-management",
+   "publisher": "Colorado State Extension",
+   "title": "Small-acreage livestock management",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "milk_cow": {
+   "url": "https://www.ndsu.edu/agriculture/extension/publications/livestock-water-requirements",
+   "publisher": "NDSU",
+   "title": "Livestock Water Requirements AS1763",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "honeybees": {
+   "url": "https://pollinators.psu.edu/assets/uploads/documents/Beekeeping-Honey-Bees.pdf",
+   "publisher": "Penn State",
+   "title": "Agricultural Alternatives: Beekeeping",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "guardian_dog": {
+   "url": "https://agrilifeextension.tamu.edu/livestock-guardian-dogs",
+   "publisher": "Texas A&M AgriLife",
+   "title": "Livestock Guardian Dogs: an overview",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "guardian_donkey": {
+   "url": "https://www.cdfa.ca.gov/ahfss/Animal_Health/pdfs/livestock%20guardians.pdf",
+   "publisher": "California Department of Food and Agriculture",
+   "title": "Livestock guardians",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "guardian_llama": {
+   "url": "https://icinfo.vet.ohio-state.edu/content/recommended-practices-caring-llamas-and-alpacas",
+   "publisher": "Ohio State",
+   "title": "Recommended practices for caring for llamas and alpacas",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  },
+  "alpacas": {
+   "url": "https://icinfo.vet.ohio-state.edu/content/recommended-practices-caring-llamas-and-alpacas",
+   "publisher": "Ohio State",
+   "title": "Recommended practices for caring for llamas and alpacas",
+   "verified_by": "search",
+   "checked": "2026-10-16"
+  }
+ }
+}

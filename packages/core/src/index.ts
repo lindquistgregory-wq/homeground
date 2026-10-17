@@ -27,3 +27,4 @@ export * from './design/scenarios';
 export * from './monetization/index';
 export * from './offline/tiles';
 export * from './safety/index';
+export * from './livestock/index';
