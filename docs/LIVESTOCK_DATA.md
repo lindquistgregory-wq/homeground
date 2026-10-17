@@ -33,6 +33,7 @@ The values are facts (space per bird, gestation days, temperature thresholds) wr
   - finishing pigs from 70 °F (Penn State);
   - cattle from 72 °F at 50% humidity (UW-Madison), or THI 80 (Missouri via Nebraska);
   - sheep and goats from THI 82 (SDSU).
+- **Heat index.** THI uses the NRC (1971) formula in its Fahrenheit form, THI = T − (0.55 − 0.0055·RH)(T − 58). That is the form behind the Fahrenheit THI bands used by [Texas A&M](https://animalscience.tamu.edu/wp-content/uploads/sites/4/2023/08/heatstress3.pdf) and Missouri. When a forecast has no humidity, alerts assume humid air (the summer average, never below 70%), because heat stress rises with humidity. All of this lives in `core/livestock/safetyDefaults.ts`.
 - **No veterinary content.** Diseases are named for awareness and prevention only. There are no treatments, doses or vaccine schedules (tested).
 - **Legal notes:**
   - CDC Salmonella guidance on every poultry and waterfowl species;

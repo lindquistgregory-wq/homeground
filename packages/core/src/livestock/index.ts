@@ -11,6 +11,11 @@ import type { AnimalRange as Range, AnimalSpec } from './types';
 
 export * from './types';
 export { SRC as ANIMAL_SOURCES } from './sources';
+export * from './safetyDefaults';
+export * from './suitability';
+export * from './capacity';
+export * from './calendar';
+export * from './alerts';
 
 export const ANIMALS: AnimalSpec[] = [...POULTRY, ...SMALL_STOCK, ...LARGE_STOCK, ...BEES, ...WORKING];
 

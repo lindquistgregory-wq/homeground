@@ -109,6 +109,8 @@ export interface ForecastPeriod {
   isNight: boolean;
   temperatureF: number;
   windMph?: number;
+  /** Relative humidity for the period (%), when the forecast gives it: used for livestock heat stress. */
+  relativeHumidityPct?: number;
   summary?: string;
 }
 
