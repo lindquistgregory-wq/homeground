@@ -152,6 +152,6 @@ export const TIER_COMPARISON: Array<{ label: string; free: string; grower: strin
   { label: 'Sun and shade', free: 'Sun path, parcel sun hours', grower: 'Heatmaps, seasonal sun', pro: '+ insolation, solar estimates' },
   { label: 'Design', free: '100 objects, full library', grower: 'Unlimited, versions, PDF', pro: '+ GIS export, offline packs, season scenarios' },
   { label: 'Planting', free: 'Full calendar', grower: 'Bed scoring, succession', pro: '+ sensor-driven timing, yield and storage' },
-  { label: 'Sensors', free: '1', grower: '5 + 1 station', pro: 'Unlimited, greenhouse alerts, local network' },
+  { label: 'Sensors', free: '1, with heat and cold alerts', grower: '5 + 1 station', pro: 'Unlimited, local network' },
   { label: 'AI planner', free: 'Interview + basic plan', grower: 'Full planner', pro: '+ income, budgets, 5-year plan' },
 ];

@@ -10,6 +10,7 @@ import {
   OBJECT_LIBRARY, bbox, estimatePv, footprintAreaM2, footprintLonLat, formatArea, formatLength, materialList, newObject, objectType,
   project, siteSuitability, snapRotationToBoundary, snapToContour, snapToGridM, unproject, validateDesign,
   SCENARIO_SEASONS, compareScenarios, scenarioLabel, sunPeriodForSeason,
+  ackKey, safetyNotesFor, safetyProximity, type SafetyNote, type SafetyWarning,
   type Design, type DesignObject, type DesignWarning, type LocalFrame, type ObjectCategory, type ScenarioSeason, type SitingTarget,
 } from '@plotwright/core';
 import { OPENFREEMAP_STYLE_URL, USGS_HILLSHADE, USGS_IMAGERY, solarClimatology } from '@plotwright/providers';
@@ -37,6 +38,8 @@ import { deletePlantingsForBed, plantingsForParcel, type Planting } from '../../
 import { listSensors } from '../../src/db/sensors';
 import { newId } from '../../src/services/identity';
 import { useSettings } from '../../src/services/settings';
+import { SafetyLine, SafetyNoteRow } from '../../src/components/SafetyNote';
+import { useSafetyAcks } from '../../src/services/safetyAcks';
 
 type Tab = 'add' | 'selected' | 'sun' | 'layers' | 'plan';
 
@@ -85,6 +88,8 @@ export default function DesignScreen() {
   const [offlineImagery, setOfflineImagery] = useState<{ template: string; maxZoom: number } | undefined>(undefined);
   const pendingChange = useRef<DesignObject[]>([]);
   const sunRef = useRef<SunResult | null>(null);
+  // Parcel facts for safety notes: the state (state-specific rules) and whether it's in a mapped flood zone.
+  const [siteCtx, setSiteCtx] = useState<{ stateFips?: string; flood?: boolean }>({});
 
   // ---------- load ----------
   useEffect(() => {
@@ -96,6 +101,7 @@ export default function DesignScreen() {
       void getPack(p.id).then((pk) => setOfflineImagery(pk?.imagery));
       setSetbackM(Number((await kvGet(`setback.${p.id}`)) ?? 0));
       const profile = await getSiteProfile(p.id);
+      setSiteCtx({ stateFips: profile?.place.stateFips, flood: profile?.flood.status === 'ok' && profile.flood.value.inSpecialFloodHazardArea });
       const frost = profile?.climate.status === 'ok'
         ? { lastSpringDoy: profile.climate.value.frost.dates.lastSpring[32][50], firstFallDoy: profile.climate.value.frost.dates.firstFall[32][50] }
         : undefined;
@@ -281,6 +287,10 @@ export default function DesignScreen() {
     () => (design && frame && parcel ? validateDesign(design.objects.filter((o) => !o.existing), { boundary: parcel.geometry, setbackM, slope: analysis?.slope, maxStructureSlopeDeg: 10, units }, frame) : []),
     [design, frame, parcel, setbackM, analysis, units],
   );
+  const safetyWarnings: SafetyWarning[] = useMemo(
+    () => (design && frame && parcel ? safetyProximity(design.objects, frame, { boundary: parcel.geometry, units, parcelInFloodZone: siteCtx.flood }) : []),
+    [design, frame, parcel, units, siteCtx.flood],
+  );
   const summary = analysis && sun ? sunSummary(analysis, sun.hours) : null;
 
   const runSiting = (target: SitingTarget) => {
@@ -453,6 +463,8 @@ export default function DesignScreen() {
             o={selected}
             units={units}
             areaM2={frame ? footprintAreaM2(selected, frame) : 0}
+            notes={selected.existing ? [] : safetyNotesFor(selected.kind, { stateFips: siteCtx.stateFips })}
+            safety={safetyWarnings.filter((w) => w.objectId === selected.id)}
             onPatch={replaceSelected}
             onMove={() => setMoving(true)}
             onSnapAngle={() => frame && replaceSelected({ rotationDeg: snapRotationToBoundary(selected.rotationDeg, parcel.geometry, frame) })}
@@ -555,7 +567,7 @@ export default function DesignScreen() {
         {tab === 'plan' && (
           <PlanPanel
             design={design}
-            warnings={warnings}
+            warnings={[...warnings, ...safetyWarnings]}
             units={units}
             setbackM={setbackM}
             onSetback={(m) => { setSetbackM(m); void kvSet(`setback.${parcel.id}`, String(m)); }}
@@ -627,16 +639,20 @@ function Stepper({ label, value, step, min, units, onChange }: { label: string; 
   );
 }
 
-function SelectedPanel({ o, units, areaM2, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted }: {
-  o: DesignObject; units: 'imperial' | 'metric'; areaM2: number; onPatch: (p: Partial<DesignObject>) => void;
+function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted }: {
+  o: DesignObject; units: 'imperial' | 'metric'; areaM2: number; notes: SafetyNote[]; safety: SafetyWarning[]; onPatch: (p: Partial<DesignObject>) => void;
   onMove: () => void; onSnapAngle: () => void; onSnapContour?: () => void; onDelete: () => void; onPlan?: () => void; planted: number;
 }) {
   const t = useTheme();
   const type = objectType(o.kind);
+  const acks = useSafetyAcks((s) => s.acks);
   const step = units === 'imperial' ? 0.3048 : 0.25;
   return (
     <Card title={o.label ?? type?.name ?? o.kind}>
       <Body muted>{formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}{planted ? ` · ${planted} planting${planted === 1 ? '' : 's'} this year` : ''}</Body>
+      {/* Point of use, but quiet: only notes still waiting for 'Got it' and distance problems sit up top. */}
+      {notes.filter((n) => n.acknowledge && !acks[ackKey(n)]).map((n) => <SafetyNoteRow key={n.id} note={n} />)}
+      {safety.map((w) => <SafetyLine key={w.kind} text={w.message} caution={w.level === 'caution'} />)}
       {onPlan && <Button title="Plan this bed: what grows best here" onPress={onPlan} />}
       {!o.polygon && o.shape === 'rect' && <Stepper label="Length" value={o.length} step={step} min={0.3} units={units} onChange={(v) => onPatch({ length: v })} />}
       {!o.polygon && <Stepper label={o.shape === 'circle' ? 'Diameter' : 'Width'} value={o.width} step={step} min={0.1} units={units} onChange={(v) => onPatch(o.shape === 'circle' ? { width: v, length: v } : { width: v })} />}
@@ -669,6 +685,7 @@ function SelectedPanel({ o, units, areaM2, onPatch, onMove, onSnapAngle, onSnapC
       <Button title="Move (tap new spot)" kind="secondary" onPress={onMove} />
       <Button title="Delete" kind="secondary" onPress={onDelete} />
       {type?.notes && <Body muted>{type.notes}</Body>}
+      {notes.filter((n) => !(n.acknowledge && !acks[ackKey(n)])).map((n) => <SafetyNoteRow key={n.id} note={n} />)}
       {o.kind === 'solar-array' && <PvCard o={o} areaM2={areaM2} onPatch={onPatch} />}
     </Card>
   );
@@ -695,6 +712,7 @@ function PvCard({ o, areaM2, onPatch }: { o: DesignObject; areaM2: number; onPat
   return (
     <View style={{ marginTop: 8 }}>
       <Body>≈ {Math.round(est.annualKWh).toLocaleString()} kWh per year from ~{kw} kW</Body>
+      <Body muted>An estimate, not a quote or an engineering design.</Body>
       <View style={styles.row}>
         <Button title={`Tilt ${tilt}° −`} kind="secondary" onPress={() => setTilt((x) => Math.max(0, x - 5))} />
         <Button title="+" kind="secondary" onPress={() => setTilt((x) => Math.min(90, x + 5))} />
@@ -710,7 +728,7 @@ function PvCard({ o, areaM2, onPatch }: { o: DesignObject; areaM2: number; onPat
 }
 
 function PlanPanel({ design, warnings, units, setbackM, onSetback, materials, canVersion, onRestore, onExport }: {
-  design: Design; warnings: DesignWarning[]; units: 'imperial' | 'metric'; setbackM: number; onSetback: (m: number) => void;
+  design: Design; warnings: Array<{ message: string }>; units: 'imperial' | 'metric'; setbackM: number; onSetback: (m: number) => void;
   materials: ReturnType<typeof materialList>; canVersion: boolean; onRestore: (objects: DesignObject[]) => void; onExport: (f: ExportFormat) => void;
 }) {
   const t = useTheme();

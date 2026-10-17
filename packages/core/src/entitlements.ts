@@ -67,7 +67,8 @@ export type Feature =
   | 'planner.multiYear'; // budgets and years 2–5 of the phased plan
 
 // Every design object is free; paid tiers add unlimited objects, versions and exports.
-const FREE_FEATURES: Feature[] = ['layers.core', 'design.fullLibrary'];
+// Health and safety features are free on every plan (Safety & Liability Review): sensor heat and cold alerts included.
+const FREE_FEATURES: Feature[] = ['layers.core', 'design.fullLibrary', 'sensors.greenhouseAlerts'];
 const GROWER_FEATURES: Feature[] = [
   ...FREE_FEATURES,
   'layers.standard',
@@ -88,7 +89,6 @@ const PRO_ONLY: Feature[] = [
   'design.multiSeason',
   'planting.dynamicScheduling',
   'planting.yieldStorage',
-  'sensors.greenhouseAlerts',
   'sensors.localNetwork',
   'planner.income',
   'planner.multiYear',

@@ -87,10 +87,10 @@ export const OBJECT_LIBRARY: ObjectType[] = [
   T({ kind: 'pond', name: 'Pond', category: 'water-soil', shape: 'circle', width: 6, length: 6, height: 0, material: Material.none, tier: 'grower' }),
   T({ kind: 'swale', name: 'Swale (on contour)', category: 'water-soil', shape: 'line', width: 1, length: 20, height: 0, material: Material.none, followsContour: true, tier: 'grower' }),
   T({ kind: 'drip-line', name: 'Drip line', category: 'water-soil', shape: 'line', width: 0.05, length: 10, height: 0, material: Material.none, tier: 'free' }),
+  T({ kind: 'well', name: 'Well', category: 'water-soil', shape: 'circle', width: 1.2, length: 1.2, height: 0.6, material: Material.opaque, tier: 'free', notes: 'Drinking-water well or wellhead. Animals, manure and compost nearby are flagged.' }),
   T({ kind: 'hose-bib', name: 'Hose bib', category: 'water-soil', shape: 'circle', width: 0.2, length: 0.2, height: 0.5, material: Material.none, tier: 'free' }),
   T({ kind: 'compost-bays', name: 'Compost bays (3)', category: 'water-soil', shape: 'rect', width: 1.2, length: 3.6, height: 1.1, material: Material.opaque, tier: 'free' }),
   T({ kind: 'worm-bin', name: 'Worm bin', category: 'water-soil', shape: 'rect', width: 0.6, length: 0.9, height: 0.7, material: Material.opaque, tier: 'free' }),
-  T({ kind: 'biochar-pit', name: 'Biochar pit', category: 'water-soil', shape: 'circle', width: 1.5, length: 1.5, height: 0, material: Material.none, tier: 'grower' }),
   // Energy & utility
   T({ kind: 'solar-array', name: 'Solar array (ground mount)', category: 'energy-utility', shape: 'rect', width: 2, length: 6, height: 2, material: Material.opaque, isStructure: true, tier: 'grower' }),
   T({ kind: 'wood-storage', name: 'Wood storage', category: 'energy-utility', shape: 'rect', width: 1.2, length: 4, height: 1.8, material: Material.opaque, tier: 'free' }),

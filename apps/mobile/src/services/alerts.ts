@@ -26,6 +26,12 @@ import { useEntitlements } from '../billing/entitlements';
 
 export const ALERT_TASK = 'plotwright-weather-alerts';
 const ENABLED_KEY = 'alerts.enabled';
+const LAST_CHECK_KEY = 'alerts.lastChecked';
+
+/** When the forecast was last checked for alerts (ISO), shown so nobody assumes checks they can't see. */
+export async function alertsLastChecked(): Promise<string | undefined> {
+  return (await kvGet(LAST_CHECK_KEY)) || undefined;
+}
 const SENT_KEY = 'alerts.sent';
 const CHANNEL_ID = 'weather-alerts';
 
@@ -169,6 +175,7 @@ async function runCheck(opts: { background?: boolean }): Promise<void> {
   // threshold check that starts after this one waits for it instead, so the two can't wait on each other.
   const earlier = thresholdsInFlight;
   if (!(await alertsEnabled())) return;
+  await kvSet(LAST_CHECK_KEY, new Date().toISOString());
   if (earlier) await earlier.catch(() => undefined);
   const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);
   // Station accounts can be read from anywhere; fetch fresh readings before checking thresholds.

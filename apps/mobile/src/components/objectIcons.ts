@@ -16,7 +16,7 @@ const KIND_ICON: Record<string, IconName> = {
   'chicken-coop': 'egg-outline', 'chicken-run': 'egg-outline', 'duck-house': 'duck', 'rabbit-hutch': 'rabbit', 'goat-shelter': 'sheep', paddock: 'fence',
   beehive: 'bee', 'mushroom-logs': 'mushroom-outline',
   'rain-barrel': 'barrel-outline', 'ibc-tote': 'water-outline', cistern: 'water-well-outline', pond: 'waves', swale: 'wave', 'drip-line': 'water-pump',
-  'hose-bib': 'water-pump', 'compost-bays': 'recycle', 'worm-bin': 'bug-outline', 'biochar-pit': 'fire',
+  'hose-bib': 'water-pump', well: 'water-well-outline', 'compost-bays': 'recycle', 'worm-bin': 'bug-outline',
   'solar-array': 'solar-panel', 'wood-storage': 'axe', 'fence-deer': 'fence', 'fence-garden': 'fence', 'fence-electric': 'fence-electric', gate: 'gate',
   path: 'walk', driveway: 'car-outline',
 };

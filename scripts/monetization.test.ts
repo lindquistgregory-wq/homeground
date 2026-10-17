@@ -271,12 +271,11 @@ test('paywall: month and year trials are shown in their own unit, not converted 
   assert.ok(disclosure(month, 'android').includes('Free for 1 month'));
 });
 
-test('safety alerts fail open for a while after the cached plan lapses', () => {
+test('safety alerts are free on every plan, before, during and long after any purchase', () => {
   const txs = [{ productId: PRODUCT_IDS.proMonthly, expiresAt: new Date(NOW).toISOString() }];
-  const later = new Date(NOW + 10 * DAY);
-  assert.equal(resolveEntitlements(txs, { now: later }).has('sensors.greenhouseAlerts'), false);
-  assert.equal(safetyEntitlements(txs, { now: later }).has('sensors.greenhouseAlerts'), true);
-  assert.equal(safetyEntitlements(txs, { now: new Date(NOW + (SAFETY_ALERT_GRACE_DAYS + 1) * DAY) }).has('sensors.greenhouseAlerts'), false);
+  assert.equal(resolveEntitlements([], { now: new Date(NOW) }).has('sensors.greenhouseAlerts'), true);
+  assert.equal(resolveEntitlements(txs, { now: new Date(NOW + 10 * DAY) }).has('sensors.greenhouseAlerts'), true);
+  assert.equal(safetyEntitlements(txs, { now: new Date(NOW + (SAFETY_ALERT_GRACE_DAYS + 1) * DAY) }).has('sensors.greenhouseAlerts'), true);
 });
 
 test('revenue: growth multiplier and break-even figures match the §12 document', () => {

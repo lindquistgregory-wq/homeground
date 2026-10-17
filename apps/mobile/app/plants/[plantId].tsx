@@ -2,7 +2,7 @@
  * Plant detail (§7): growing facts, a planting calendar personalised to the property's frost dates and
  * soil warming, climate fit with reasons, and links to land-grant extension guides for how-to detail.
  */
-import { isCustomPlantId, plantById, scorePlant } from '@plotwright/core';
+import { EATER_LABEL, TOXICITY_SOURCES, isCustomPlantId, plantById, scorePlant, toxicityFor, type SafetyNote } from '@plotwright/core';
 import { cropGuide, stateExtensionHub } from '@plotwright/data';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -21,6 +21,7 @@ import { useCustomPlants } from '../../src/services/customPlants';
 import { plantingsUsing } from '../../src/db/customPlants';
 import { deletePlantingsForPlant } from '../../src/db/plantings';
 import { Pill } from '../../src/components/kit';
+import { SafetyNoteRow } from '../../src/components/SafetyNote';
 
 const inToUnits = (inches: number, imperial: boolean) => (imperial ? `${inches} in` : `${Math.round(inches * 2.54)} cm`);
 
@@ -53,6 +54,7 @@ export default function PlantDetail() {
       } }]);
   };
   const guide = cropGuide(plant.id);
+  const toxic = toxicityNote(plant.id, plant.commonName, guide?.url);
   const hub = stateExtensionHub(state?.profile?.place.stateFips);
   const climate = state?.profile?.climate;
 
@@ -98,6 +100,8 @@ export default function PlantDetail() {
           {plant.germination && <Body muted>Germination: soil {plant.germination.minSoilF} °F minimum, {plant.germination.optimalF[0]}–{plant.germination.optimalF[1]} °F best</Body>}
         </View>
       </Card>
+
+      {toxic && <SafetyNoteRow note={toxic} />}
 
       {state?.profileStale && <StaleProfileNotice parcelId={state.parcel.id} />}
       {state && (
@@ -154,4 +158,23 @@ export default function PlantDetail() {
       {parcelId && <Button title="Plant it in a bed" kind="secondary" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcelId } })} />}
     </ScrollView>
   );
+}
+
+/** "Listed as toxic to …" from the cited lists, as one quiet line; undefined when no source lists it. */
+function toxicityNote(plantId: string, name: string, guideUrl?: string): SafetyNote | undefined {
+  const lines = toxicityFor(plantId);
+  if (!lines.length) return undefined;
+  const who = lines.map((l) => EATER_LABEL[l.to].toLowerCase());
+  const list = who.length > 1 ? `${who.slice(0, -1).join(', ')} and ${who[who.length - 1]}` : who[0];
+  const sources = [...new Set(lines.flatMap((l) => l.sources))].flatMap((id) =>
+    id === 'extension-guide' ? (guideUrl ? [{ title: `${name}: extension guide`, url: guideUrl }] : []) : [TOXICITY_SOURCES[id]]);
+  return {
+    id: `toxic-${plantId}`, level: 'caution', version: 1,
+    headline: `Listed as harmful to ${list}: keep children and animals from eating it.`,
+    details: [
+      ...lines.map((l) => `${EATER_LABEL[l.to]}: ${[l.part, l.effect].filter(Boolean).join(' · ') || 'the plant'}`),
+      'Ripe produce can differ from the plant. Plants not on these lists can still cause harm. Possible poisoning: call your vet, or Poison Control (1-800-222-1222) for people.',
+    ],
+    sources,
+  };
 }

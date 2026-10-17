@@ -224,6 +224,7 @@ export function PlanView({ plan, tier, onDraft }: { plan: HomesteadPlan; tier: {
 
       {tier.income && plan.enterprises && (
         <Card title="Income ideas">
+          <Body muted>Planning estimates, not financial or legal advice. Check your state’s food, licensing and tax rules before selling.</Body>
           {plan.enterprises.slice(0, 6).map((e) => (
             <View key={e.id} style={{ marginBottom: 8 }}>
               <Text style={{ color: e.fit === 'good' ? t.accent : e.fit === 'possible' ? t.warn : t.muted, fontWeight: '600' }}>{e.name}: {e.fit} fit</Text>

@@ -169,7 +169,12 @@ export default function Profile() {
       </LayerCard>
 
       <LayerCard title="Flood hazard" icon="home-flood" layer={shown?.flood} summary={(f) => f.headline}>
-        {(f) => <Body>{f.headline}</Body>}
+        {(f) => (
+          <>
+            <Body>{f.headline}</Body>
+            <Body muted>Not an official flood determination: FEMA’s Flood Map Service Center is. Land outside mapped zones can still flood.</Body>
+          </>
+        )}
       </LayerCard>
 
       <LayerCard title="Streams & ponds" icon="waves" layer={shown?.water}

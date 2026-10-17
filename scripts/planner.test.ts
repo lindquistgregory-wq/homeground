@@ -150,3 +150,23 @@ test('safety filter: catches real risks and leaves ordinary garden questions alo
   ];
   for (const q of fine) assert.equal(safetyTopic(q), null, q);
 });
+
+test('safety filter (liability review): preservation steps, burning, wiring and raw drinking water point to the authority', () => {
+  const must: Array<[string, string]> = [
+    ['How long should I pressure can green beans?', 'preservation'], ['How many minutes in a water bath for peaches?', 'preservation'],
+    ['What vinegar ratio for pickles?', 'preservation'], ['Good recipe for venison jerky?', 'preservation'], ['How much curing salt for bacon? I want to cure meat', 'preservation'],
+    ['Can I burn the brush pile this weekend?', 'burning'], ['How do I start a biochar kiln?', 'burning'], ['Is there a burn ban in my county?', 'burning'],
+    ['How do I wire up the solar panels to the inverter?', 'electrical'], ['What gauge wire for my well pump?', 'electrical'], ['Do I need a transfer switch for the generator?', 'electrical'],
+    ['Is rain barrel water safe to drink?', 'drinkingWater'], ['Can we cook with the pond water?', 'drinkingWater'], ['Can I drink water from the creek?', 'drinkingWater'],
+  ];
+  for (const [q, topic] of must) assert.equal(safetyTopic(q), topic, q);
+  const fine = [
+    'How long do canned tomatoes keep?', 'Can I grow pickling cucumbers here?', 'Will frost burn my lettuce?', 'How many solar panels would power a chest freezer?',
+    'How much do goats drink in summer?', 'Where should I put the rain barrel?', 'What size pond for ducks?', 'How do I store potatoes in a root cellar?', 'Does freezer burn ruin food?',
+  ];
+  for (const q of fine) assert.equal(safetyTopic(q), null, q);
+  assert.equal(screenReply('Process pints for 20 minutes at 10 psi in a pressure canner.').replaced, 'preservation');
+  assert.equal(screenReply('Use 10 AWG wire from the panel.').replaced, 'electrical');
+  assert.equal(screenReply('Rainwater from the barrel is safe to drink.').replaced, 'drinkingWater');
+  assert.equal(screenReply('Store canned goods somewhere cool and dark.').replaced, undefined);
+});

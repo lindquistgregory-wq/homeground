@@ -16,7 +16,7 @@ import { deleteSecrets } from '../src/services/secrets';
 import { listParcels, saveUserEndpoint } from '../src/db/parcels';
 import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
-import { alertsEnabled, setAlertsEnabled } from '../src/services/alerts';
+import { alertsEnabled, alertsLastChecked, setAlertsEnabled } from '../src/services/alerts';
 import { cloudSyncAvailable, syncNow, wipeCloudData } from '../src/sync/userCloud';
 import { useAds } from '../src/ads/useAds';
 import { BUSINESS_MODEL, PRIVACY_POLICY_URL } from '../src/config';
@@ -74,10 +74,12 @@ export default function Settings() {
   const [checking, setChecking] = useState(false);
   const [bench, setBench] = useState<string | null>(null);
   const [alerts, setAlerts] = useState(false);
+  const [lastCheck, setLastCheck] = useState<string | undefined>();
 
   useEffect(() => {
     cloudSyncAvailable().then(setCloud);
     alertsEnabled().then(setAlerts);
+    alertsLastChecked().then(setLastCheck);
   }, []);
 
   const contribute = async () => {
@@ -114,7 +116,9 @@ export default function Settings() {
             crops. Checked on this device about twice a day when your phone allows background refresh, and whenever you open the
             app. No account or push server involved.
           </Body>
+          <Body muted>Plotwright’s alerts aren’t official warnings and can be late or missed. For watches and warnings, follow the National Weather Service (weather.gov) and local emergency alerts.</Body>
         </MoreInfo>
+        {alerts && <Body muted>{lastCheck ? `Last checked ${new Date(lastCheck).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}.` : 'Not checked yet: open the app to check now.'} Not an official warning service.</Body>}
         <Button
           title={alerts ? '✓ Alerts on' : 'Turn on alerts'}
           kind={alerts ? 'primary' : 'secondary'}

@@ -28,3 +28,5 @@ export const PRIVACY_POLICY_URL = `${PROJECT_URL}/blob/main/docs/PRIVACY.md`;
 export const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 /** Android: the app's own terms. */
 export const TERMS_URL_ANDROID = `${PROJECT_URL}/blob/main/docs/TERMS.md`;
+/** Plotwright's own terms (assumption of risk, limits), agreed to at first launch on every platform. */
+export const APP_TERMS_URL = TERMS_URL_ANDROID;

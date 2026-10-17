@@ -156,7 +156,7 @@ export default function Paywall() {
               disabled={!!busy || owned.has(chosen.productId) || owned.has(PRODUCT_IDS.proLifetime) || rank(chosen.tier) < rank(entitlements.tier)}
               onPress={() => buy(chosen)}
             />
-            <Body muted>{disclosure(chosen, platform)}</Body>
+            <Body muted>{disclosure(chosen, platform)} By tapping the button you agree to these terms and the Terms of Use.</Body>
           </>
         )}
         <Button title={busy === 'restore' ? 'Restoring…' : 'Restore purchases'} kind="secondary" disabled={!!busy} onPress={doRestore} />
