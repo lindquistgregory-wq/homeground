@@ -4,7 +4,8 @@ import { validateUserEndpoint } from '@plotwright/providers';
 import { UserSync } from '@plotwright/user-sync';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Platform, ScrollView, Share, StyleSheet } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, Share, StyleSheet, Switch, View } from 'react-native';
+import { Text } from '../src/components/Text';
 import { TextInput } from '../src/components/Text';
 import { StubBillingAdapter, billing } from '../src/billing/adapter';
 import { useEntitlements } from '../src/billing/entitlements';
@@ -65,7 +66,7 @@ function benchNative(): { ms: number; moveMs: number; maxDiffH: number } {
 
 export default function Settings() {
   const t = useTheme();
-  const { units, setUnits } = useSettings();
+  const { units, setUnits, animals, setAnimals, showProcessing, setShowProcessing } = useSettings();
   const { entitlements, refresh, restore, storeError } = useEntitlements();
   const { privacyOptionsRequired, showPrivacyOptions, personalised, setPersonalised } = useAds();
   const [metricsOn, setMetricsOn] = useState(metricsConsent());
@@ -101,6 +102,12 @@ export default function Settings() {
       <Card title="Explore" icon="compass-outline">
         <ListRow icon="database-outline" title="Data sources" detail="Where every map layer and number comes from" onPress={() => router.push('/data-sources')} />
         <ListRow icon="star-circle-outline" title="Plans" detail="What each plan includes" onPress={() => router.push({ pathname: '/paywall', params: { source: 'settings' } })} />
+      </Card>
+
+      <Card title="Animals" icon="paw-outline">
+        {animals === 'yes' && <ListRow icon="paw" title="Animal library" detail="Poultry, goats, sheep, bees and more" onPress={() => router.push('/animals')} />}
+        <SwitchRow label="Show animal features" value={animals === 'yes'} onChange={(v) => setAnimals(v ? 'yes' : 'no')} />
+        {animals === 'yes' && <SwitchRow label="Show harvest and processing details" hint="Processing dates, dressed weights and related rules for meat animals. Off by default." value={showProcessing} onChange={setShowProcessing} />}
       </Card>
 
       <Card title="Units" icon="ruler">
@@ -263,6 +270,20 @@ export default function Settings() {
         />
       </Card>
     </ScrollView>
+  );
+}
+
+/** A labelled on/off row with the platform switch. */
+function SwitchRow({ label, hint, value, onChange }: { label: string; hint?: string; value: boolean; onChange: (v: boolean) => void }) {
+  const t = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, paddingVertical: 6 }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: t.text, fontSize: 15, fontWeight: '600' }}>{label}</Text>
+        {hint ? <Text style={{ color: t.muted, fontSize: 13 }}>{hint}</Text> : null}
+      </View>
+      <Switch value={value} onValueChange={onChange} accessibilityLabel={label} trackColor={{ true: t.accent, false: t.border }} thumbColor={t.card} />
+    </View>
   );
 }
 

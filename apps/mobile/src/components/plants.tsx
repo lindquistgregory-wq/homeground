@@ -23,9 +23,12 @@ export function VerdictBadge({ s }: { s: Pick<Suitability, 'verdict' | 'score'> 
 
 const STATUS_MARK: Record<Factor['status'], string> = { good: '✓', ok: '○', warn: '!', fail: '✕' };
 
-export function FactorList({ factors }: { factors: Factor[] }) {
+/** Any explained factor list (plants or animals): only these fields are used. */
+type FactorLike = Pick<Factor, 'label' | 'score' | 'weight' | 'status' | 'detail'> & { key: string };
+
+export function FactorList({ factors }: { factors: FactorLike[] }) {
   const t = useTheme();
-  const color = (f: Factor) => (f.status === 'good' ? t.accent : f.status === 'ok' ? t.text : f.status === 'warn' ? t.warn : t.bad);
+  const color = (f: FactorLike) => (f.status === 'good' ? t.accent : f.status === 'ok' ? t.text : f.status === 'warn' ? t.warn : t.bad);
   return (
     <View>
       {[...factors].sort((a, b) => a.score * a.weight - b.score * b.weight).map((f) => (
