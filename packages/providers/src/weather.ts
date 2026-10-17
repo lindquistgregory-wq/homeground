@@ -26,6 +26,8 @@ interface NwsPeriod {
   temperatureUnit?: string;
   windSpeed?: string;
   shortForecast?: string;
+  /** Present in current NWS forecasts: { unitCode: 'wmoUnit:percent', value }. */
+  relativeHumidity?: { value?: number | null };
 }
 interface NwsForecast {
   properties?: { updated?: string; generatedAt?: string; periods?: NwsPeriod[] };
@@ -47,6 +49,7 @@ export function parseNwsPeriods(f: NwsForecast): ForecastPeriod[] {
     isNight: !p.isDaytime,
     temperatureF: p.temperatureUnit === 'C' ? (p.temperature * 9) / 5 + 32 : p.temperature,
     windMph: parseWindMph(p.windSpeed),
+    ...(typeof p.relativeHumidity?.value === 'number' ? { relativeHumidityPct: p.relativeHumidity.value } : {}),
     summary: p.shortForecast,
   }));
 }

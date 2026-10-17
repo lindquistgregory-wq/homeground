@@ -28,3 +28,13 @@ test('the planner knowledge base and the animal library agree (prompt §9: no dr
     if (eggs !== undefined) assert.ok(same(a!.production.eggsPerYear, eggs), `${id}: eggs`);
   }
 });
+
+test('NWS forecast periods carry relative humidity when the forecast gives it (livestock heat stress)', async () => {
+  const { parseNwsPeriods } = await import('../packages/providers/src/weather');
+  const periods = parseNwsPeriods({ properties: { periods: [
+    { startTime: '2027-07-12T06:00:00-04:00', endTime: '2027-07-12T18:00:00-04:00', isDaytime: true, temperature: 92, temperatureUnit: 'F', relativeHumidity: { value: 64 } },
+    { startTime: '2027-07-12T18:00:00-04:00', endTime: '2027-07-13T06:00:00-04:00', isDaytime: false, temperature: 70, temperatureUnit: 'F' },
+  ] } });
+  assert.equal(periods[0]!.relativeHumidityPct, 64);
+  assert.equal(periods[1]!.relativeHumidityPct, undefined, 'missing humidity stays undefined (alerts then assume humid air)');
+});
