@@ -65,6 +65,10 @@ const store: LocalStore = {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM plantings WHERE id = ?', id);
       return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
     }
+    if (collection === 'herds') {
+      const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM herds WHERE id = ?', id);
+      return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
+    }
     if (collection === 'customPlants') {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM custom_plants WHERE id = ?', id);
       return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
@@ -161,6 +165,17 @@ const store: LocalStore = {
         rec.id, String(d.parcel_id ?? ''), String(d.design_id ?? ''), String(d.bed_object_id ?? ''), String(d.plant_id ?? ''), str(d.variety),
         Number(d.year ?? new Date().getFullYear()), Number(d.share ?? 1), String(d.status ?? 'planned'), str(d.planted_on), str(d.notes), str(d.cells),
         String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
+      );
+    } else if (rec.collection === 'herds') {
+      const d = (rec.data ?? {}) as Record<string, unknown>;
+      const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
+      await db.runAsync(
+        `INSERT INTO herds (id, parcel_id, design_id, object_id, species_id, breed, purpose, count, status, arrived_on, bred_on, notes, created_at, updated_hlc, deleted)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET species_id = excluded.species_id, breed = excluded.breed, purpose = excluded.purpose, count = excluded.count,
+           status = excluded.status, arrived_on = excluded.arrived_on, bred_on = excluded.bred_on, notes = excluded.notes, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
+        rec.id, String(d.parcel_id ?? ''), String(d.design_id ?? ''), String(d.object_id ?? ''), String(d.species_id ?? ''), str(d.breed), str(d.purpose),
+        Number(d.count ?? 1), String(d.status ?? 'planned'), str(d.arrived_on), str(d.bred_on), str(d.notes), String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
       );
     } else if (rec.collection === 'customPlants') {
       const d = (rec.data ?? {}) as Record<string, unknown>;

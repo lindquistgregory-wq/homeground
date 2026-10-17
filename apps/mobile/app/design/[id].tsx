@@ -35,6 +35,7 @@ import {
 import { exportDesign, type ExportFormat } from '../../src/services/export';
 import { activePlantings, cropShadeObjects, isPlantable } from '../../src/services/garden';
 import { deletePlantingsForBed, plantingsForParcel, type Planting } from '../../src/db/plantings';
+import { deleteHerdsForObject } from '../../src/db/herds';
 import { listSensors } from '../../src/db/sensors';
 import { newId } from '../../src/services/identity';
 import { useSettings } from '../../src/services/settings';
@@ -479,6 +480,8 @@ export default function DesignScreen() {
                   await deletePlantingsForBed(design.id, selected.id);
                   setPlantings((ps) => ps.filter((p) => p.bedObjectId !== selected.id));
                 }
+                // Herds housed in it go too, so they don't keep raising alerts.
+                await deleteHerdsForObject(design.id, selected.id);
               };
               if (planted) Alert.alert('Delete bed?', `This also removes its ${planted} planting${planted === 1 ? '' : 's'} and their history.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => void remove() }]);
               else void remove();
