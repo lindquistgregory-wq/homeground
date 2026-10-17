@@ -54,6 +54,7 @@ export const bundledZoneTable: Record<string, string> = zones as Record<string, 
 
 import cropGuides from '../extension/crop-guides.json';
 import stateHubs from '../extension/state-hubs.json';
+import livestockGuides from '../extension/livestock-guides.json';
 
 export interface ExtensionLink {
   url: string;
@@ -68,6 +69,11 @@ export interface ExtensionLink {
 /** Crop-specific growing guide from a land-grant extension service (link out only). */
 export function cropGuide(plantId: string): ExtensionLink | null {
   return ((cropGuides.crops as Record<string, ExtensionLink | null>)[plantId] ?? null);
+}
+
+/** Species care guide from Cooperative Extension or a government agency (link out only). */
+export function livestockGuide(animalId: string): ExtensionLink | null {
+  return ((livestockGuides.animals as Record<string, ExtensionLink | null>)[animalId] ?? null);
 }
 
 /** The user's state extension home-garden hub, by 2-digit state FIPS. */

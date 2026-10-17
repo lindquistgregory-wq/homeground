@@ -1,0 +1,71 @@
+/** Pigs and cattle. Figures from the cited extension sources; `null` where none was found. */
+import { SRC } from './sources';
+import type { AnimalSpec } from './types';
+
+const ZONING = 'Check zoning, HOA and lease rules before keeping livestock.';
+const CATTLE_HEAT = {
+  tolerance: 'low' as const, airOnsetF: 72, thiOnset: 80, thiScale: 'University of Missouri THI (via University of Nebraska)',
+  note: 'Signs can start at 72 °F with 50% humidity (UW-Madison); stress likely above THI 80 or when nights stay above 70 °F.',
+};
+
+export const LARGE_STOCK: AnimalSpec[] = [
+  {
+    id: 'feeder_pigs', commonName: 'Pigs (feeders)', aliases: ['pigs', 'hogs', 'feeder pigs'], scientificName: 'Sus scrofa domesticus',
+    kind: 'pig', purposes: ['meat'], unit: 'per pig, one grow-out',
+    minGroupSize: 2, starterGroupSize: [2, 2], maleNeeded: false, livesAloneOk: false, socialNote: 'Pigs do better in pairs or small groups.',
+    heat: { tolerance: 'low', airOnsetF: 70, note: 'Pigs over 150 lb need cooling above about 70 °F (Penn State); a 50 lb pig is comfortable at 70–82 °F (Oregon State). Provide shade and a wallow.' },
+    cold: { tolerance: 'medium', note: 'Dry, draft-free bedding.' }, shadeNeeded: true,
+    spaceIndoorSqFt: [8, 8], spaceOutdoorSqFt: null, pastureAcresPerHead: [0.03, 0.07],
+    fence: 'Electric wire at ground level stops rooting under fences (Penn State).', housingObjects: ['paddock', 'barn'],
+    feedLbPerGrowOut: [500, 690], waterGalPerDay: [2, 3],
+    production: { growOutDays: [100, 153], liveWeightLb: [250, 280] },
+    processing: { ageDays: [150, 210], dressedWeightLb: [169, 175], note: 'About 125 lb of retail cuts from a 250 lb pig (UW-Madison).' },
+    reproduction: { gestationDays: [114, 114] },
+    lifespanYears: null, laborHoursPerWeek: null, noise: 'medium',
+    predators: [], diseasesToKnow: ['heat stress', 'internal parasites', 'African swine fever (report unusual deaths)'],
+    biosecurity: 'Keep pigs away from feral swine and never feed meat scraps (a disease route and illegal in many states).',
+    companions: [], keepApart: [],
+    regulatory: [ZONING, 'Selling pork by the cut needs USDA- or state-inspected slaughter; custom-exempt processing is for the owner’s own use (shown with processing details on).'],
+    breeds: [], notes: [],
+    sources: [SRC.psuPigs, SRC.osuPigs, SRC.uwHog, SRC.ndsuWater, SRC.merckGestation],
+  },
+  {
+    id: 'beef_cattle', commonName: 'Beef cattle (small acreage)', aliases: ['cattle', 'cows', 'beef', 'Dexter', 'miniature cattle'], scientificName: 'Bos taurus',
+    kind: 'cattle', purposes: ['meat', 'grazing', 'breeding'], unit: 'per cow-calf pair',
+    minGroupSize: 2, starterGroupSize: [2, 3], maleNeeded: false, livesAloneOk: false, socialNote: 'Cattle are herd animals: keep at least two.',
+    heat: CATTLE_HEAT, cold: { tolerance: 'high', note: 'Windbreak and dry bedding in winter.' }, shadeNeeded: true,
+    spaceIndoorSqFt: null, spaceOutdoorSqFt: [30, 30], pastureAcresPerHead: [1.5, 2], animalUnitEquivalent: 1,
+    fence: 'Fencing is a must on small acreages (Colorado State): woven wire or multi-strand electric, with strong corners and gates.', housingObjects: ['paddock', 'barn'],
+    waterGalPerDay: [15.3, 20], waterNote: 'At 90 °F (NDSU via Drovers); needs can double in heat. 2 in of trough per head.',
+    production: { note: 'One calf a year per cow under good management.' },
+    reproduction: { gestationDays: [279, 287] },
+    lifespanYears: null, laborHoursPerWeek: null, noise: 'medium',
+    predators: ['dogs (calves)'], diseasesToKnow: ['heat stress', 'bloat on lush legumes', 'internal parasites', 'pinkeye'],
+    biosecurity: 'Quarantine new animals; ask a vet about a herd health plan.',
+    companions: ['guardian_donkey'], keepApart: [],
+    regulatory: [ZONING, 'State brand or ID and movement rules can apply to cattle: check with the state veterinarian.'],
+    breeds: [{ name: 'Dexter', climate: null, purpose: 'meat', note: 'A small breed often kept on small acreages.' }],
+    notes: ['Outdoor space: about 30 sq ft of shade per head (UW-Madison).', 'Pasture: 1.5–2 acres per pair in temperate climates with average forage (Colorado State); 1.65–1.72 acres in one Iowa rotational trial; poor land needs far more. Use your county’s forage data.'],
+    sources: [SRC.csuLivestock, SRC.uwCool, SRC.unlHeat, SRC.droversWater, SRC.iowaGrazing, SRC.osuAum, SRC.merckGestation],
+  },
+  {
+    id: 'milk_cow', commonName: 'Family milk cow', aliases: ['milk cow', 'dairy cow', 'Jersey', 'family cow'], scientificName: 'Bos taurus',
+    kind: 'cattle', purposes: ['milk', 'breeding', 'grazing'], unit: 'per cow',
+    minGroupSize: 2, starterGroupSize: [2, 2], maleNeeded: false, livesAloneOk: false, socialNote: 'A lone cow is stressed: keep a companion (her calf, a steer or another bovine).',
+    heat: { ...CATTLE_HEAT, note: 'Dairy cows are especially heat-sensitive; signs can start at 72 °F with 50% humidity (UW-Madison).' },
+    cold: { tolerance: 'high' }, shadeNeeded: true,
+    spaceIndoorSqFt: null, spaceOutdoorSqFt: [30, 30], pastureAcresPerHead: [2, 5], animalUnitEquivalent: 1,
+    fence: 'Strong perimeter fence and a milking area.', housingObjects: ['paddock', 'barn'],
+    waterGalPerDay: [18, 41], waterNote: 'Milking cows: about 18–22 gal at 30 lb of milk up to 35–41 gal at 100 lb (NDSU AS1763).',
+    production: { lactationDays: [270, 300], note: 'Plan on 9–10 months of milk with at least 2 months dry before calving (keeper guidance). Daily output varies hugely with breed and feed.' },
+    reproduction: { gestationDays: [279, 287] },
+    lifespanYears: null, laborHoursPerWeek: null, noise: 'medium',
+    predators: [], diseasesToKnow: ['mastitis', 'milk fever', 'heat stress', 'bloat'],
+    biosecurity: 'Ask a vet about a herd health plan and testing before buying.',
+    companions: [], keepApart: [],
+    regulatory: [ZONING, 'Raw milk sales are state law and vary widely: check before selling or sharing milk.', 'Grade A dairy rules call for cooling milk below 40 °F right after milking.'],
+    breeds: [{ name: 'Jersey', climate: null, purpose: 'milk' }],
+    notes: ['Milking is twice a day, every day, for most of the year.'],
+    sources: [SRC.ndsuWater, SRC.familyCow, SRC.uwCool, SRC.unlHeat, SRC.rawMilk, SRC.merckGestation],
+  },
+];

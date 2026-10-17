@@ -1,0 +1,374 @@
+{
+  "umnEggs": {
+    "title": "Raising chickens for eggs (UMN Extension)",
+    "url": "https://extension.umn.edu/small-scale-poultry/raising-chickens-eggs",
+    "year": 2025,
+    "kind": "extension"
+  },
+  "psuEggs": {
+    "title": "Small-Scale Egg Production (Penn State)",
+    "url": "https://extension.psu.edu/small-scale-egg-production-organic-and-conventional",
+    "year": 2021,
+    "kind": "extension"
+  },
+  "poultrySpace": {
+    "title": "Space allowances for small and backyard poultry flocks (extension.org)",
+    "url": "https://poultry.extension.org/articles/getting-started-with-small-and-backyard-poultry/housing-for-small-and-backyard-poultry-flocks/space-allowances-in-housing-for-small-and-backyard-poultry-flocks/",
+    "year": null,
+    "kind": "extension"
+  },
+  "umdLayers": {
+    "title": "Backyard Layer Flock Economics FS-2025-0783 (UMD)",
+    "url": "https://extension.umd.edu/resource/backyard-layer-flock-economics-how-much-does-it-cost-you-produce-dozen-eggs-fs-2025-0783",
+    "year": 2025,
+    "kind": "extension"
+  },
+  "ufEggs": {
+    "title": "PS029 Factors Affecting Egg Production in Backyard Chicken Flocks (UF/IFAS)",
+    "url": "https://ask.ifas.ufl.edu/publication/PS029",
+    "year": 2025,
+    "kind": "extension"
+  },
+  "umnHeat": {
+    "title": "Laying hen housing and heat (University of Minnesota)",
+    "url": "https://conservancy.umn.edu/server/api/core/bitstreams/6a1e80b1-d651-42c3-bf73-9a7cce31c8d6/content",
+    "year": null,
+    "kind": "extension"
+  },
+  "cdcPoultry": {
+    "title": "Backyard poultry and Salmonella (CDC)",
+    "url": "https://www.cdc.gov/salmonella/backyardpoultry-05-23/index.html",
+    "year": 2026,
+    "kind": "government"
+  },
+  "lcChart": {
+    "title": "Heritage Chicken Breed Comparison Chart (The Livestock Conservancy)",
+    "url": "https://livestockconservancy.org/wp-content/uploads/2026/03/PickaBreedChickens2026.pdf",
+    "year": 2026,
+    "kind": "research"
+  },
+  "lcFaq": {
+    "title": "Heritage Chicken FAQ (The Livestock Conservancy)",
+    "url": "https://livestockconservancy.org/?p=2064",
+    "year": null,
+    "kind": "research"
+  },
+  "psuBroilers": {
+    "title": "A Quick Guide to Raising Pastured Broilers (Penn State)",
+    "url": "https://extension.psu.edu/a-quick-guide-to-raising-pastured-broilers",
+    "year": 2025,
+    "kind": "extension"
+  },
+  "muBroilers": {
+    "title": "Mobile Poultry for Meat Planning Budget G742 (MU Extension)",
+    "url": "https://extension.missouri.edu/publications/g742",
+    "year": null,
+    "kind": "extension"
+  },
+  "acesExempt": {
+    "title": "Exemptions from USDA Inspection for Small-Scale Poultry Processors (Alabama Extension)",
+    "url": "https://www.aces.edu/blog/topics/farming/exemptions-from-usda-inspection-for-small-scale-poultry-processors/",
+    "year": 2022,
+    "kind": "extension"
+  },
+  "msuIncubation": {
+    "title": "Incubation duration periods (Mississippi State Extension)",
+    "url": "https://extension.msstate.edu/agriculture/livestock/poultry/incubation-duration-periods",
+    "year": null,
+    "kind": "extension"
+  },
+  "okIncubation": {
+    "title": "Artificial Incubation (Oklahoma State Extension)",
+    "url": "https://extension.okstate.edu/fact-sheets/artificial-incubation.html",
+    "year": null,
+    "kind": "extension"
+  },
+  "duckFeed": {
+    "title": "Feeding ducks for egg production in small flocks (extension.org)",
+    "url": "https://poultry.extension.org/articles/feeds-and-feeding-of-poultry/feeding-ducks-for-egg-production-kept-in-small-flocks/",
+    "year": null,
+    "kind": "extension"
+  },
+  "okKhaki": {
+    "title": "Khaki Campbell Ducks (Oklahoma State Breeds of Livestock)",
+    "url": "https://breeds.okstate.edu/poultry/ducks/khaki-campbell-ducks",
+    "year": null,
+    "kind": "extension"
+  },
+  "geeseSpace": {
+    "title": "How much space do you need to raise geese? (Family Farm Livestock)",
+    "url": "https://familyfarmlivestock.com/how-much-space-do-you-need-to-raise-geese/",
+    "year": null,
+    "kind": "secondary"
+  },
+  "guineaExt": {
+    "title": "Raising guinea fowl in small and backyard flocks (extension.org)",
+    "url": "https://poultry.extension.org/articles/poultry-management/raising-guinea-fowl/",
+    "year": null,
+    "kind": "extension"
+  },
+  "guineaMcMurray": {
+    "title": "Raising guinea fowl (Murray McMurray Hatchery)",
+    "url": "https://blog.mcmurrayhatchery.com/2022/02/16/raising-guinea-fowl/",
+    "year": 2022,
+    "kind": "industry"
+  },
+  "quailFarmDairy": {
+    "title": "Raise quail for meat and eggs (Farm and Dairy)",
+    "url": "https://www.farmanddairy.com/?p=367812",
+    "year": null,
+    "kind": "secondary"
+  },
+  "psuTurkeys": {
+    "title": "Small-Flock Turkey Production (Penn State)",
+    "url": "https://extension.psu.edu/small-flock-turkey-production",
+    "year": 2021,
+    "kind": "extension"
+  },
+  "msuTurkeys": {
+    "title": "E1259 Want to Raise a Few Turkeys? (Michigan State)",
+    "url": "https://sanweb.lib.msu.edu/DMC/extension_publications/e1259/e1259.pdf",
+    "year": 1978,
+    "kind": "extension"
+  },
+  "umaineRabbits": {
+    "title": "Bulletin #1044 Backyard Production of Meat Rabbits in Maine",
+    "url": "https://extension.umaine.edu/publications/1044e/",
+    "year": 2014,
+    "kind": "extension"
+  },
+  "tamuRabbits": {
+    "title": "Backyard Production of Meat Rabbits in Texas (Texas A&M AgriLife)",
+    "url": "https://agrilifeextension.tamu.edu/wp-content/uploads/2025/03/Backyard-Productions-of-Meat-Rabbits-in-Texas.pdf",
+    "year": 1995,
+    "kind": "extension"
+  },
+  "osuRabbits": {
+    "title": "EC 1655 Raising rabbits (Oregon State)",
+    "url": "https://extension.oregonstate.edu/sites/default/files/documents/ec1655.pdf",
+    "year": null,
+    "kind": "extension"
+  },
+  "merckGestation": {
+    "title": "Approximate Gestation Periods (Merck Veterinary Manual)",
+    "url": "https://www.merckvetmanual.com/multimedia/table/approximate-gestation-periods",
+    "year": null,
+    "kind": "research"
+  },
+  "psuDairyGoats": {
+    "title": "Dairy Goat Production (Penn State)",
+    "url": "https://extension.psu.edu/dairy-goat-production",
+    "year": 2022,
+    "kind": "extension"
+  },
+  "msuGoats": {
+    "title": "What to know before bringing home goats (Mississippi State)",
+    "url": "https://extension.msstate.edu/news/feature-story/2023/what-know-bringing-home-goats",
+    "year": 2025,
+    "kind": "extension"
+  },
+  "rawMilk": {
+    "title": "Raw Milk Sales by State Chart (Food Safety News, May 2025)",
+    "url": "https://www.foodsafetynews.com/files/2025/05/Updated-Raw-Milk-Sales-by-State-Chart-as-of-May-1-2025.pdf",
+    "year": 2025,
+    "kind": "secondary"
+  },
+  "psuMeatGoats": {
+    "title": "Meat Goat Production (Penn State)",
+    "url": "https://extension.psu.edu/meat-goat-production",
+    "year": 2023,
+    "kind": "extension"
+  },
+  "ncatGoats": {
+    "title": "Meat Goats: Sustainable Production (ATTRA/NCAT)",
+    "url": "https://www.ncat.org/publication/meat-goats-sustainable-production/",
+    "year": 2009,
+    "kind": "extension"
+  },
+  "sdsuThi": {
+    "title": "Heat stress in sheep and goats (SDSU Extension, via OSU Sheep Team)",
+    "url": "https://u.osu.edu/sheep/?p=5170",
+    "year": null,
+    "kind": "extension"
+  },
+  "muSmallRuminants": {
+    "title": "Managing heat stress in sheep and goats (MU Extension)",
+    "url": "https://extension.missouri.edu/news/managing-heat-stress-in-sheep-and-goats",
+    "year": null,
+    "kind": "extension"
+  },
+  "umassAngora": {
+    "title": "Angora Goat Shearing (UMass Amherst)",
+    "url": "https://www.umass.edu/agriculture-food-environment/crops-dairy-livestock-equine/fact-sheets/angora-goat-shearing",
+    "year": null,
+    "kind": "extension"
+  },
+  "okAngora": {
+    "title": "Angora Goats (Oklahoma State Breeds of Livestock)",
+    "url": "https://breeds.okstate.edu/goats/angora-goats",
+    "year": null,
+    "kind": "extension"
+  },
+  "umaineSheep": {
+    "title": "Bulletin #2186 Are You Thinking of Raising Sheep? (UMaine)",
+    "url": "https://extension.umaine.edu/publications/2186e/",
+    "year": 2006,
+    "kind": "extension"
+  },
+  "cornellSheep": {
+    "title": "How to Get Started with Sheep (Cornell Small Farms)",
+    "url": "https://smallfarms.cornell.edu/2010/07/how-to-get-started-with-sheep/",
+    "year": 2010,
+    "kind": "extension"
+  },
+  "ndsuWater": {
+    "title": "Livestock Water Requirements AS1763 (NDSU)",
+    "url": "https://www.ndsu.edu/agriculture/extension/publications/livestock-water-requirements",
+    "year": 2026,
+    "kind": "extension"
+  },
+  "aphisScrapie": {
+    "title": "National Scrapie Eradication Program fact sheet (USDA APHIS)",
+    "url": "https://www.aphis.usda.gov/sites/default/files/fs_ahscrapie.pdf",
+    "year": null,
+    "kind": "government"
+  },
+  "psuPigs": {
+    "title": "Raising Small Groups of Pigs (Penn State)",
+    "url": "https://extension.psu.edu/raising-small-groups-of-pigs",
+    "year": 2026,
+    "kind": "extension"
+  },
+  "osuPigs": {
+    "title": "Care and Management of New Feeder Pigs EM 9271 (Oregon State)",
+    "url": "https://extension.oregonstate.edu/catalog/em-9271-care-management-new-feeder-pigs",
+    "year": 2019,
+    "kind": "extension"
+  },
+  "uwHog": {
+    "title": "How much meat should a hog yield? (UW-Madison Extension)",
+    "url": "https://livestock.extension.wisc.edu/articles/how-much-meat-should-a-hog-yield/",
+    "year": 2020,
+    "kind": "extension"
+  },
+  "unlHeat": {
+    "title": "Heat stress in feedlot cattle G2355 (University of Nebraska)",
+    "url": "https://extensionpubs.unl.edu/publication/g2355/html/view",
+    "year": 2023,
+    "kind": "extension"
+  },
+  "uwCool": {
+    "title": "Keep Cattle Cool and Comfortable in Summer (UW-Madison Extension)",
+    "url": "https://livestock.extension.wisc.edu/files/2024/06/Keep-Cattle-Cool-and-Comfortable-in-Summer.pdf",
+    "year": 2024,
+    "kind": "extension"
+  },
+  "csuLivestock": {
+    "title": "Small-acreage livestock management (Colorado State Extension)",
+    "url": "https://extension.colostate.edu/resource/livestock-management",
+    "year": null,
+    "kind": "extension"
+  },
+  "droversWater": {
+    "title": "Water: the drought plan’s most overlooked line item (Drovers, citing NDSU)",
+    "url": "https://www.drovers.com/news/education/water-drought-plans-most-overlooked-line-item",
+    "year": null,
+    "kind": "secondary"
+  },
+  "iowaGrazing": {
+    "title": "Rotational grazing of cow-calf pairs (Iowa State)",
+    "url": "https://iastatedigitalpress.com/air/article/7277/galley/7106/download",
+    "year": null,
+    "kind": "research"
+  },
+  "osuAum": {
+    "title": "Estimating and measuring pasture productivity EM 9552 (Oregon State, NRCS animal units)",
+    "url": "https://extension.oregonstate.edu/es/catalog/em-9552-estimating-measuring-pasture-productivity",
+    "year": null,
+    "kind": "extension"
+  },
+  "familyCow": {
+    "title": "Family cow: three things to consider (Mother Earth News)",
+    "url": "https://www.motherearthnews.com/homesteading-and-livestock/family-cow-three-things-to-consider-zbcz1912/",
+    "year": null,
+    "kind": "secondary"
+  },
+  "psuBees": {
+    "title": "Agricultural Alternatives: Beekeeping (Penn State)",
+    "url": "https://pollinators.psu.edu/assets/uploads/documents/Beekeeping-Honey-Bees.pdf",
+    "year": 2012,
+    "kind": "extension"
+  },
+  "nassHoney": {
+    "title": "Honey (USDA NASS, March 2026)",
+    "url": "https://www.nass.usda.gov/Publications/Todays_Reports/reports/hony0326.pdf",
+    "year": 2026,
+    "kind": "government"
+  },
+  "usuBees": {
+    "title": "Beekeeping Annual Calendar (Utah State)",
+    "url": "https://extension.usu.edu/beekeeping/learn/calendar",
+    "year": null,
+    "kind": "extension"
+  },
+  "cdfaGuardians": {
+    "title": "Livestock guardians (California Department of Food and Agriculture)",
+    "url": "https://www.cdfa.ca.gov/ahfss/Animal_Health/pdfs/livestock%20guardians.pdf",
+    "year": null,
+    "kind": "government"
+  },
+  "tamuLgd": {
+    "title": "Livestock Guardian Dogs: an overview (Texas A&M AgriLife)",
+    "url": "https://agrilifeextension.tamu.edu/livestock-guardian-dogs",
+    "year": 2026,
+    "kind": "extension"
+  },
+  "albertaDonkey": {
+    "title": "Guard donkeys (Alberta Agriculture factsheet)",
+    "url": "https://open.alberta.ca/dataset/939205ff-24df-4923-b16b-6fa605cbcdb2/resource/12f78a4b-c079-4725-aefc-9fb7649737a2/download/1994-684-18.pdf",
+    "year": 1994,
+    "kind": "government"
+  },
+  "ontarioDonkey": {
+    "title": "Management recommendations for donkeys and mules (Ontario)",
+    "url": "https://www.ontario.ca/page/management-recommendations-donkeys-and-mules",
+    "year": null,
+    "kind": "government"
+  },
+  "osuCamelids": {
+    "title": "Recommended practices for caring for llamas and alpacas (Ohio State)",
+    "url": "https://icinfo.vet.ohio-state.edu/content/recommended-practices-caring-llamas-and-alpacas",
+    "year": null,
+    "kind": "extension"
+  },
+  "camelidWelfare": {
+    "title": "Camelid welfare FAQs (extension.org)",
+    "url": "https://animal-welfare.extension.org/camelid-welfare-faqs/",
+    "year": null,
+    "kind": "extension"
+  },
+  "alpacaFleece": {
+    "title": "Alpaca (Encyclopaedia Britannica)",
+    "url": "https://www.britannica.com/animal/alpaca",
+    "year": null,
+    "kind": "secondary"
+  },
+  "unlWater": {
+    "title": "Water development for livestock (University of Nebraska drought planning)",
+    "url": "https://drought.unl.edu/ranchplan/BeforeDrought/WaterManagement/WaterDevelopmentProjects.aspx",
+    "year": null,
+    "kind": "extension"
+  },
+  "rabbitHeritability": {
+    "title": "Litter traits in New Zealand White rabbits (Egyptian Poultry Science Journal)",
+    "url": "https://journals.ekb.eg/article_114314.html",
+    "year": null,
+    "kind": "research"
+  },
+  "goatHeritability": {
+    "title": "Milk yield heritability in dairy goats (Journal of Dairy Research)",
+    "url": "https://journalofdairyresearch.org/erduran-2017.html",
+    "year": 2017,
+    "kind": "research"
+  }
+}
