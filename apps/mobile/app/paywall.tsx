@@ -24,7 +24,7 @@ import { track } from '../src/services/metrics';
 
 const FEATURE_NAMES: Partial<Record<Feature, string>> = {
   'sun.heatmaps': 'sun-hour heatmaps', 'layers.canopyShade': 'tree shade from canopy heights', 'layers.advancedTerrain': 'advanced terrain tools',
-  'export.pdf': 'PDF export', 'export.gis': 'GIS export (GeoJSON, KML, DXF)',
+  'export.pdf': 'PDF export', 'export.gis': 'GIS export (GeoJSON, KML, DXF)', 'livestock.herdBook': 'the Herd Book (pedigree and breeding suggestions)',
 };
 
 const PERIOD: Record<PaywallPlan['period'], string> = { year: 'per year', month: 'per month', lifetime: 'one time' };
@@ -117,7 +117,7 @@ export default function Paywall() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
-      {feature && FEATURE_NAMES[feature] && <Body>{capitalize(FEATURE_NAMES[feature]!)} is part of {feature === 'sun.heatmaps' || feature === 'export.pdf' ? 'Grower and Homestead Pro' : 'Homestead Pro'}.</Body>}
+      {feature && FEATURE_NAMES[feature] && <Body>{capitalize(FEATURE_NAMES[feature]!)} is part of {feature === 'sun.heatmaps' || feature === 'export.pdf' || feature === 'livestock.herdBook' ? 'Grower and Homestead Pro' : 'Homestead Pro'}.</Body>}
 
       <Card title="Compare plans">
         <View style={styles.row}>

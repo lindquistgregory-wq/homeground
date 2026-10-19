@@ -64,7 +64,8 @@ export type Feature =
   | 'sensors.localNetwork'
   | 'planner.full'
   | 'planner.income'
-  | 'planner.multiYear'; // budgets and years 2–5 of the phased plan
+  | 'planner.multiYear' // budgets and years 2–5 of the phased plan
+  | 'livestock.herdBook'; // pedigree, inbreeding, merit and breeding suggestions (animal health and records stay free)
 
 // Every design object is free; paid tiers add unlimited objects, versions and exports.
 // Health and safety features are free on every plan (Safety & Liability Review): sensor heat and cold alerts included.
@@ -78,6 +79,7 @@ const GROWER_FEATURES: Feature[] = [
   'planting.bedScoring',
   'planting.successionRotation',
   'planner.full',
+  'livestock.herdBook',
 ];
 const PRO_ONLY: Feature[] = [
   'layers.advancedTerrain',

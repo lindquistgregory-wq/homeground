@@ -64,6 +64,14 @@ These are typical ranges for small US homesteads, and breeds differ widely. Seve
 
 Local extension advice, a vet and your state agriculture department win over these figures.
 
+## Herd Book figures (paid; `livestock/breeding.ts`)
+
+- **Inbreeding (COI):** the tabular (kinship) method, which includes each common ancestor's own inbreeding. Hand-worked tests cover half sibs (12.5%), full sibs (25%), first cousins (6.25%) and an inbred common ancestor. Missing ancestors add nothing, so a shallow pedigree reads **low**; the app says so when fewer than 3 generations are mostly known.
+- **Limit:** suggestions only below 5% by default. Users can lower it freely; raising it needs an acknowledgement and stops at 6.25%. The app calls it a precaution, not a guarantee.
+- **Herd trend:** mean COI by generation; a rise of about 1% or more per generation is flagged (FAO guidance for an effective population of 50 or more).
+- **Merit:** only where a heritability is sourced (dairy goat milk yield, rabbit litter size). It uses the **lower** cited heritability and treats repeatability as equal to it, so estimates lean toward zero. Each record is compared with contemporaries (species, sex, year and group). Shown as a range with a confidence word, never a precise score. Other species are ranked by inbreeding only.
+- **Mating rules:** `matingRules` turn sourced `knownMatingRisks` into checks (two naturally polled goats are never suggested).
+
 ## Care guide links
 
 | File | Contents | Checked |

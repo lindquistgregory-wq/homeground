@@ -48,6 +48,8 @@ export interface AnimalRecord {
    * with the record; the full-size file stays on the phone that took it (`file`, a local name).
    */
   photos?: Array<{ id: string; addedOn: string; thumb: string; file?: string }>;
+  /** Recorded traits used by breeding checks, such as "polled" for goats. */
+  traits?: string[];
   /** Reserved for a later version (lab parentage or genotype results); nothing reads it yet. */
   dnaTests?: Array<{ lab: string; date: string; result: string }>;
   createdAt: string;

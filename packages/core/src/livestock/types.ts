@@ -68,6 +68,11 @@ export interface Reproduction {
   /** Narrow-sense heritability of the main production traits, keyed by trait, with its source. */
   heritability?: Record<string, { value: Range; source: number }>;
   knownMatingRisks?: string[];
+  /**
+   * Machine-checkable versions of knownMatingRisks: pairings where both animals carry `trait`
+   * (recorded on the animal, e.g. "polled") are never suggested.
+   */
+  matingRules?: Array<{ ifBoth: string; reason: string }>;
 }
 
 export interface Breed {

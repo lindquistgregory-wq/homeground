@@ -4,7 +4,7 @@
  * animal by name. Sex, dates and tags are the owner's; nothing is inferred.
  */
 import {
-  HOUSEHOLD, allAnimals, isHousehold, isIsoDate, statusOptions, type AnimalRecord, type AnimalSex, type AnimalStatus,
+  HOUSEHOLD, allAnimals, animalById, isHousehold, isIsoDate, statusOptions, type AnimalRecord, type AnimalSex, type AnimalStatus,
 } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -93,6 +93,9 @@ export default function EditAnimal() {
         {field('Born or hatched', f.birthDate, (v) => set({ birthDate: v || undefined }), { date: true, hint: 'Born or hatched (YYYY-MM-DD, optional)' })}
         {field('Breed', f.breed, (v) => set({ breed: v || undefined }), { hint: 'Breed (optional)' })}
         {field('Colour and markings', f.colorMarkings, (v) => set({ colorMarkings: v || undefined }), { hint: 'Colour and markings (optional)' })}
+        {!pet && f.speciesId && animalById(f.speciesId)?.reproduction.matingRules?.some((r) => r.ifBoth === 'polled') && (
+          <Chip label="Naturally polled (hornless)" active={!!f.traits?.includes('polled')} onPress={() => set({ traits: f.traits?.includes('polled') ? f.traits.filter((x) => x !== 'polled') : [...(f.traits ?? []), 'polled'] })} />
+        )}
       </Card>
 
       {!pet && herds.some((h) => h.speciesId === f.speciesId) && (
