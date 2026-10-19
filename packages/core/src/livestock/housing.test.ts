@@ -76,3 +76,12 @@ test('care tasks: windows that wrap past New Year, and soonest first', () => {
   assert.deepEqual(tasks.map((t) => t.kind), ['winter-water']);
   assert.equal(tasks[0]!.herdId, 'h');
 });
+
+test('counts read naturally: colonies for bees, the species name otherwise', async () => {
+  const { countOf } = await import('./index');
+  const bees = animalById('honeybees')!;
+  assert.equal(countOf(bees, 1), '1 colony');
+  assert.equal(countOf(bees, 2), '2 colonies');
+  assert.equal(countOf(hens, 6), '6 laying hens');
+  assert.equal(countOf(undefined, 3), '3 animals');
+});

@@ -5,7 +5,7 @@
  * free and always shown.
  */
 import {
-  animalsForHousing, footprintAreaM2, formatArea, frameForBoundary, housingOccupancy, minimumGroup, objectType, scoreAnimal,
+  animalsForHousing, countOf, footprintAreaM2, formatArea, frameForBoundary, housingOccupancy, minimumGroup, objectType, scoreAnimal,
   type AnimalSpec, type HousingOccupancy,
 } from '@plotwright/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -96,8 +96,8 @@ export default function HousingPlanner() {
               <View key={s.herdId} style={styles.legendRow}>
                 <View style={[styles.swatch, { backgroundColor: colorOf(s.herdId) }]} />
                 <Body>
-                  {s.count} {s.animal.commonName.toLowerCase()}
-                  {s.capacity.fits !== null ? ` · room for ${s.capacity.fits} alone` : ' · no sourced space figure'}
+                  {countOf(s.animal, s.count)}
+                  {s.capacity.limitingFactor === 'hives' ? ' · one colony per hive' : s.capacity.fits !== null ? ` · room for ${s.capacity.fits} alone` : ' · no sourced space figure'}
                 </Body>
               </View>
             ))}
@@ -191,7 +191,7 @@ function AddHerd({ a, summary, onAdd, areaOk }: {
       <Body>{summary}</Body>
       <View style={[styles.row, { alignItems: 'center' }]}>
         <Chip label="−" active={false} disabled={count <= 1} onPress={() => setCount((c) => Math.max(1, c - 1))} />
-        <Text style={{ color: t.text, fontSize: 18, fontWeight: '700', minWidth: 36, textAlign: 'center' }} accessibilityLabel={`${count} animals`}>{count}</Text>
+        <Text style={{ color: t.text, fontSize: 18, fontWeight: '700', minWidth: 36, textAlign: 'center' }} accessibilityLabel={countOf(a, count)}>{count}</Text>
         <Chip label="+" active={false} onPress={() => setCount((c) => c + 1)} />
       </View>
       {next?.used != null && <Text style={{ color: next.over ? t.bad : t.muted }}>{next.over ? `That’s over capacity (${Math.round(next.used * 100)}% of the space).` : `Uses ${Math.round(next.used * 100)}% of the space with what’s already here.`}</Text>}
@@ -204,7 +204,7 @@ function AddHerd({ a, summary, onAdd, areaOk }: {
       <TextInput value={date} onChangeText={setDate} placeholder={status === 'active' ? 'Arrived or hatched (YYYY-MM-DD, optional)' : 'Expected arrival (YYYY-MM-DD, optional)'}
         placeholderTextColor={t.muted} keyboardType="numbers-and-punctuation" accessibilityLabel="Arrival or hatch date, optional"
         style={[styles.input, { color: t.text, borderColor: dateOk ? t.border : t.bad }]} />
-      <Button title={`Add ${count} ${a.commonName.toLowerCase()}`} disabled={!dateOk} onPress={() => void onAdd(count, status, date || undefined)} />
+      <Button title={`Add ${countOf(a, count)}`} disabled={!dateOk} onPress={() => void onAdd(count, status, date || undefined)} />
     </View>
   );
 }

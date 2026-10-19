@@ -1,6 +1,6 @@
 /** Shared helpers for the animal screens, Calendar, Home and alerts. */
 import {
-  animalById, animalCalendar, doyOfIso, objectType, type ActiveHerd, type AnimalEvent, type AnimalSite, type AnimalSpec, type Design, type DesignObject, type SiteConditions,
+  animalById, animalCalendar, countOf, doyOfIso, objectType, type ActiveHerd, type AnimalEvent, type AnimalSite, type AnimalSpec, type Design, type DesignObject, type SiteConditions,
 } from '@plotwright/core';
 import { getDesign } from '../db/designs';
 import { herdsForParcel, type Herd } from '../db/herds';
@@ -26,6 +26,7 @@ export const isCurrent = (h: Herd) => h.status === 'planned' || h.status === 'ac
 
 /** "6 laying hens", with the species name lower-cased. */
 export function herdLabel(h: Pick<Herd, 'count' | 'speciesId' | 'breed'>, a: AnimalSpec | undefined = animalById(h.speciesId)): string {
+  if (a?.kind === 'pollinator') return countOf(a, h.count);
   const name = (a?.commonName ?? h.speciesId).toLowerCase();
   return `${h.count} ${h.breed ? `${h.breed} ` : ''}${name}`;
 }

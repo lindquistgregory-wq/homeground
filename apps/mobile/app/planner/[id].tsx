@@ -5,7 +5,7 @@
  * Everything runs on the phone. The conversation isn't uploaded anywhere.
  */
 import {
-  animalById, buildPlan, plannerTurn, readyToPlan, validateDesignDraft,
+  animalById, buildPlan, countOf, plannerTurn, readyToPlan, validateDesignDraft,
   type DesignDraft, type HomesteadGoals, type HomesteadPlan, type PlanItem, type PlannerContext, type PlannerModel,
 } from '@plotwright/core';
 import { KNOWLEDGE_BASE } from '@plotwright/data';
@@ -140,7 +140,7 @@ export default function Planner() {
         const herd = d.payload.herd && animalsOn ? d.payload.herd : undefined;
         const sp = herd ? animalById(herd.species) : undefined;
         const home = sp ? r.placed.find((o) => sp.housingObjects.includes(o.kind)) : undefined;
-        const planHerd = herd && sp && home ? [{ text: `Plan ${herd.count} ${sp.commonName.toLowerCase()} there`, onPress: async () => { await saveHerd({ parcelId: id, designId: r.designId, objectId: home.id, speciesId: sp.id, count: herd.count, status: 'planned' }); router.push({ pathname: '/housing/[id]', params: { id, objectId: home.id } }); } }] : [];
+        const planHerd = herd && sp && home ? [{ text: `Plan ${countOf(sp, herd.count)} there`, onPress: async () => { await saveHerd({ parcelId: id, designId: r.designId, objectId: home.id, speciesId: sp.id, count: herd.count, status: 'planned' }); router.push({ pathname: '/housing/[id]', params: { id, objectId: home.id } }); } }] : [];
         Alert.alert('Added to your design', `${r.added} object${r.added === 1 ? '' : 's'} placed${r.plantings ? `, ${r.plantings} planting${r.plantings === 1 ? '' : 's'} planned` : ''}. They’re labelled “planner draft”: move them where they fit best (check the sun layer).${r.unplaced.length ? `\n\nNot placed: ${r.unplaced.join(', ')}.` : ''}`,
           [{ text: 'OK' }, ...planHerd, { text: 'Open design', onPress: () => router.push({ pathname: '/design/[id]', params: { id } }) }]);
       } else {
