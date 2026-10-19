@@ -175,6 +175,7 @@ export default function Home() {
                   <>
                     <View style={{ height: 10 }} />
                     <TileRow>
+                      <Tile icon="clipboard-text-outline" label="My animals" caption="Health, logs, pets" onPress={() => router.push('/records')} />
                       <Tile icon="paw" label="Animals" caption={sum?.animals ? `${sum.animals} animal${sum.animals === 1 ? '' : 's'}` : 'Fit, housing, care'} onPress={() => router.push({ pathname: '/animals', params: { parcelId: item.id } })} />
                     </TileRow>
                   </>

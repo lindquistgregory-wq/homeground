@@ -8,6 +8,9 @@ import type { GardenState } from './useGarden';
 
 const ACRE_M2 = 4046.86;
 
+/** Today on the phone's calendar, as YYYY-MM-DD (records use local dates). */
+export const localToday = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
 /** The property facts the animal fit score uses, from the loaded garden state. */
 export function siteForAnimals(state: GardenState): AnimalSite {
   return { zone: state.site.zone, peakSummerMaxF: state.site.peakSummerMaxF, summerRhPct: state.site.summerRhPct, parcelAcres: state.parcel.areaM2 / ACRE_M2 };

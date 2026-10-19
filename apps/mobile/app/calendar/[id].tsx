@@ -3,7 +3,7 @@
  * weeks of tasks, the whole season month by month, and frost/heat/wind alerts from the NWS forecast
  * for crops already in the ground. With animal features on, herds' care tasks and weather alerts too.
  */
-import { formatDoy, formatWindow, plantById, upcomingAnimalTasks, upcomingTasks, type PlantCalendar } from '@plotwright/core';
+import { HEALTH_TYPES, addDaysIso, formatDoy, formatWindow, healthDue, plantById, upcomingAnimalTasks, upcomingTasks, type PlantCalendar } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
@@ -14,7 +14,9 @@ import { EmptyState, MoreInfo, Pill } from '../../src/components/kit';
 import { PlantArt } from '../../src/components/PlantArt';
 import { AnimalArt } from '../../src/components/AnimalArt';
 import { herdsForParcel, type Herd } from '../../src/db/herds';
-import { herdCalendars, herdLabel } from '../../src/services/animals';
+import { herdCalendars, herdLabel, localToday } from '../../src/services/animals';
+import { allRecords, listAnimals } from '../../src/db/records';
+import { healthSubjects } from '../../src/services/healthReminders';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { alertsEnabled, alertsForParcel, type ParcelAlerts } from '../../src/services/alerts';
 import { activePlantings, bedName, calendarFor } from '../../src/services/garden';
@@ -65,8 +67,24 @@ export default function CalendarScreen() {
     return out;
   }, [state, active, risk, dynamic, ent]);
 
+  // Record due dates: breeding and hatch windows, and health dates, for this property's animals.
+  const [dues, setDues] = useState<Array<{ key: string; text: string; when: string; overdue: boolean }>>([]);
   useEffect(() => {
-    if (state && animalsOn) void herdsForParcel(state.parcel.id).then(setHerds);
+    if (!state || !animalsOn) return;
+    void herdsForParcel(state.parcel.id).then(setHerds);
+    void (async () => {
+      const today = localToday(), until = addDaysIso(today, 42);
+      const names = new Map((await listAnimals()).map((a) => [a.id, a.name]));
+      const who = await healthSubjects();
+      const mine = <T extends { parcelId?: string }>(xs: T[]) => xs.filter((x) => x.parcelId === state.parcel.id);
+      const out: Array<{ key: string; text: string; when: string; overdue: boolean }> = [];
+      for (const b of mine(await allRecords('breedingRecords')))
+        if (b.dueFrom && b.dueTo && b.born === undefined && b.dueTo >= today && b.dueFrom <= until)
+          out.push({ key: b.id, text: `${b.damId ? names.get(b.damId) ?? 'Dam' : 'Eggs set'}: ${b.method === 'eggs-set' ? 'hatch' : 'due'}`, when: `${b.dueFrom} – ${b.dueTo}`, overdue: false });
+      for (const d of healthDue(mine(await allRecords('healthRecords')), today, 42))
+        out.push({ key: d.record.id, text: `${who(d.record)}: ${d.record.product || HEALTH_TYPES[d.record.type]}`, when: d.record.nextDue!, overdue: d.overdue });
+      setDues(out.sort((a, b) => a.when.localeCompare(b.when)));
+    })();
   }, [state, animalsOn]);
   const herdCals = useMemo(() => (state && animalsOn ? herdCalendars(herds, state.design, state.site, showProcessing) : []), [state, animalsOn, herds, showProcessing]);
 
@@ -115,7 +133,7 @@ export default function CalendarScreen() {
         {notifyOn === false && <Button title="Turn on alert notifications" kind="secondary" onPress={() => router.push('/settings')} />}
       </Card>
 
-      {herdCals.length > 0 && (() => {
+      {(herdCals.length > 0 || dues.length > 0) && (() => {
         const soonAnimal = upcomingAnimalTasks(herdCals.map((c) => ({ herdId: c.herd.id, animalId: c.animal.id, events: c.events })), today, Math.min(365, today + 42));
         const byHerd = new Map(herdCals.map((c) => [c.herd.id, c]));
         return (
@@ -131,7 +149,13 @@ export default function CalendarScreen() {
                   </View>
                 </View>
               );
-            }) : <Body muted>No animal care dates in the next six weeks.</Body>}
+            }) : !dues.length && <Body muted>No animal care dates in the next six weeks.</Body>}
+            {dues.map((x) => (
+              <View key={x.key} style={{ marginBottom: 8 }}>
+                <Text style={{ color: x.overdue ? t.bad : t.text, fontWeight: '600' }}>{x.text}</Text>
+                <Body muted>{x.overdue ? `Was due ${x.when}` : x.when} · from your records</Body>
+              </View>
+            ))}
             <MoreInfo label="Your herds">
               {herdCals.map((c) => <Body key={c.herd.id} muted>{herdLabel(c.herd, c.animal)} in {c.housing} · {c.herd.status === 'active' ? 'on the land' : 'planned'}</Body>)}
               <Body muted>Dates come from your frost dates and each herd’s arrival or breeding date. They’re reminders, not veterinary schedules.</Body>

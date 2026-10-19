@@ -17,6 +17,7 @@ export * from './capacity';
 export * from './calendar';
 export * from './alerts';
 export * from './housing';
+export * from './records';
 
 export const ANIMALS: AnimalSpec[] = [...POULTRY, ...SMALL_STOCK, ...LARGE_STOCK, ...BEES, ...WORKING];
 

@@ -106,6 +106,7 @@ export default function Settings() {
 
       <Card title="Animals" icon="paw-outline">
         {animals === 'yes' && <ListRow icon="paw" title="Animal library" detail="Poultry, goats, sheep, bees and more" onPress={() => router.push('/animals')} />}
+        {animals === 'yes' && <ListRow icon="clipboard-text-outline" title="My animals and pets" detail="Health records, reminders, logs and breeding" onPress={() => router.push('/records')} />}
         <SwitchRow label="Show animal features" value={animals === 'yes'} onChange={(v) => setAnimals(v ? 'yes' : 'no')} />
         {animals === 'yes' && <SwitchRow label="Show harvest and processing details" hint="Processing dates, dressed weights and related rules for meat animals. Off by default." value={showProcessing} onChange={setShowProcessing} />}
       </Card>

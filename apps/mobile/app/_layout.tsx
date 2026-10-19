@@ -15,6 +15,7 @@ import { TAB_ROUTES, TabBar } from '../src/components/TabBar';
 import { FONTS } from '../src/components/Text';
 // Registers the background alert task at startup (the OS may launch the app headless to run it).
 import { checkAlerts } from '../src/services/alerts';
+import { refreshHealthReminders } from '../src/services/healthReminders';
 import { collectOnOpen } from '../src/services/ble';
 import { localOffsetMin } from '../src/services/sensorInsights';
 import { refreshAllStations } from '../src/services/stations';
@@ -60,6 +61,8 @@ export default function RootLayout() {
       Promise.allSettled([collectOnOpen(localOffsetMin()), refreshAllStations(localOffsetMin(), true)])
         .then(() => checkAlerts())
         .catch(() => undefined);
+      // Health reminders follow the records, including ones synced from another device.
+      refreshHealthReminders().catch(() => undefined);
     })();
   }, []);
 
@@ -109,6 +112,10 @@ function Screens() {
       <Stack.Screen name="animals/index" options={{ title: 'Animals' }} />
       <Stack.Screen name="animals/[animalId]" options={{ title: 'Animal' }} />
       <Stack.Screen name="housing/[id]" options={{ title: 'Animal housing' }} />
+      <Stack.Screen name="records/index" options={{ title: 'My animals' }} />
+      <Stack.Screen name="records/[id]" options={{ title: 'Records' }} />
+      <Stack.Screen name="records/edit" options={{ title: 'Animal' }} />
+      <Stack.Screen name="records/import" options={{ title: 'Import animals' }} />
       <Stack.Screen name="garden/[id]" options={{ title: 'Bed planner' }} />
       <Stack.Screen name="calendar/[id]" options={{ title: 'Calendar' }} />
       <Stack.Screen name="sensors/index" options={{ title: 'Sensors' }} />

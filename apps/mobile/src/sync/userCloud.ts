@@ -3,6 +3,7 @@
  * (CloudTransport). Nothing here talks to a developer server.
  */
 import { Platform } from 'react-native';
+import { applyRecordRow, recordRow } from '../db/records';
 import { syncOnce, type ChangeBatch, type CloudTransport, type LocalStore, type SyncCollection, type SyncRecord } from '@plotwright/core';
 import { UserSync } from '@plotwright/user-sync';
 import { getDb, kvGet, kvSet } from '../db/database';
@@ -64,6 +65,10 @@ const store: LocalStore = {
     if (collection === 'plantings') {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM plantings WHERE id = ?', id);
       return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
+    }
+    if (collection === 'animals' || collection === 'animalLogs' || collection === 'breedingRecords' || collection === 'healthRecords') {
+      const r = await recordRow(collection, id);
+      return r ? { collection, id, ...r } : undefined;
     }
     if (collection === 'herds') {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM herds WHERE id = ?', id);
@@ -166,6 +171,8 @@ const store: LocalStore = {
         Number(d.year ?? new Date().getFullYear()), Number(d.share ?? 1), String(d.status ?? 'planned'), str(d.planted_on), str(d.notes), str(d.cells),
         String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
       );
+    } else if (rec.collection === 'animals' || rec.collection === 'animalLogs' || rec.collection === 'breedingRecords' || rec.collection === 'healthRecords') {
+      await applyRecordRow(rec.collection, rec.id, rec.hlc, rec.deleted, (rec.data ?? {}) as Record<string, unknown>);
     } else if (rec.collection === 'herds') {
       const d = (rec.data ?? {}) as Record<string, unknown>;
       const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
