@@ -96,6 +96,16 @@
       "commercialUse": true,
       "note": "Local notifications / OS background scheduling only; no push service or server"
     },
+    "expo-image-manipulator": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Animal photos: resize and re-encode on the phone (WebP), which drops EXIF/GPS"
+    },
+    "expo-image-picker": {
+      "license": "MIT",
+      "commercialUse": true,
+      "note": "Animal photos: the system photo picker (no storage permission on Android 13+)"
+    },
     "expo-print": {
       "license": "MIT",
       "commercialUse": true,

@@ -17,6 +17,8 @@ import { deleteSecrets } from '../src/services/secrets';
 import { listParcels, saveUserEndpoint } from '../src/db/parcels';
 import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
+import { deleteAllPhotos, freeUpPhotos, photoStorage } from '../src/services/photos';
+import { cancelHealthReminders } from '../src/services/healthReminders';
 import { alertsEnabled, alertsLastChecked, setAlertsEnabled } from '../src/services/alerts';
 import { cloudSyncAvailable, syncNow, wipeCloudData } from '../src/sync/userCloud';
 import { useAds } from '../src/ads/useAds';
@@ -106,6 +108,7 @@ export default function Settings() {
 
       <Card title="Animals" icon="paw-outline">
         {animals === 'yes' && <ListRow icon="paw" title="Animal library" detail="Poultry, goats, sheep, bees and more" onPress={() => router.push('/animals')} />}
+        {animals === 'yes' && <PhotoStorageRow />}
         {animals === 'yes' && <ListRow icon="clipboard-text-outline" title="My animals and pets" detail="Health records, reminders, logs and breeding" onPress={() => router.push('/records')} />}
         <SwitchRow label="Show animal features" value={animals === 'yes'} onChange={(v) => setAnimals(v ? 'yes' : 'no')} />
         {animals === 'yes' && <SwitchRow label="Show harvest and processing details" hint="Processing dates, dressed weights and related rules for meat animals. Off by default." value={showProcessing} onChange={setShowProcessing} />}
@@ -255,6 +258,8 @@ export default function Settings() {
                   await deleteSecrets((await listSensors()).map((x) => x.id));
                   await setAlertsEnabled(false).catch(() => undefined);
                   deleteAllPacks();
+                  deleteAllPhotos();
+                  await cancelHealthReminders().catch(() => undefined);
                   await setMetricsConsent(false).catch(() => undefined);
                   await deleteAllLocalData();
                   const cloudResult = await wipeCloudData();
@@ -275,6 +280,22 @@ export default function Settings() {
 }
 
 /** A labelled on/off row with the platform switch. */
+/** Storage used by full-size animal photos, and "Free up space" (thumbnails stay). */
+function PhotoStorageRow() {
+  const t = useTheme();
+  const [st, setSt] = useState(() => { try { return photoStorage(); } catch { return { files: 0, bytes: 0 }; } });
+  if (!st.files) return null;
+  const free = (days: number) => { const n = freeUpPhotos(days); setSt(photoStorage()); Alert.alert('Free up space', `Removed ${n} full-size photo${n === 1 ? '' : 's'}. Thumbnails stay with the records.`); };
+  return (
+    <View style={{ paddingVertical: 8 }}>
+      <Text style={{ color: t.text }}>Animal photos: {st.files} on this phone, {(st.bytes / 1_048_576).toFixed(1)} MB</Text>
+      <Button title="Free up space" kind="secondary" onPress={() => Alert.alert('Free up space', 'Remove full-size photos older than…', [
+        { text: '3 months', onPress: () => free(90) }, { text: '1 year', onPress: () => free(365) }, { text: 'Cancel', style: 'cancel' },
+      ])} />
+    </View>
+  );
+}
+
 function SwitchRow({ label, hint, value, onChange }: { label: string; hint?: string; value: boolean; onChange: (v: boolean) => void }) {
   const t = useTheme();
   return (
