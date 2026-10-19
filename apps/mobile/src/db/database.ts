@@ -208,6 +208,28 @@ const MIGRATIONS: string[] = [
     deleted INTEGER NOT NULL DEFAULT 0
   );
   `,
+  // 9 — livestock: a herd (flock, colony) of one species living in a housing object on the design.
+  `
+  CREATE TABLE IF NOT EXISTS herds (
+    id TEXT PRIMARY KEY,
+    parcel_id TEXT NOT NULL,
+    design_id TEXT NOT NULL,
+    object_id TEXT NOT NULL,           -- DesignObject id of the coop, run, shelter, paddock or hive
+    species_id TEXT NOT NULL,
+    breed TEXT,
+    purpose TEXT,
+    count INTEGER NOT NULL,
+    status TEXT NOT NULL,              -- 'planned' | 'active' | 'retired' | 'sold' | 'processed'
+    arrived_on TEXT,
+    bred_on TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL,
+    updated_hlc TEXT NOT NULL,
+    deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS herds_parcel ON herds(parcel_id);
+  CREATE INDEX IF NOT EXISTS herds_object ON herds(design_id, object_id);
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -263,7 +285,7 @@ export class SqliteHttpCache implements KeyValueCache {
 export async function maxStoredHlc(): Promise<string | undefined> {
   const db = await getDb();
   const r = await db.getFirstAsync<{ m: string | null }>(
-    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs UNION ALL SELECT MAX(updated_hlc) FROM plantings UNION ALL SELECT MAX(updated_hlc) FROM sensors UNION ALL SELECT MAX(updated_hlc) FROM sensor_days UNION ALL SELECT MAX(updated_hlc) FROM planner_goals UNION ALL SELECT MAX(updated_hlc) FROM tasks UNION ALL SELECT MAX(updated_hlc) FROM custom_plants)',
+    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs UNION ALL SELECT MAX(updated_hlc) FROM plantings UNION ALL SELECT MAX(updated_hlc) FROM sensors UNION ALL SELECT MAX(updated_hlc) FROM sensor_days UNION ALL SELECT MAX(updated_hlc) FROM planner_goals UNION ALL SELECT MAX(updated_hlc) FROM tasks UNION ALL SELECT MAX(updated_hlc) FROM custom_plants UNION ALL SELECT MAX(updated_hlc) FROM herds)',
   );
   return r?.m ?? undefined;
 }
@@ -272,6 +294,6 @@ export async function maxStoredHlc(): Promise<string | undefined> {
 export async function deleteAllLocalData(): Promise<void> {
   const db = await getDb();
   await db.execAsync(
-    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings; DELETE FROM sensors; DELETE FROM readings; DELETE FROM sensor_days; DELETE FROM ble_aliases; DELETE FROM planner_goals; DELETE FROM planner_messages; DELETE FROM planner_drafts; DELETE FROM tasks; DELETE FROM custom_plants;',
+    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings; DELETE FROM sensors; DELETE FROM readings; DELETE FROM sensor_days; DELETE FROM ble_aliases; DELETE FROM planner_goals; DELETE FROM planner_messages; DELETE FROM planner_drafts; DELETE FROM tasks; DELETE FROM custom_plants; DELETE FROM herds;',
   );
 }

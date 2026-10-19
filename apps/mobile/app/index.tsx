@@ -37,6 +37,8 @@ export default function Home() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const units = useSettings((s) => s.units);
+  const animals = useSettings((s) => s.animals);
+  const setAnimals = useSettings((s) => s.setAnimals);
   const limits = useEntitlements((s) => s.entitlements.limits);
   const [parcels, setParcels] = useState<ParcelRecord[] | null>(null);
   const [profiles, setProfiles] = useState<Record<string, SiteProfile | undefined>>({});
@@ -110,6 +112,17 @@ export default function Home() {
         </>
       )}
 
+      {/* Asked once (owner decision 2): animal features stay out of sight unless someone wants them. */}
+      {parcels && parcels.length > 0 && animals === null && (
+        <Card title="Do you keep, or plan to keep, animals?" icon="paw-outline">
+          <Body muted>Plotwright can plan for poultry, goats, bees and more: where they live, care dates and heat alerts. You can change this any time in More.</Body>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+            <View style={{ flex: 1 }}><Button title="Yes, show animals" onPress={() => setAnimals('yes')} /></View>
+            <View style={{ flex: 1 }}><Button title="No thanks" kind="secondary" onPress={() => setAnimals('no')} /></View>
+          </View>
+        </Card>
+      )}
+
       {parcels?.map((item) => {
         const profile = profiles[item.id];
         const sum = summaries[item.id];
@@ -151,6 +164,14 @@ export default function Home() {
                   <Tile icon="lightbulb-on-outline" label="Planner" caption="Plan the homestead" onPress={() => go('/planner/[id]', item.id)} />
                   <Tile icon="layers-outline" label="Site profile" caption="Soil, sun, water" onPress={() => go('/profile/[id]', item.id)} />
                 </TileRow>
+                {animals === 'yes' && (
+                  <>
+                    <View style={{ height: 10 }} />
+                    <TileRow>
+                      <Tile icon="paw" label="Animals" caption="Fit, housing, care" onPress={() => router.push({ pathname: '/animals', params: { parcelId: item.id } })} />
+                    </TileRow>
+                  </>
+                )}
               </View>
             </View>
 
