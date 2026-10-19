@@ -16,6 +16,7 @@ export * from './suitability';
 export * from './capacity';
 export * from './calendar';
 export * from './alerts';
+export * from './housing';
 
 export const ANIMALS: AnimalSpec[] = [...POULTRY, ...SMALL_STOCK, ...LARGE_STOCK, ...BEES, ...WORKING];
 
@@ -27,6 +28,14 @@ export function animalById(id: string): AnimalSpec | undefined {
 
 export function allAnimals(): AnimalSpec[] {
   return ANIMALS;
+}
+
+/** Design-object kinds that some species can live in (coop, run, hutch, shelter, paddock, barn, hive). */
+export const HOUSING_KINDS: ReadonlySet<string> = new Set(ANIMALS.flatMap((a) => a.housingObjects));
+
+/** Species that can live in a kind of housing object. */
+export function animalsForHousing(kind: string, list: AnimalSpec[] = allAnimals()): AnimalSpec[] {
+  return list.filter((a) => a.housingObjects.includes(kind));
 }
 
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();

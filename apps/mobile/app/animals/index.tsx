@@ -25,7 +25,7 @@ const KINDS: Array<{ key: AnimalKind | 'all' | 'stock'; label: string }> = [
 export default function AnimalLibrary() {
   const { parcelId } = useLocalSearchParams<{ parcelId?: string }>();
   const t = useTheme();
-  const { animals, setAnimals } = useSettings();
+  const { animals, setAnimals, showProcessing } = useSettings();
   const { state } = useGarden(parcelId);
   const [q, setQ] = useState('');
   const [kind, setKind] = useState<(typeof KINDS)[number]['key']>('all');
@@ -60,7 +60,7 @@ export default function AnimalLibrary() {
         ListEmptyComponent={<Body muted>No animals match “{q}”.</Body>}
         renderItem={({ item: { a, s } }) => {
           const space = spacePerHeadSqFt(a, 'indoor');
-          const meta = [space ? `${space} sq ft each` : a.pastureAcresPerHead ? `${Math.max(...a.pastureAcresPerHead)} acre each` : null, a.purposes.slice(0, 2).join(', '), a.minGroupSize && a.minGroupSize > 1 ? `keep ${a.minGroupSize}+` : null].filter(Boolean).join(' · ');
+          const meta = [space ? `${space} sq ft each` : a.pastureAcresPerHead ? `${Math.max(...a.pastureAcresPerHead)} acre each` : null, a.purposes.map((x) => (showProcessing || x !== 'meat' ? x : 'raised for meat')).slice(0, 2).join(', '), a.minGroupSize && a.minGroupSize > 1 ? `keep ${a.minGroupSize}+` : null].filter(Boolean).join(' · ');
           return (
             <Pressable
               accessibilityRole="button"

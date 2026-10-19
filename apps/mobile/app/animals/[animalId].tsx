@@ -18,7 +18,7 @@ import { SafetyNoteRow } from '../../src/components/SafetyNote';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { useGarden } from '../../src/services/useGarden';
 import { useSettings } from '../../src/services/settings';
-import { siteForAnimals } from '../../src/services/animals';
+import { housingName, siteForAnimals } from '../../src/services/animals';
 
 const range = (r: [number, number] | null | undefined, unit = '') => (r ? (r[0] === r[1] ? `${r[0]}${unit}` : `${r[0]}–${r[1]}${unit}`) : null);
 const SOURCE_TAG: Record<string, string> = { extension: 'Extension', government: 'Government', research: 'Research', industry: 'Industry', secondary: 'Secondary' };
@@ -162,7 +162,18 @@ export default function AnimalDetail() {
         {a.oldData && <Body muted>Some figures are from before 2016; local extension advice wins.</Body>}
       </Card>
 
-      {parcelId && <Button title="Add to my homestead" icon="map-plus" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcelId } })} />}
+      {parcelId && state && (() => {
+        // Straight to the housing planner when the design already has somewhere they can live.
+        const homes = state.design.objects.filter((o) => a.housingObjects.includes(o.kind));
+        return homes.length ? (
+          homes.slice(0, 3).map((o) => <Button key={o.id} title={`Plan in ${housingName(o)}`} icon="map-plus" onPress={() => router.push({ pathname: '/housing/[id]', params: { id: parcelId, objectId: o.id } })} />)
+        ) : (
+          <>
+            <Body muted>Add a {a.housingObjects.map((k) => objectType(k)?.name.toLowerCase() ?? k).join(' or ')} in Design, then tap it and choose “Plan animals here”.</Body>
+            <Button title="Open Design" icon="map-plus" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcelId } })} />
+          </>
+        );
+      })()}
     </ScrollView>
   );
 }

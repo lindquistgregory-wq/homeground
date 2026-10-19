@@ -1,11 +1,12 @@
 /**
- * Frost, heat and wind alerts for what's actually planted (§7.3), as on-device local notifications.
+ * Frost, heat and wind alerts for what's actually planted (§7.3), and heat, freezing-water and wind
+ * alerts for animals on the land (livestock phase 4), as on-device local notifications.
  * The NWS forecast is free and keyless; notifications are scheduled locally (no push server, no
  * Firebase/APNs sender). A background task re-checks roughly twice a day when the OS allows it; the
  * app also checks whenever it opens.
  */
-import { plantById, weatherAlerts, type Design, type PlantedCrop, type WeatherAlert } from '@plotwright/core';
-import { nwsForecast } from '@plotwright/providers';
+import { housingHeatCheck, livestockAlerts, plantById, weatherAlerts, FREEZE_F, type AnimalAlert, type Design, type PlantedCrop, type WeatherAlert } from '@plotwright/core';
+import { humidityClimatology, nwsForecast } from '@plotwright/providers';
 import * as BackgroundTask from 'expo-background-task';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
@@ -18,6 +19,7 @@ import { checkThresholds, METRIC_LABEL, safetyEntitlements } from '@plotwright/c
 import { BUSINESS_MODEL } from '../config';
 import { latestValues, listSensors } from '../db/sensors';
 import { activePlantings, bedName } from './garden';
+import { activeHerds, herdsInHousing } from './animals';
 import { frostOffset, localOffsetMin, recordForecastLows } from './sensorInsights';
 import { refreshAllStations } from './stations';
 import { http } from './http';
@@ -119,6 +121,8 @@ export interface ParcelAlerts {
   parcelId: string;
   parcelName: string;
   alerts: WeatherAlert[];
+  /** Heat, freezing-water, cold and wind alerts for herds on the land. Free on every plan. */
+  animalAlerts: AnimalAlert[];
   forecastNote?: string;
   /** Applied when a pinned sensor has shown the spot runs colder than the forecast. */
   lowSpot?: { sensor: string; offsetF: number; nights: number };
@@ -127,13 +131,14 @@ export interface ParcelAlerts {
 /** Alerts for one parcel (used by the calendar screen, with or without notifications on). */
 export async function alertsForParcel(parcelId: string, parcelName: string, lat: number, lon: number): Promise<ParcelAlerts> {
   const crops = await plantedCrops(parcelId);
+  const herds = await activeHerds(parcelId);
   const hasAirSensor = (await listSensors(parcelId)).some((x) => x.exposure === 'open-air');
-  if (!crops.length && !hasAirSensor) return { parcelId, parcelName, alerts: [] };
+  if (!crops.length && !herds.length && !hasAirSensor) return { parcelId, parcelName, alerts: [], animalAlerts: [] };
   const fc = await nwsForecast(http, { lat, lon });
-  if (fc.status !== 'ok') return { parcelId, parcelName, alerts: [], forecastNote: fc.reason };
+  if (fc.status !== 'ok') return { parcelId, parcelName, alerts: [], animalAlerts: [], forecastNote: fc.reason };
   // Remember tonight's forecast lows so pinned sensors can show how much colder the low spot runs.
   await recordForecastLows(parcelId, fc.value.periods.filter((p) => p.isNight).map((p) => ({ date: p.start.slice(0, 10), lowF: p.temperatureF })));
-  if (!crops.length) return { parcelId, parcelName, alerts: [] };
+  if (!crops.length && !herds.length) return { parcelId, parcelName, alerts: [], animalAlerts: [] };
   // An offline, cached forecast may include nights that have already passed.
   const now = Date.now();
   let periods = fc.value.periods.filter((p) => Date.parse(p.end) > now);
@@ -145,7 +150,14 @@ export async function alertsForParcel(parcelId: string, parcelName: string, lat:
     lowSpot && (a.kind === 'frost' || a.kind === 'freeze')
       ? { ...a, body: `${a.body} Adjusted for your low spot: “${lowSpot.sensor}” has run about ${Math.round(-lowSpot.offsetF)} °F colder than the forecast over ${lowSpot.nights} nights.` }
       : a);
-  return { parcelId, parcelName, alerts, forecastNote: fc.attribution.notes?.[0], lowSpot };
+  // Hourly humidity comes with the forecast; the summer average (cached) is the fallback for THI.
+  let summerRhPct: number | undefined;
+  if (herds.length) {
+    const h = await humidityClimatology(http, { lat, lon }).catch(() => undefined);
+    if (h?.status === 'ok') summerRhPct = h.value.summer;
+  }
+  const animalAlerts = livestockAlerts(periods, herds, { summerRhPct });
+  return { parcelId, parcelName, alerts, animalAlerts, forecastNote: fc.attribution.notes?.[0], lowSpot };
 }
 
 /** Threshold checks right after readings arrive (the scan screen); cheap, no forecast fetch. */
@@ -187,8 +199,8 @@ async function runCheck(opts: { background?: boolean }): Promise<void> {
     const profile = await getSiteProfile(parcel.id);
     const c = profile?.centroid;
     if (!c) continue;
-    const { alerts } = await alertsForParcel(parcel.id, parcel.name, c.lat, c.lon);
-    for (const a of alerts) {
+    const { alerts, animalAlerts } = await alertsForParcel(parcel.id, parcel.name, c.lat, c.lon);
+    for (const a of [...alerts, ...animalAlerts.map((x) => ({ ...x, kind: `animal-${x.kind}` }))]) {
       const key = `${parcel.id}|${a.kind}|${a.at.slice(0, 10)}`;
       if (sent.has(key)) continue;
       sent.add(key);
@@ -210,6 +222,8 @@ async function runCheck(opts: { background?: boolean }): Promise<void> {
  * metric and direction per hour.
  */
 async function checkSensorThresholds(sent: Set<string>): Promise<void> {
+  // Animal housing first: heat and freezing checks there are safety alerts, free and on by default.
+  await checkHousingSensors(sent);
   // A headless run hasn't loaded the plan yet; and thresholds stop when Homestead Pro lapses.
   try {
     await useEntitlements.getState().loadCached();
@@ -239,6 +253,38 @@ async function checkSensorThresholds(sent: Set<string>): Promise<void> {
         trigger: Platform.OS === 'android' ? { channelId: CHANNEL_ID } : null,
       });
     }
+  }
+}
+
+/**
+ * A thermometer in a coop, barn or shelter with animals living there: heat stress from its own
+ * temperature and humidity (THI for cattle, goats and sheep), and water freezing. No setup needed;
+ * at most one notification per sensor and kind per hour.
+ */
+async function checkHousingSensors(sent: Set<string>): Promise<void> {
+  const now = Date.now();
+  for (const s of await listSensors()) {
+    if (!s.bedObjectId) continue;
+    const housed = await herdsInHousing(s.parcelId, s.bedObjectId);
+    if (!housed.animals.length) continue;
+    const latest = await latestValues(s.id);
+    const fresh = (m: 'temperature' | 'humidity') => { const v = latest[m]; return v && now - v.t < 30 * 60_000 ? v.value : undefined; };
+    const c = fresh('temperature');
+    if (c === undefined) continue;
+    const f = (c * 9) / 5 + 32;
+    const hot = housingHeatCheck(housed.animals, f, fresh('humidity'));
+    const hour = new Date(now).toISOString().slice(0, 13);
+    const post = async (kind: string, title: string, body: string) => {
+      const key = `${s.id}|house-${kind}|${hour}`;
+      if (sent.has(key)) return;
+      sent.add(key);
+      await Notifications.scheduleNotificationAsync({ content: { title, body, data: { sensorId: s.id } }, trigger: Platform.OS === 'android' ? { channelId: CHANNEL_ID } : null });
+    };
+    if (hot.length)
+      await post('heat', `Heat stress risk in ${housed.name}: ${Math.round(f)} °F`,
+        `${hot.map((x) => `${x.animal.commonName} (${x.basis})`).join('; ')}. Open up for air flow, give shade and plenty of cool water, and check on them through the afternoon.`);
+    if (f <= FREEZE_F)
+      await post('freeze', `Freezing in ${housed.name}: ${Math.round(f)} °F`, 'Water may freeze: check waterers and keep water available. Dry bedding, and keep drafts off the animals.');
   }
 }
 
