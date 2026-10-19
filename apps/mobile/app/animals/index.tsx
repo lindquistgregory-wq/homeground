@@ -5,6 +5,7 @@
 import { scoreAnimal, searchAnimals, spacePerHeadSqFt, type AnimalKind, type AnimalSpec, type AnimalSuitability } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { BrowseBanner } from '../../src/ads/useAds';
 import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../src/components/Text';
 import { AnimalArt } from '../../src/components/AnimalArt';
@@ -82,6 +83,7 @@ export default function AnimalLibrary() {
           );
         }}
       />
+      <BrowseBanner screen="animals" />
     </View>
   );
 }

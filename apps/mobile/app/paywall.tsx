@@ -24,7 +24,7 @@ import { track } from '../src/services/metrics';
 
 const FEATURE_NAMES: Partial<Record<Feature, string>> = {
   'sun.heatmaps': 'sun-hour heatmaps', 'layers.canopyShade': 'tree shade from canopy heights', 'layers.advancedTerrain': 'advanced terrain tools',
-  'export.pdf': 'PDF export', 'export.gis': 'GIS export (GeoJSON, KML, DXF)', 'livestock.herdBook': 'the Herd Book (pedigree and breeding suggestions)',
+  'export.pdf': 'PDF export', 'export.gis': 'GIS export (GeoJSON, KML, DXF)', 'livestock.herdBook': 'the Herd Book (pedigree and breeding suggestions)', 'planner.income': 'sales, costs and income planning',
 };
 
 const PERIOD: Record<PaywallPlan['period'], string> = { year: 'per year', month: 'per month', lifetime: 'one time' };

@@ -4,7 +4,7 @@
  * rewarded ads only on request. Consent is gathered once per launch, after the app has loaded, and
  * only when the current plan shows ads.
  */
-import { atNaturalBreak, canShowBanner, newAdSession, type AdSession, type NaturalBreak } from '@plotwright/core';
+import { atNaturalBreak, bannerKeywords, canShowBanner, newAdSession, type AdSession, type NaturalBreak } from '@plotwright/core';
 import { useEffect } from 'react';
 import { Platform, View } from 'react-native';
 import { create } from 'zustand';
@@ -75,14 +75,15 @@ export const useAds = create<AdState>((set, get) => ({
 }));
 
 /** Anchored banner for browse screens; renders nothing where the rules don't allow an ad. */
-export function BrowseBanner({ screen }: { screen: 'plants' | 'plant-guide' }) {
+export function BrowseBanner({ screen, animalKind }: { screen: 'plants' | 'plant-guide' | 'animals' | 'animal-guide'; animalKind?: string }) {
   const ent = useEntitlements((s) => s.entitlements);
   const ready = useAds((s) => s.ready);
   const id = ads.unitId('browse-banner');
   if (!ads.Banner || !id || !canShowBanner(screen, ent, ready)) return null;
   const B = ads.Banner;
   // Its own row at the bottom, away from buttons and navigation (AdMob placement policy).
-  return <View accessibilityLabel="Advertisement" style={{ alignItems: 'center', paddingVertical: 8 }}><B unitId={id} /></View>;
+  // Topic words only (never records or health data) for a contextual ad.
+  return <View accessibilityLabel="Advertisement" style={{ alignItems: 'center', paddingVertical: 8 }}><B unitId={id} keywords={bannerKeywords(screen, animalKind)} /></View>;
 }
 
 /** Count leaving a screen as a natural break (e.g. closing a plant guide). */

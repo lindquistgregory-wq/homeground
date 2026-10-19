@@ -55,9 +55,9 @@ export interface AnimalRecord {
   createdAt: string;
 }
 
-export type LogKind = 'eggs' | 'milk' | 'weight' | 'litter-born' | 'litter-weaned' | 'fleece' | 'honey' | 'feed';
+export type LogKind = 'eggs' | 'milk' | 'weight' | 'litter-born' | 'litter-weaned' | 'fleece' | 'honey' | 'feed' | 'sale' | 'expense';
 
-export const LOG_KINDS: Record<LogKind, { label: string; unit: string; purpose?: string }> = {
+export const LOG_KINDS: Record<LogKind, { label: string; unit: string; purpose?: string; ledger?: boolean }> = {
   eggs: { label: 'Eggs', unit: 'eggs', purpose: 'eggs' },
   milk: { label: 'Milk', unit: 'lb', purpose: 'milk' },
   weight: { label: 'Weight', unit: 'lb' },
@@ -66,7 +66,12 @@ export const LOG_KINDS: Record<LogKind, { label: string; unit: string; purpose?:
   fleece: { label: 'Fleece', unit: 'lb', purpose: 'fiber' },
   honey: { label: 'Honey', unit: 'lb', purpose: 'honey' },
   feed: { label: 'Feed bought', unit: 'lb' },
+  sale: { label: 'Sale', unit: 'USD', ledger: true },
+  expense: { label: 'Cost', unit: 'USD', ledger: true },
 };
+
+/** Kinds shown in the production chart (the ledger has its own card). */
+export const PRODUCTION_KINDS = (Object.keys(LOG_KINDS) as LogKind[]).filter((k) => !LOG_KINDS[k].ledger);
 
 export interface AnimalLog {
   id: string;
@@ -78,6 +83,10 @@ export interface AnimalLog {
   value: number;
   unit: string;
   note?: string;
+  /** Ledger entries: what was sold or bought (see LEDGER_CATEGORIES). */
+  category?: string;
+  /** Ledger entries: how much (e.g. 4 dozen eggs, 2 kids). */
+  quantity?: number;
 }
 
 export type BreedingMethod = 'natural' | 'ai' | 'eggs-set' | 'other';
@@ -227,6 +236,50 @@ export function weanedPerLitter(logs: AnimalLog[]): number | null {
   return w.length ? Math.round((w.reduce((n, l) => n + l.value, 0) / w.length) * 10) / 10 : null;
 }
 
+// ---------- Sales and costs (paid: planner.income) ----------
+
+export const LEDGER_CATEGORIES = {
+  sale: ['eggs', 'meat', 'milk', 'honey', 'fiber', 'animals', 'manure', 'other'],
+  expense: ['feed', 'bedding', 'housing', 'equipment', 'animals bought', 'vet bills', 'other'],
+} as const;
+
+export interface LedgerSummary {
+  sales: number;
+  costs: number;
+  net: number;
+  /** Net per animal over the period, or null without a head count. */
+  netPerHead: number | null;
+  /** Costs ÷ dozens of eggs logged in the same period, or null without egg logs. */
+  costPerDozen: number | null;
+  byCategory: Array<{ kind: 'sale' | 'expense'; category: string; total: number }>;
+  entries: number;
+}
+
+const money = (x: number) => Math.round(x * 100) / 100;
+
+/** Totals for entries dated within [from, to] (inclusive), with cost per dozen from the egg logs. */
+export function ledgerSummary(logs: AnimalLog[], opts: { from: string; to: string; heads?: number }): LedgerSummary {
+  const inRange = logs.filter((l) => l.date >= opts.from && l.date <= opts.to);
+  const led = inRange.filter((l) => l.kind === 'sale' || l.kind === 'expense');
+  const sales = led.filter((l) => l.kind === 'sale').reduce((n, l) => n + l.value, 0);
+  const costs = led.filter((l) => l.kind === 'expense').reduce((n, l) => n + l.value, 0);
+  const eggs = inRange.filter((l) => l.kind === 'eggs').reduce((n, l) => n + l.value, 0);
+  const cats = new Map<string, { kind: 'sale' | 'expense'; category: string; total: number }>();
+  for (const l of led) {
+    const k = `${l.kind}|${l.category ?? 'other'}`;
+    const c = cats.get(k) ?? { kind: l.kind as 'sale' | 'expense', category: l.category ?? 'other', total: 0 };
+    c.total += l.value;
+    cats.set(k, c);
+  }
+  return {
+    sales: money(sales), costs: money(costs), net: money(sales - costs),
+    netPerHead: opts.heads && opts.heads > 0 ? money((sales - costs) / opts.heads) : null,
+    costPerDozen: eggs >= 12 ? money(costs / (eggs / 12)) : null,
+    byCategory: [...cats.values()].map((c) => ({ ...c, total: money(c.total) })).sort((a, b) => b.total - a.total),
+    entries: led.length,
+  };
+}
+
 // ---------- Welfare ----------
 
 /** A gentle note when a social species is kept below its group minimum (owner decision; free). */
@@ -316,7 +369,7 @@ export function animalsCsv(animals: AnimalRecord[], nameOf: (id?: string) => str
 }
 
 export function logsCsv(logs: AnimalLog[], nameOf: (l: AnimalLog) => string): string {
-  return toCsv(['date', 'animal_or_group', 'kind', 'value', 'unit', 'note'], [...logs].sort((a, b) => a.date.localeCompare(b.date)).map((l) => [l.date, nameOf(l), l.kind, l.value, l.unit, l.note]));
+  return toCsv(['date', 'animal_or_group', 'kind', 'category', 'quantity', 'value', 'unit', 'note'], [...logs].sort((a, b) => a.date.localeCompare(b.date)).map((l) => [l.date, nameOf(l), l.kind, l.category, l.quantity, l.value, l.unit, l.note]));
 }
 
 export function healthCsv(records: HealthRecord[], nameOf: (r: HealthRecord) => string): string {

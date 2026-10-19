@@ -4,7 +4,7 @@
  * export. The app stores what the owner and their vet decide; it never suggests products or doses.
  */
 import {
-  HEALTH_TYPES, LOG_KINDS, PHOTO, animalById, eggsPerHenPerWeek, expectedDue, isHousehold, isIsoDate, logSeries, logTotal, weanedPerLitter, welfareNote,
+  HEALTH_TYPES, LEDGER_CATEGORIES, LOG_KINDS, PHOTO, PRODUCTION_KINDS, ledgerSummary, animalById, eggsPerHenPerWeek, expectedDue, isHousehold, isIsoDate, logSeries, logTotal, weanedPerLitter, welfareNote,
   type AnimalLog, type AnimalRecord, type BreedingMethod, type BreedingRecord, type HealthRecord, type HealthType, type LogKind, type LogPeriod,
 } from '@plotwright/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -22,6 +22,7 @@ import { herdLabel, localToday } from '../../src/services/animals';
 import { refreshHealthReminders, speciesName } from '../../src/services/healthReminders';
 import { exportVetHistory } from '../../src/services/recordsExport';
 import { FindAVet } from '../../src/components/FindAVet';
+import { useEntitlements } from '../../src/billing/entitlements';
 import { deletePhotoFile, photoUri, pickAnimalPhoto } from '../../src/services/photos';
 
 const METHODS: Array<[BreedingMethod, string]> = [['natural', 'Natural'], ['ai', 'AI'], ['eggs-set', 'Eggs set'], ['other', 'Other']];
@@ -41,6 +42,7 @@ interface Loaded {
 export default function RecordsScreen() {
   const { id, type, parcelId } = useLocalSearchParams<{ id: string; type: 'animal' | 'herd'; parcelId?: string }>();
   const t = useTheme();
+  const ent = useEntitlements((s) => s.entitlements);
   const [d, setD] = useState<Loaded | null>(null);
   const [missing, setMissing] = useState(false);
 
@@ -106,12 +108,18 @@ export default function RecordsScreen() {
         onExport={a ? (fmt) => exportVetHistory(a, d.health, fmt).catch((e: Error) => Alert.alert('Export', e.message)) : undefined} />
 
       <LogsCard logs={d.logs} groupSize={groupSize}
-        kinds={pet ? ['weight'] : (Object.keys(LOG_KINDS) as LogKind[]).filter((k) => {
+        kinds={pet ? ['weight'] : PRODUCTION_KINDS.filter((k) => {
           const purpose = LOG_KINDS[k].purpose;
           return !purpose || !!sp?.purposes.includes(purpose as never) || (purpose === 'breeding' && !!sp?.reproduction.litterSize);
         })}
         onAdd={async (l) => { await saveRecord('animalLogs', { ...owner, ...l }); await load(); }}
         onRemove={async (l) => { await deleteRecord('animalLogs', l.id); await load(); }} />
+
+      {!pet && (
+        <LedgerCard logs={d.logs} heads={groupSize} allowed={ent.has('planner.income')}
+          onAdd={async (l) => { await saveRecord('animalLogs', { ...owner, ...l }); await load(); }}
+          onRemove={async (l) => { await deleteRecord('animalLogs', l.id); await load(); }} />
+      )}
 
       {canBreed && (
         <BreedingCard records={d.breeding} males={d.males} names={d.names} eggs={!sp!.reproduction.gestationDays}
@@ -304,6 +312,65 @@ function Bars({ data, unit }: { data: Array<{ label: string; total: number }>; u
         })}
       </Svg>
     </View>
+  );
+}
+
+function LedgerCard({ logs, heads, allowed, onAdd, onRemove }: {
+  logs: AnimalLog[]; heads: number; allowed: boolean; onAdd: (l: Omit<AnimalLog, 'id'>) => Promise<void>; onRemove: (l: AnimalLog) => Promise<void>;
+}) {
+  const t = useTheme();
+  const year = localToday().slice(0, 4);
+  const [y, setY] = useState(year);
+  const [kind, setKind] = useState<'sale' | 'expense'>('expense');
+  const [category, setCategory] = useState<string>('feed');
+  const [amount, setAmount] = useState('');
+  const [qty, setQty] = useState('');
+  const [date, setDate] = useState(localToday());
+  if (!allowed)
+    return (
+      <Card title="Sales and costs" icon="cash-multiple">
+        <Body muted>Track feed and other costs against egg, milk, honey and animal sales: cost per dozen and profit per animal. Part of Homestead Pro.</Body>
+        <Button title="See plans" kind="secondary" onPress={() => router.push({ pathname: '/paywall', params: { feature: 'planner.income', source: 'ledger' } })} />
+      </Card>
+    );
+  const sum = ledgerSummary(logs, { from: `${y}-01-01`, to: `${y}-12-31`, heads });
+  const usd = (x: number) => `${x < 0 ? '−' : ''}${Math.abs(x).toFixed(2)}`;
+  const entries = logs.filter((l) => (l.kind === 'sale' || l.kind === 'expense') && l.date.startsWith(y));
+  const v = Number(amount);
+  return (
+    <Card title="Sales and costs" icon="cash-multiple">
+      <View style={styles.chips}>{[year, String(Number(year) - 1)].map((x) => <Chip key={x} label={x} active={y === x} onPress={() => setY(x)} />)}</View>
+      {sum.entries ? (
+        <>
+          <Text style={{ color: sum.net < 0 ? t.warn : t.text, fontWeight: '700' }}>Net {usd(sum.net)} · sales {usd(sum.sales)} · costs {usd(sum.costs)}</Text>
+          {sum.netPerHead !== null && heads > 1 && <Body>{usd(sum.netPerHead)} per animal ({heads}).</Body>}
+          {sum.costPerDozen !== null && <Body>Cost per dozen eggs: {usd(sum.costPerDozen)} (costs ÷ eggs logged this year).</Body>}
+          {sum.byCategory.slice(0, 5).map((c) => <Body key={c.kind + c.category} muted>{c.kind === 'sale' ? 'Sold' : 'Spent'} · {c.category}: {usd(c.total)}</Body>)}
+        </>
+      ) : <Body muted>No sales or costs recorded for {y}.</Body>}
+      <View style={styles.chips}>
+        <Chip label="Cost" active={kind === 'expense'} onPress={() => { setKind('expense'); setCategory('feed'); }} />
+        <Chip label="Sale" active={kind === 'sale'} onPress={() => { setKind('sale'); setCategory('eggs'); }} />
+      </View>
+      <View style={styles.chips}>{LEDGER_CATEGORIES[kind].map((c) => <Chip key={c} label={c} active={category === c} onPress={() => setCategory(c)} />)}</View>
+      <View style={[styles.chips, { alignItems: 'center' }]}>
+        <TextInput value={amount} onChangeText={setAmount} placeholder="$" placeholderTextColor={t.muted} keyboardType="decimal-pad" accessibilityLabel="Amount in dollars" style={[styles.input, { color: t.text, borderColor: t.border, width: 90 }]} />
+        <TextInput value={qty} onChangeText={setQty} placeholder="Qty" placeholderTextColor={t.muted} keyboardType="decimal-pad" accessibilityLabel="Quantity, optional" style={[styles.input, { color: t.text, borderColor: t.border, width: 70 }]} />
+        <View style={{ flex: 1 }}><DateField label="Date" value={date} onChange={setDate} /></View>
+      </View>
+      <Button title={kind === 'sale' ? 'Record sale' : 'Record cost'} kind="secondary" disabled={!amount || !Number.isFinite(v) || v < 0 || !isIsoDate(date)} onPress={async () => {
+        const q = Number(qty);
+        await onAdd({ date, kind, value: v, unit: 'USD', category, quantity: qty && Number.isFinite(q) ? q : undefined });
+        setAmount(''); setQty('');
+      }} />
+      {entries.slice(0, 6).map((l) => (
+        <View key={l.id} style={[styles.item, { borderColor: t.border }]}>
+          <Body>{l.date}: {l.kind === 'sale' ? 'sold' : 'spent'} {usd(l.value)} · {l.category}{l.quantity ? ` × ${l.quantity}` : ''}</Body>
+          <Chip label="Remove" active={false} onPress={() => void onRemove(l)} />
+        </View>
+      ))}
+      <Body muted>Your own figures, for your planning; not tax or financial advice.</Body>
+    </Card>
   );
 }
 
