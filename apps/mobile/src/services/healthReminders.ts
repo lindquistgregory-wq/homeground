@@ -73,6 +73,13 @@ export function refreshHealthReminders(): Promise<number> {
   return running;
 }
 
+/** Cancel every scheduled health reminder ("Delete all my data"). */
+export async function cancelHealthReminders(): Promise<void> {
+  const old = JSON.parse((await kvGet(IDS_KEY)) ?? '[]') as string[];
+  for (const id of old) await Notifications.cancelScheduledNotificationAsync(id).catch(() => undefined);
+  await kvSet(IDS_KEY, '[]');
+}
+
 /** A species label for any record, including household pets. */
 export function speciesName(speciesId: string): string {
   return isHousehold(speciesId) ? HOUSEHOLD[speciesId] : animalById(speciesId)?.commonName ?? speciesId;

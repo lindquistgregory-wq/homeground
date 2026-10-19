@@ -43,6 +43,11 @@ export interface AnimalRecord {
   source?: string;
   status: AnimalStatus;
   notes?: string;
+  /**
+   * Up to 5 photos; the first is the profile picture. `thumb` is a small WebP data URI that syncs
+   * with the record; the full-size file stays on the phone that took it (`file`, a local name).
+   */
+  photos?: Array<{ id: string; addedOn: string; thumb: string; file?: string }>;
   /** Reserved for a later version (lab parentage or genotype results); nothing reads it yet. */
   dnaTests?: Array<{ lab: string; date: string; result: string }>;
   createdAt: string;

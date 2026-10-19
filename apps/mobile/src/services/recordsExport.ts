@@ -13,6 +13,7 @@ import { herdsForParcel } from '../db/herds';
 import { allRecords, listAnimals } from '../db/records';
 import { herdLabel } from './animals';
 import { speciesName } from './healthReminders';
+import { photoBase64 } from './photos';
 
 const safe = (s: string) => s.replace(/[^\w.-]+/g, '_').slice(0, 60) || 'records';
 const today = () => new Date().toISOString().slice(0, 10);
@@ -46,7 +47,10 @@ export async function exportRecords(kind: RecordsExport): Promise<void> {
   if (kind === 'breeding') return share(`breeding-${stamp}.csv`, breedingCsv(await allRecords('breedingRecords'), n.name), 'text/csv');
   const all = {
     exportedAt: new Date().toISOString(), app: 'Plotwright',
-    animals: n.animals, productionLogs: await allRecords('animalLogs'), breedingRecords: await allRecords('breedingRecords'), healthRecords: await allRecords('healthRecords'),
+    animals: n.animals,
+    // Full-size photos from this phone (WebP, base64), keyed by photo id; other devices hold only thumbnails.
+    photos: Object.fromEntries((await Promise.all(n.animals.flatMap((a) => a.photos ?? []).map(async (p) => [p.id, await photoBase64(p)] as const))).filter(([, v]) => v)),
+    productionLogs: await allRecords('animalLogs'), breedingRecords: await allRecords('breedingRecords'), healthRecords: await allRecords('healthRecords'),
   };
   return share(`plotwright-animal-records-${stamp}.json`, JSON.stringify(all, null, 2), 'application/json');
 }

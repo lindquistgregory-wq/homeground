@@ -4,12 +4,12 @@
  * export. The app stores what the owner and their vet decide; it never suggests products or doses.
  */
 import {
-  HEALTH_TYPES, LOG_KINDS, animalById, eggsPerHenPerWeek, expectedDue, isHousehold, isIsoDate, logSeries, logTotal, weanedPerLitter, welfareNote,
+  HEALTH_TYPES, LOG_KINDS, PHOTO, animalById, eggsPerHenPerWeek, expectedDue, isHousehold, isIsoDate, logSeries, logTotal, weanedPerLitter, welfareNote,
   type AnimalLog, type AnimalRecord, type BreedingMethod, type BreedingRecord, type HealthRecord, type HealthType, type LogKind, type LogPeriod,
 } from '@plotwright/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Svg, { G, Rect, Text as SvgText } from 'react-native-svg';
 import { Text } from '../../src/components/Text';
 import { AnimalArt } from '../../src/components/AnimalArt';
@@ -21,6 +21,7 @@ import { deleteAnimalAndRecords, deleteRecord, getAnimal, listAnimals, recordsFo
 import { herdLabel, localToday } from '../../src/services/animals';
 import { refreshHealthReminders, speciesName } from '../../src/services/healthReminders';
 import { exportVetHistory } from '../../src/services/recordsExport';
+import { deletePhotoFile, photoUri, pickAnimalPhoto } from '../../src/services/photos';
 
 const METHODS: Array<[BreedingMethod, string]> = [['natural', 'Natural'], ['ai', 'AI'], ['eggs-set', 'Eggs set'], ['other', 'Other']];
 
@@ -73,7 +74,7 @@ export default function RecordsScreen() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
       <View style={styles.head}>
-        <AnimalArt animalId={d.speciesId} size={72} />
+        {a?.photos?.[0] ? <Image source={{ uri: a.photos[0].thumb }} style={styles.avatar} accessibilityLabel={`Photo of ${a.name}`} /> : <AnimalArt animalId={d.speciesId} size={72} />}
         <View style={{ flex: 1 }}>
           <Text style={{ color: t.text, fontSize: 24, fontWeight: '700' }} accessibilityRole="header">{d.title}</Text>
           <Body muted>{[a?.breed ?? speciesName(d.speciesId), a && a.sex !== 'unknown' ? a.sex : null, a?.tag, a && a.status !== 'active' ? a.status : null].filter(Boolean).join(' · ')}</Body>
@@ -87,11 +88,12 @@ export default function RecordsScreen() {
             ['Born', a.birthDate], ['Acquired', a.acquiredOn], ['From', a.source], ['Markings', a.colorMarkings], ['Registration', a.registrationNo],
             ['Sire', a.sireId ? d.names.get(a.sireId) : a.outsideSire?.name], ['Dam', a.damId ? d.names.get(a.damId) : a.outsideDam?.name], ['Notes', a.notes],
           ].filter(([, v]) => v).map(([k, v]) => <Body key={k}>{k}: {v}</Body>)}
+          <Photos a={a} onChange={async (photos) => { await saveRecord('animals', { ...a, photos }); await load(); }} />
           <View style={styles.chips}>
             <Chip label="Edit" active={false} onPress={() => router.push({ pathname: '/records/edit', params: { id: a.id } })} />
             <Chip label="Delete" active={false} onPress={() => Alert.alert('Delete record?', `Delete ${a.name} and all of ${a.name}’s logs, breeding and health records? To keep the history, edit the status instead (sold, retired, deceased).`, [
               { text: 'Cancel', style: 'cancel' },
-              { text: 'Delete', style: 'destructive', onPress: async () => { await deleteAnimalAndRecords(a.id); await refreshHealthReminders().catch(() => 0); router.back(); } },
+              { text: 'Delete', style: 'destructive', onPress: async () => { a.photos?.forEach(deletePhotoFile); await deleteAnimalAndRecords(a.id); await refreshHealthReminders().catch(() => 0); router.back(); } },
             ])} />
           </View>
         </Card>
@@ -121,6 +123,49 @@ export default function RecordsScreen() {
       )}
       {sp && <Button title={`${sp.commonName}: care and details`} kind="secondary" onPress={() => router.push({ pathname: '/animals/[animalId]', params: { animalId: sp.id, ...(owner.parcelId ? { parcelId: owner.parcelId } : {}) } })} />}
     </ScrollView>
+  );
+}
+
+function Photos({ a, onChange }: { a: AnimalRecord; onChange: (p: NonNullable<AnimalRecord['photos']>) => Promise<void> }) {
+  const t = useTheme();
+  const [busy, setBusy] = useState(false);
+  const [view, setView] = useState<string | null>(null);
+  const photos = a.photos ?? [];
+  return (
+    <View style={{ marginTop: 8 }}>
+      <View style={styles.chips}>
+        {photos.map((p, i) => (
+          <Pressable key={p.id} accessibilityRole="imagebutton" accessibilityLabel={`Photo ${i + 1} of ${a.name}${i === 0 ? ', profile picture' : ''}`}
+            onPress={() => setView(photoUri(p))}
+            onLongPress={() => Alert.alert('Photo', undefined, [
+              ...(i > 0 ? [{ text: 'Make profile picture', onPress: () => void onChange([p, ...photos.filter((x) => x.id !== p.id)]) }] : []),
+              { text: 'Remove', style: 'destructive' as const, onPress: () => { deletePhotoFile(p); void onChange(photos.filter((x) => x.id !== p.id)); } },
+              { text: 'Cancel', style: 'cancel' as const },
+            ])}>
+            <Image source={{ uri: p.thumb }} style={[styles.thumb, i === 0 && { borderColor: t.accent, borderWidth: 2 }]} />
+          </Pressable>
+        ))}
+      </View>
+      {photos.length < PHOTO.maxPerAnimal && (
+        <Chip label={busy ? 'Saving photo…' : photos.length ? 'Add photo' : 'Add a photo'} active={false} disabled={busy} onPress={async () => {
+          setBusy(true);
+          try {
+            const p = await pickAnimalPhoto();
+            if (p) await onChange([...photos, p]);
+          } catch (e) {
+            Alert.alert('Photo', (e as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }} />
+      )}
+      {photos.length > 0 && <Text style={{ color: t.muted, fontSize: 12 }}>Hold a photo to remove it or make it the profile picture. Photos are compressed and location data is removed.</Text>}
+      <Modal visible={!!view} transparent animationType="fade" onRequestClose={() => setView(null)}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Close photo" onPress={() => setView(null)} style={styles.viewer}>
+          {view && <Image source={{ uri: view }} style={{ width: '100%', height: '80%' }} resizeMode="contain" />}
+        </Pressable>
+      </Modal>
+    </View>
   );
 }
 
@@ -309,6 +354,9 @@ function BreedingCard({ records, males, names, eggs, onAdd, onOutcome, onRemove 
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 12 },
+  avatar: { width: 72, height: 72, borderRadius: 18 },
+  thumb: { width: 64, height: 64, borderRadius: 10 },
+  viewer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', alignItems: 'center', justifyContent: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginVertical: 4 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 6, borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 8 },
   input: { borderWidth: 1, borderRadius: 10, padding: 10, marginVertical: 5, fontSize: 15 },
