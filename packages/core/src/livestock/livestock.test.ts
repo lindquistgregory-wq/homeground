@@ -10,7 +10,7 @@ test('animal database integrity: every species passes the validator', () => {
     ids.add(a.id);
     assert.deepEqual(validateAnimalSpec(a), [], a.id);
   }
-  assert.equal(ANIMALS.length, 21, 'the version-1 species list (prompt §2)');
+  assert.equal(ANIMALS.length, 25, 'the version-1 list (prompt §2) plus horses, barn cats, composting worms and pond fish');
 });
 
 test('every species lives in real map objects and cites real https sources', () => {
@@ -22,7 +22,8 @@ test('every species lives in real map objects and cites real https sources', () 
 
 test('breeding data: gestation or incubation wherever animals are bred; heritability is sourced', () => {
   for (const a of ANIMALS) {
-    if (a.kind === 'pollinator') continue;
+    // Bees, pond fish and worm bins aren't bred by the owner; barn cats are spayed or neutered.
+    if (a.kind === 'pollinator' || a.kind === 'aquatic' || a.kind === 'invertebrate' || a.id === 'barn_cats') continue;
     const r = a.reproduction;
     assert.ok(r.gestationDays || r.incubationDays, `${a.id} needs a gestation or incubation period`);
   }

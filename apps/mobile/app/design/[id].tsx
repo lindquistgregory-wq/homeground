@@ -37,7 +37,10 @@ import {
 import { exportDesign, type ExportFormat } from '../../src/services/export';
 import { activePlantings, cropShadeObjects, isPlantable } from '../../src/services/garden';
 import { deletePlantingsForBed, plantingsForParcel, type Planting } from '../../src/db/plantings';
-import { deleteHerdsForObject, herdsForParcel, type Herd } from '../../src/db/herds';
+import { deleteHerd, deleteHerdsForObject, herdsForParcel, saveHerd, type Herd } from '../../src/db/herds';
+import { allAnimals, countOf, minimumGroup, searchAnimals } from '@plotwright/core';
+import { AnimalArt } from '../../src/components/AnimalArt';
+import { Chip } from '../../src/components/plants';
 import { herdLabel, isCurrent } from '../../src/services/animals';
 import { listSensors } from '../../src/db/sensors';
 import { newId } from '../../src/services/identity';
@@ -65,7 +68,7 @@ const OBJECT_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = { 'text-field': 
 const SENSOR_LABEL_PAINT: SymbolLayerSpecification['paint'] ={ 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 };
 
 export default function DesignScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, placeAnimal } = useLocalSearchParams<{ id: string; placeAnimal?: string }>();
   const t = useTheme();
   const units = useSettings((s) => s.units);
   const ent = useEntitlements((s) => s.entitlements);
@@ -89,6 +92,15 @@ export default function DesignScreen() {
   const [plantings, setPlantings] = useState<Planting[]>([]);
   const [herds, setHerds] = useState<Herd[]>([]);
   const animalsOn = useSettings((s) => s.animals) === 'yes';
+  // Animals placed on the map without a housing object (free-roaming herds).
+  const [placingAnimal, setPlacingAnimal] = useState<{ speciesId: string; count: number } | null>(() => {
+    const a = placeAnimal ? animalById(placeAnimal) : undefined;
+    return a ? { speciesId: a.id, count: Math.max(1, minimumGroup(a)) } : null;
+  });
+  const [movingHerd, setMovingHerd] = useState<string | null>(null);
+  const [selectedHerdId, setSelectedHerdId] = useState<string | null>(null);
+  const [animalPickerOpen, setAnimalPickerOpen] = useState(false);
+  const selectedHerd = selectedHerdId ? herds.find((h) => h.id === selectedHerdId) : undefined;
   const [sensorPins, setSensorPins] = useState<GeoJSON.FeatureCollection<GeoJSON.Point, { label: string }> | null>(null);
   const [shadeSeason, setShadeSeason] = useState({ fromDoy: 180, toDoy: 288 });
   const [offlineImagery, setOfflineImagery] = useState<{ template: string; maxZoom: number } | undefined>(undefined);
@@ -177,6 +189,23 @@ export default function DesignScreen() {
   const onMapPress = (lon: number, lat: number) => {
     if (!design || !frame) return;
     const snapped = snapToGridM(frame, [lon, lat], 0.25);
+    if (placingAnimal && parcel) {
+      const p = placingAnimal;
+      setPlacingAnimal(null);
+      void saveHerd({ parcelId: parcel.id, designId: design.id, objectId: '', location: { lon, lat }, speciesId: p.speciesId, count: p.count, status: 'planned' }).then((h) => {
+        setHerds((hs) => [...hs, h]);
+        setSelectedId(null);
+        setSelectedHerdId(h.id);
+        setTab('selected');
+      });
+      return;
+    }
+    if (movingHerd) {
+      const h = herds.find((x) => x.id === movingHerd);
+      setMovingHerd(null);
+      if (h) void saveHerd({ ...h, location: { lon, lat } }).then((n) => setHerds((hs) => hs.map((x) => (x.id === n.id ? n : x))));
+      return;
+    }
     if (placing) {
       if (design.objects.filter((o) => !o.existing).length >= ent.limits.designObjects) {
         Alert.alert('Object limit reached', `Your plan allows ${ent.limits.designObjects} objects. Upgrade for unlimited objects.`);
@@ -207,6 +236,7 @@ export default function DesignScreen() {
     // A tap on an object's icon badge also reaches the map underneath; keep that selection.
     if (Date.now() - badgeTapAt.current < 600) return;
     setSelectedId(null);
+    setSelectedHerdId(null);
   };
 
   const detectBuildings = async () => {
@@ -272,6 +302,7 @@ export default function DesignScreen() {
   const selectObject = (fid: unknown) => {
     if (typeof fid === 'string') {
       setSelectedId(fid);
+      setSelectedHerdId(null);
       setTab('selected');
       // Frame the object with ~40 m around it: close enough to work on, not past the detail the aerial imagery has.
       const ring = objectsGeo?.features.find((f) => f.properties.id === fid)?.geometry.coordinates[0];
@@ -414,6 +445,19 @@ export default function DesignScreen() {
               </Marker>
             );
           })}
+          {animalsOn && herds.filter((h) => h.designId === design.id && !h.objectId && h.location).map((h) => {
+            const sel = selectedHerdId === h.id;
+            const size = sel ? 40 : 32;
+            return (
+              <Marker key={`herd-${h.id}`} id={`herd-${h.id}`} lngLat={[h.location!.lon, h.location!.lat]}
+                onPress={() => { if (!placing && !moving && !placingAnimal) { badgeTapAt.current = Date.now(); tapFeedback(); setSelectedId(null); setSelectedHerdId(h.id); setTab('selected'); } }}>
+                <View accessibilityRole="button" accessibilityLabel={`${herdLabel(h)}, on the property${sel ? ', selected' : ''}`}
+                  style={{ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff6e8', borderWidth: sel ? 3 : 2, borderColor: sel ? '#4ea8f2' : '#ffffff', elevation: 4 }}>
+                  <Svg width={size * 0.78} height={size * 0.78} viewBox="0 0 48 48">{drawAnimal(artForAnimal(h.speciesId))}</Svg>
+                </View>
+              </Marker>
+            );
+          })}
           {sensorPins && (
             <GeoJSONSource id="sensor-pins" data={sensorPins}>
               <Layer type="circle" id="sensor-pin" paint={SENSOR_PIN_PAINT} />
@@ -431,10 +475,10 @@ export default function DesignScreen() {
             <Text style={{ color: t.accent, fontWeight: '600' }}>⤢ Whole property</Text>
           </Pressable>
         )}
-        {(placing || moving) && (
+        {(placing || moving || placingAnimal || movingHerd) && (
           <View style={[styles.banner, { backgroundColor: t.card }]}>
-            <Text style={{ color: t.text }}>{placing ? `Tap the map to place: ${objectType(placing)?.name}` : 'Tap the new spot'}</Text>
-            <Pressable accessibilityRole="button" onPress={() => { setPlacing(null); setMoving(false); }}><Text style={{ color: t.accent }}>Cancel</Text></Pressable>
+            <Text style={{ color: t.text }}>{placing ? `Tap the map to place: ${objectType(placing)?.name}` : placingAnimal ? `Tap where the ${countOf(animalById(placingAnimal.speciesId), placingAnimal.count)} will be` : 'Tap the new spot'}</Text>
+            <Pressable accessibilityRole="button" onPress={() => { setPlacing(null); setMoving(false); setPlacingAnimal(null); setMovingHerd(null); }}><Text style={{ color: t.accent }}>Cancel</Text></Pressable>
           </View>
         )}
         {!analysis && !analysisError && (
@@ -464,6 +508,7 @@ export default function DesignScreen() {
         {tab === 'add' && (
           <>
             <Button title="Browse object library" onPress={() => setLibraryOpen(true)} />
+            {animalsOn && !design.scenario && <Button title="Place animals on the map" kind="secondary" icon="paw" accessibilityHint="Adds animals that roam the property, without a coop or shelter" onPress={() => setAnimalPickerOpen(true)} />}
             <Button title="Add existing buildings from the map" kind="secondary" onPress={detectBuildings} />
             <Body muted>{design.objects.filter((o) => !o.existing).length} of {Number.isFinite(ent.limits.designObjects) ? ent.limits.designObjects : 'unlimited'} objects used.</Body>
           </>
@@ -507,7 +552,13 @@ export default function DesignScreen() {
             onHouse={animalsOn && HOUSING_KINDS.has(selected.kind) && !design.scenario ? () => router.push({ pathname: '/housing/[id]', params: { id: parcel.id, objectId: selected.id } }) : undefined}
             housed={herds.filter((h) => h.designId === design.id && h.objectId === selected.id)}
           />
-        ) : <Body muted>Tap an object on the map to edit it.</Body>)}
+        ) : selectedHerd ? (
+          <HerdPanel h={selectedHerd} onChange={async (h) => { const n = await saveHerd(h); setHerds((hs) => hs.map((x) => (x.id === n.id ? n : x))); }}
+            onMove={() => setMovingHerd(selectedHerd.id)}
+            onRecords={() => router.push({ pathname: '/records/[id]', params: { id: selectedHerd.id, type: 'herd', parcelId: parcel.id } })}
+            onCare={() => router.push({ pathname: '/animals/[animalId]', params: { animalId: selectedHerd.speciesId, parcelId: parcel.id } })}
+            onRemove={() => Alert.alert('Remove animals?', `Remove ${herdLabel(selectedHerd)} from the map? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { await deleteHerd(selectedHerd.id); setHerds((hs) => hs.filter((x) => x.id !== selectedHerd.id)); setSelectedHerdId(null); } }])} />
+        ) : <Body muted>Tap an object or animals on the map to edit them.</Body>)}
 
         {tab === 'sun' && (
           <>
@@ -609,6 +660,7 @@ export default function DesignScreen() {
         )}
       </ScrollView>
 
+      <AnimalPicker visible={animalPickerOpen} onClose={() => setAnimalPickerOpen(false)} onPick={(speciesId, count) => { setAnimalPickerOpen(false); setSelectedId(null); setPlacingAnimal({ speciesId, count }); }} />
       <Modal visible={libraryOpen} animationType="slide" onRequestClose={() => setLibraryOpen(false)}>
         <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 48, backgroundColor: t.bg }}>
           <Button title="Close" kind="secondary" onPress={() => setLibraryOpen(false)} />
@@ -632,6 +684,66 @@ export default function DesignScreen() {
         </ScrollView>
       </Modal>
     </View>
+  );
+}
+
+/** Animals placed without housing: count, status, move, records and remove. */
+function HerdPanel({ h, onChange, onMove, onRecords, onCare, onRemove }: {
+  h: Herd; onChange: (h: Herd) => Promise<void>; onMove: () => void; onRecords: () => void; onCare: () => void; onRemove: () => void;
+}) {
+  const a = animalById(h.speciesId);
+  return (
+    <Card title={herdLabel(h, a)} icon="paw">
+      <View style={[styles.row, { alignItems: 'center' }]}>
+        <AnimalArt animalId={h.speciesId} size={44} />
+        <Body muted>{h.status === 'active' ? 'On the land' : 'Planned'} · roaming the property (no housing)</Body>
+      </View>
+      <View style={styles.row}>
+        <Chip label="−" active={false} disabled={h.count <= 1} onPress={() => void onChange({ ...h, count: h.count - 1 })} />
+        <Chip label="+" active={false} onPress={() => void onChange({ ...h, count: h.count + 1 })} />
+        <Chip label={h.status === 'active' ? 'Mark as planned' : 'They’ve arrived'} active={false}
+          onPress={() => void onChange({ ...h, status: h.status === 'active' ? 'planned' : 'active', arrivedOn: h.arrivedOn ?? (h.status === 'active' ? undefined : new Date().toISOString().slice(0, 10)) })} />
+      </View>
+      {a && h.count < minimumGroup(a) && <Body muted>{a.commonName} do best in groups of {minimumGroup(a)} or more.</Body>}
+      <Button title="Records: health, logs, breeding" kind="secondary" icon="clipboard-text-outline" onPress={onRecords} />
+      <Button title={`${a?.commonName ?? 'Animal'}: care and details`} kind="secondary" onPress={onCare} />
+      <Button title="Move (tap new spot)" kind="secondary" onPress={onMove} />
+      <Button title="Remove from the map" kind="secondary" onPress={onRemove} />
+      <Body muted>Weather alerts cover these animals once they’re marked as arrived. To check space and capacity, put them in a coop, shelter or paddock instead.</Body>
+    </Card>
+  );
+}
+
+/** Pick a species and how many, then tap the map to place them. */
+function AnimalPicker({ visible, onClose, onPick }: { visible: boolean; onClose: () => void; onPick: (speciesId: string, count: number) => void }) {
+  const t = useTheme();
+  const [q, setQ] = useState('');
+  const [sel, setSel] = useState<string | null>(null);
+  const [count, setCount] = useState(1);
+  const list = q.trim() ? searchAnimals(q) : allAnimals();
+  const a = sel ? animalById(sel) : undefined;
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 48, backgroundColor: t.bg }} keyboardShouldPersistTaps="handled">
+        <Button title="Close" kind="secondary" onPress={onClose} />
+        <Card title="Place animals on the map" icon="paw">
+          <Body muted>For animals that roam the property, like a guardian dog, barn cats or horses on open land. Put them in a coop, shelter or paddock instead to check space.</Body>
+          <TextInput value={q} onChangeText={setQ} placeholder="Search animals" placeholderTextColor={t.muted} accessibilityLabel="Search animals" style={[styles.input, { color: t.text, borderColor: t.border }]} />
+          <View style={styles.row}>{list.map((x) => <Chip key={x.id} label={x.commonName} active={sel === x.id} onPress={() => { setSel(x.id); setCount(Math.max(1, minimumGroup(x))); }} />)}</View>
+          {a && (
+            <View style={{ marginTop: 8 }}>
+              <View style={[styles.row, { alignItems: 'center' }]}>
+                <Chip label="−" active={false} disabled={count <= 1} onPress={() => setCount((c) => Math.max(1, c - 1))} />
+                <Text style={{ color: t.text, fontSize: 18, fontWeight: '700', minWidth: 36, textAlign: 'center' }} accessibilityLabel={countOf(a, count)}>{count}</Text>
+                <Chip label="+" active={false} onPress={() => setCount((c) => c + 1)} />
+              </View>
+              {count < minimumGroup(a) && <Body muted>{a.commonName} do best in groups of {minimumGroup(a)} or more.</Body>}
+              <Button title={`Place ${countOf(a, count)} on the map`} onPress={() => onPick(a.id, count)} />
+            </View>
+          )}
+        </Card>
+      </ScrollView>
+    </Modal>
   );
 }
 

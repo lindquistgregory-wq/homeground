@@ -17,10 +17,11 @@ import { useSettings } from '../../src/services/settings';
 import { siteForAnimals } from '../../src/services/animals';
 import { useCustomAnimals } from '../../src/services/customAnimals';
 
-const KINDS: Array<{ key: AnimalKind | 'all' | 'stock'; label: string }> = [
+const KINDS: Array<{ key: AnimalKind | 'all' | 'stock' | 'other'; label: string }> = [
   { key: 'all', label: 'All' }, { key: 'poultry', label: 'Poultry' }, { key: 'waterfowl', label: 'Ducks & geese' },
   { key: 'small-stock', label: 'Rabbits' }, { key: 'ruminant', label: 'Goats & sheep' }, { key: 'stock', label: 'Pigs & cattle' },
-  { key: 'pollinator', label: 'Bees' }, { key: 'working', label: 'Guardians & fiber' },
+  { key: 'equine', label: 'Horses' }, { key: 'pollinator', label: 'Bees' }, { key: 'working', label: 'Guardians, cats & fiber' },
+  { key: 'other', label: 'Fish & worms' },
 ];
 
 
@@ -35,7 +36,7 @@ export default function AnimalLibrary() {
   const [kind, setKind] = useState<(typeof KINDS)[number]['key']>('all');
 
   const list = useMemo((): Array<{ a: AnimalSpec; s: AnimalSuitability | null }> => {
-    const base = searchAnimals(q).filter((a) => kind === 'all' || (kind === 'stock' ? a.kind === 'pig' || a.kind === 'cattle' : a.kind === kind));
+    const base = searchAnimals(q).filter((a) => kind === 'all' || (kind === 'stock' ? a.kind === 'pig' || a.kind === 'cattle' : kind === 'other' ? a.kind === 'aquatic' || a.kind === 'invertebrate' : a.kind === kind));
     if (!state) return base.map((a) => ({ a, s: null }));
     const site = siteForAnimals(state);
     return base.map((a) => ({ a, s: scoreAnimal(a, site) })).sort((x, y) => y.s!.score - x.s!.score || x.a.commonName.localeCompare(y.a.commonName));
@@ -65,7 +66,7 @@ export default function AnimalLibrary() {
         ListEmptyComponent={<Body muted>No animals match “{q}”.</Body>}
         renderItem={({ item: { a, s } }) => {
           const space = spacePerHeadSqFt(a, 'indoor');
-          const meta = [space ? `${space} sq ft each` : a.pastureAcresPerHead ? `${Math.max(...a.pastureAcresPerHead)} acre each` : null, a.purposes.map((x) => (showProcessing || x !== 'meat' ? x : 'raised for meat')).slice(0, 2).join(', '), a.minGroupSize && a.minGroupSize > 1 ? `keep ${a.minGroupSize}+` : null].filter(Boolean).join(' · ');
+          const meta = [space ? `${space} sq ft each` : a.pastureAcresPerHead ? `${Math.max(...a.pastureAcresPerHead)} acre${Math.max(...a.pastureAcresPerHead) === 1 ? '' : 's'} each` : null, a.purposes.map((x) => (showProcessing || x !== 'meat' ? x : 'raised for meat')).slice(0, 2).join(', '), a.minGroupSize && a.minGroupSize > 1 ? `keep ${a.minGroupSize}+` : null].filter(Boolean).join(' · ');
           return (
             <Pressable
               accessibilityRole="button"

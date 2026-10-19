@@ -79,10 +79,10 @@ export default function AnimalDetail() {
       <Card title="Needs" icon="paw-outline">
         <FactGrid items={[
           { icon: 'home-outline', label: 'Shelter', value: indoor ? `${indoor} sq ft each` : '—' },
-          { icon: 'fence', label: a.pastureAcresPerHead ? 'Pasture' : 'Outdoors', value: a.pastureAcresPerHead ? `${Math.max(...a.pastureAcresPerHead)} acre each` : outdoor ? `${outdoor} sq ft each` : '—' },
+          { icon: 'fence', label: a.pastureAcresPerHead ? 'Pasture' : 'Outdoors', value: a.pastureAcresPerHead ? `${Math.max(...a.pastureAcresPerHead)} acre${Math.max(...a.pastureAcresPerHead) === 1 ? '' : 's'} each` : outdoor ? `${outdoor} sq ft each` : '—' },
           { icon: 'water-outline', label: 'Water', value: water ? `up to ${water} gal/day` : 'always fresh' },
           { icon: 'account-group-outline', label: 'Group', value: group > 1 ? `${group} or more` : 'fine alone' },
-          { icon: 'thermometer-high', label: 'Heat stress', value: a.heat.airOnsetF ? `from ${a.heat.airOnsetF} °F` : a.heat.thiOnset ? `THI ${a.heat.thiOnset}` : a.heat.tolerance ?? '—' },
+          { icon: 'thermometer-high', label: 'Heat stress', value: a.heat.airOnsetF ? `from ${a.heat.airOnsetF} °F` : a.heat.thiOnset ? `THI ${a.heat.thiOnset}` : a.heat.tPlusRhOnset ? `°F + humidity ${a.heat.tPlusRhOnset}` : a.heat.tolerance ?? '—' },
           { icon: 'snowflake', label: 'Cold', value: a.cold.tolerance ? `${a.cold.tolerance} tolerance` : '—' },
           { icon: 'volume-high', label: 'Noise', value: a.noise ?? '—' },
           { icon: 'heart-pulse', label: 'Lifespan', value: range(a.lifespanYears, ' yrs') ?? '—' },
@@ -174,12 +174,14 @@ export default function AnimalDetail() {
       {parcelId && state && (() => {
         // Straight to the housing planner when the design already has somewhere they can live.
         const homes = state.design.objects.filter((o) => a.housingObjects.includes(o.kind));
+        const roam = <Button key="roam" title="Place on my land without housing" kind="secondary" icon="paw" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcelId, placeAnimal: a.id } })} />;
         return homes.length ? (
-          homes.slice(0, 3).map((o) => <Button key={o.id} title={`Plan in ${housingName(o)}`} icon="map-plus" onPress={() => router.push({ pathname: '/housing/[id]', params: { id: parcelId, objectId: o.id } })} />)
+          <>{homes.slice(0, 3).map((o) => <Button key={o.id} title={`Plan in ${housingName(o)}`} icon="map-plus" onPress={() => router.push({ pathname: '/housing/[id]', params: { id: parcelId, objectId: o.id } })} />)}{roam}</>
         ) : (
           <>
             <Body muted>Add a {a.housingObjects.map((k) => objectType(k)?.name.toLowerCase() ?? k).join(' or ')} in Design, then tap it and choose “Plan animals here”.</Body>
             <Button title="Open Design" icon="map-plus" onPress={() => router.push({ pathname: '/design/[id]', params: { id: parcelId } })} />
+            {roam}
           </>
         );
       })()}

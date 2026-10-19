@@ -148,6 +148,34 @@
    "title": "Recommended practices for caring for llamas and alpacas",
    "verified_by": "search",
    "checked": "2026-10-16"
+  },
+  "horses": {
+   "url": "https://horses.extension.org/how-much-land-do-i-need-for-a-horse/",
+   "publisher": "Extension Horses (extension.org)",
+   "title": "How much land do I need for a horse?",
+   "verified_by": "fetch",
+   "checked": "2026-10-19"
+  },
+  "barn_cats": {
+   "url": "https://animalcare.saccounty.gov/us/en/barn-garden-cat-adoptions.html",
+   "publisher": "Sacramento County Animal Care",
+   "title": "Barn & Garden Cat adoptions",
+   "verified_by": "fetch",
+   "checked": "2026-10-19"
+  },
+  "composting_worms": {
+   "url": "https://content.ces.ncsu.edu/worms-can-recycle-your-garbage",
+   "publisher": "NC State Extension",
+   "title": "Worms Can Recycle Your Garbage",
+   "verified_by": "fetch",
+   "checked": "2026-10-19"
+  },
+  "pond_fish": {
+   "url": "https://extension.msstate.edu/natural-resources/fisheries/pond-and-lake-management/stocking/stocking-recommendations-for-ponds-1-acre-or-larger",
+   "publisher": "Mississippi State University Extension",
+   "title": "Stocking recommendations for ponds 1 acre or larger",
+   "verified_by": "fetch",
+   "checked": "2026-10-19"
   }
  }
 }

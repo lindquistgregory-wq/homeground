@@ -7,6 +7,7 @@ import { BEES, WORKING } from './working';
 import { LARGE_STOCK } from './largeStock';
 import { POULTRY } from './poultry';
 import { SMALL_STOCK } from './smallStock';
+import { HOMESTEAD } from './homestead';
 import type { AnimalRange as Range, AnimalSpec } from './types';
 import { customAnimalById, customAnimals } from './custom';
 
@@ -23,7 +24,7 @@ export * from './photos';
 export * from './breeding';
 export * from './custom';
 
-export const ANIMALS: AnimalSpec[] = [...POULTRY, ...SMALL_STOCK, ...LARGE_STOCK, ...BEES, ...WORKING];
+export const ANIMALS: AnimalSpec[] = [...POULTRY, ...SMALL_STOCK, ...LARGE_STOCK, ...BEES, ...WORKING, ...HOMESTEAD];
 
 const byId = new Map(ANIMALS.map((a) => [a.id, a]));
 
@@ -40,6 +41,7 @@ export function allAnimals(): AnimalSpec[] {
 /** A count as people say it: "1 colony" or "2 colonies" for bees, "6 laying hens" otherwise. */
 export function countOf(a: Pick<AnimalSpec, 'kind' | 'commonName'> | undefined, n: number, fallback = 'animals'): string {
   if (a?.kind === 'pollinator') return `${n} ${n === 1 ? 'colony' : 'colonies'}`;
+  if (a?.kind === 'invertebrate') return `${n} lb of worms`;
   return `${n} ${(a?.commonName ?? fallback).toLowerCase()}`;
 }
 

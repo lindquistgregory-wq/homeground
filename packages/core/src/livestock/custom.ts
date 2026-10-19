@@ -35,6 +35,9 @@ const HOUSING: Record<AnimalKind, string[]> = {
   cattle: ['paddock', 'barn'],
   pollinator: ['beehive'],
   working: ['paddock', 'barn', 'goat-shelter'],
+  equine: ['stable', 'run-in-shed', 'paddock', 'pasture', 'barn'],
+  aquatic: ['pond'],
+  invertebrate: ['worm-bin'],
 };
 
 /**

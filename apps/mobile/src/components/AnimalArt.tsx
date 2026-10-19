@@ -201,6 +201,34 @@ export function drawAnimal(a: AnimalArtSpec): ReactNode {
         <Circle cx={35} cy={20} r={1.1} fill={DARK} />
         <Path d="M32 23 L33.5 24 L35 23" stroke={DARK} strokeWidth={0.9} fill="none" />
       </G>);
+    case 'horse':
+      return (<G>
+        {legs([9, 13, 25, 29], 30, 12)}
+        <Path d="M6 24 C2 26 2 32 4 34" stroke={alt} strokeWidth={3} fill="none" strokeLinecap="round" />
+        <Rect x={6} y={19} width={28} height={13} rx={6.5} fill={m} />
+        <Path d="M29 22 C30 15 32 10 36 9 L43 17 C44 20 42 22 39 21 L35 19 L33 24 Z" fill={m} />
+        <Path d="M30 21 C30 14 33 9 36 8 L35 13 C33 15 32 18 32 22 Z" fill={alt} />
+        <Path d="M35 9 L36 4 L38 9 Z" fill={m} />
+        <Ellipse cx={41.5} cy={18.5} rx={2.4} ry={2} fill={dk} />
+        <Circle cx={37.5} cy={13} r={1.1} fill={DARK} />
+      </G>);
+    case 'worm':
+      return (<G>
+        <Ellipse cx={24} cy={38} rx={18} ry={4} fill={shade(m, -0.55)} opacity={0.35} />
+        <Path d="M8 32 C12 22 18 22 21 30 C24 38 30 38 33 28 C35 22 39 21 41 24" stroke={m} strokeWidth={6} fill="none" strokeLinecap="round" />
+        <Path d="M16 25 L17 28 M27 35 L28 32 M35 25 L36 28" stroke={dk} strokeWidth={1.2} strokeLinecap="round" />
+        <Circle cx={40} cy={23} r={1} fill={DARK} />
+      </G>);
+    case 'fish':
+      return (<G>
+        <Path d="M6 16 L13 24 L6 32 Z" fill={dk} />
+        <Ellipse cx={25} cy={24} rx={14} ry={9} fill={m} />
+        <Path d="M16 20 C22 16 30 16 36 21" stroke={alt} strokeWidth={2} fill="none" />
+        <Path d="M22 15 L27 10 L30 16 Z" fill={dk} />
+        <Path d="M24 30 L27 35 L29 30 Z" fill={dk} />
+        <Circle cx={33} cy={22} r={1.4} fill={DARK} />
+        <Path d="M38 26 C37 27 36 27 35 26" stroke={DARK} strokeWidth={0.9} fill="none" />
+      </G>);
   }
 }
 

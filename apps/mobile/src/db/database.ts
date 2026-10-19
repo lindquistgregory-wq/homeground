@@ -263,6 +263,11 @@ const MIGRATIONS: string[] = [
     updated_hlc TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0
   );
   `,
+  // 12 — free-roaming herds: animals placed on the map without a housing object (object_id '').
+  `
+  ALTER TABLE herds ADD COLUMN lon REAL;
+  ALTER TABLE herds ADD COLUMN lat REAL;
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
