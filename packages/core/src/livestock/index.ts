@@ -37,6 +37,12 @@ export function allAnimals(): AnimalSpec[] {
   return c.length ? [...ANIMALS, ...c] : ANIMALS;
 }
 
+/** A count as people say it: "1 colony" or "2 colonies" for bees, "6 laying hens" otherwise. */
+export function countOf(a: Pick<AnimalSpec, 'kind' | 'commonName'> | undefined, n: number, fallback = 'animals'): string {
+  if (a?.kind === 'pollinator') return `${n} ${n === 1 ? 'colony' : 'colonies'}`;
+  return `${n} ${(a?.commonName ?? fallback).toLowerCase()}`;
+}
+
 /** Design-object kinds that some species can live in (coop, run, hutch, shelter, paddock, barn, hive). */
 export const HOUSING_KINDS: ReadonlySet<string> = new Set(ANIMALS.flatMap((a) => a.housingObjects));
 
