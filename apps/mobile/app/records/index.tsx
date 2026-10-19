@@ -169,6 +169,9 @@ export default function MyAnimals() {
         <View style={{ flex: 1 }}><Button title="Import CSV" kind="secondary" icon="file-upload-outline" disabled={!firstParcel} onPress={() => router.push({ pathname: '/records/import', params: { parcelId: firstParcel ?? '' } })} /></View>
         <View style={{ flex: 1 }}><Button title="Export" kind="secondary" icon="export-variant" onPress={exportMenu} /></View>
       </View>
+      {stock.some((a) => a.sex === 'female') && stock.some((a) => a.sex === 'male') && (
+        <Button title="Herd Book: pedigrees and breeding" kind="secondary" icon="family-tree" onPress={() => router.push('/herdbook')} />
+      )}
       <Body muted>Records stay on this phone and in your own cloud account if you sync. Plotwright records what you and your veterinarian decide; it never suggests vaccines, treatments, schedules or doses.</Body>
     </ScrollView>
   );

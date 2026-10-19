@@ -154,4 +154,5 @@ export const TIER_COMPARISON: Array<{ label: string; free: string; grower: strin
   { label: 'Planting', free: 'Full calendar', grower: 'Bed scoring, succession', pro: '+ sensor-driven timing, yield and storage' },
   { label: 'Sensors', free: '1, with heat and cold alerts', grower: '5 + 1 station', pro: 'Unlimited, local network' },
   { label: 'AI planner', free: 'Interview + basic plan', grower: 'Full planner', pro: '+ income, budgets, 5-year plan' },
+  { label: 'Animals', free: 'Records, health reminders, alerts', grower: '+ Herd Book (pedigree, breeding)', pro: '+ Herd Book (pedigree, breeding)' },
 ];

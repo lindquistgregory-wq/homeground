@@ -91,6 +91,7 @@ export default function RecordsScreen() {
           <Photos a={a} onChange={async (photos) => { await saveRecord('animals', { ...a, photos }); await load(); }} />
           <View style={styles.chips}>
             <Chip label="Edit" active={false} onPress={() => router.push({ pathname: '/records/edit', params: { id: a.id } })} />
+            {!pet && <Chip label="Pedigree" active={false} onPress={() => router.push({ pathname: '/herdbook/[animalId]', params: { animalId: a.id } })} />}
             <Chip label="Delete" active={false} onPress={() => Alert.alert('Delete record?', `Delete ${a.name} and all of ${a.name}’s logs, breeding and health records? To keep the history, edit the status instead (sold, retired, deceased).`, [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Delete', style: 'destructive', onPress: async () => { a.photos?.forEach(deletePhotoFile); await deleteAnimalAndRecords(a.id); await refreshHealthReminders().catch(() => 0); router.back(); } },

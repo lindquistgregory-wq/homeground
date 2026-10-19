@@ -116,6 +116,8 @@ function Screens() {
       <Stack.Screen name="records/[id]" options={{ title: 'Records' }} />
       <Stack.Screen name="records/edit" options={{ title: 'Animal' }} />
       <Stack.Screen name="records/import" options={{ title: 'Import animals' }} />
+      <Stack.Screen name="herdbook/index" options={{ title: 'Herd Book' }} />
+      <Stack.Screen name="herdbook/[animalId]" options={{ title: 'Pedigree' }} />
       <Stack.Screen name="garden/[id]" options={{ title: 'Bed planner' }} />
       <Stack.Screen name="calendar/[id]" options={{ title: 'Calendar' }} />
       <Stack.Screen name="sensors/index" options={{ title: 'Sensors' }} />
