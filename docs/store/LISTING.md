@@ -23,6 +23,7 @@ Plotwright builds a profile of your actual land from free public data and turns 
 • Design your whole property on aerial imagery: beds, fruit trees, greenhouses, coops, rain barrels and more.
 • A planting calendar for what you grow, with frost, heat and wind alerts from the National Weather Service forecast.
 • Bluetooth garden sensors and home weather stations sharpen dates and watering advice.
+• Animals, only if you want them: 21 species from hens to bees, scored for your land, with housing capacity, care dates and heat and freezing alerts. Keep free records for livestock and pets: health and vaccination dates with reminders, egg and milk logs, breeding due dates and a vet-ready history. The optional Herd Book adds pedigrees and breeding suggestions that keep inbreeding low.
 
 Every number shows where it came from, and your data stays on your phone. Parcel lines from GIS are approximate and are not a legal survey.
 

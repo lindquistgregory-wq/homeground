@@ -178,7 +178,8 @@ export const rng = (r: [number, number]) => {
 };
 const fmtArea = (sq: number) => `${Math.round(sq).toLocaleString('en-US')} sq ft`;
 
-export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: KnowledgeBase, opts: { now?: Date; includeIncome?: boolean; showCosts?: boolean } = {}): HomesteadPlan {
+/** `animalFeatures: false` ("Show animal features" off) leaves animals out of the plan entirely. */
+export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: KnowledgeBase, opts: { now?: Date; includeIncome?: boolean; showCosts?: boolean; animalFeatures?: boolean } = {}): HomesteadPlan {
   const items: PlanItem[] = [];
   const warnings: string[] = [];
   const assumptions: string[] = [];
@@ -242,8 +243,8 @@ export function buildPlan(goals: HomesteadGoals, site: SitePlanInput, kb: Knowle
 
   // --- Livestock ---
   // Animals only once the user says they're allowed (or unsure, with a warning to check).
-  const animalsOk = goals.animals === 'yes' || goals.animals === 'poultry-only' || goals.animals === 'unsure';
-  if (goals.animals === undefined) assumptions.push('Animals are left out until you say whether they’re allowed where you live.');
+  const animalsOk = opts.animalFeatures !== false && (goals.animals === 'yes' || goals.animals === 'poultry-only' || goals.animals === 'unsure');
+  if (opts.animalFeatures !== false && goals.animals === undefined) assumptions.push('Animals are left out until you say whether they’re allowed where you live.');
   const poultryOnly = goals.animals === 'poultry-only';
   const interest = new Set(goals.animalInterest ?? []);
   const wantsAnimalFood = ambition !== 'kitchen' || interest.size > 0;

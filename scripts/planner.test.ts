@@ -170,3 +170,10 @@ test('safety filter (liability review): preservation steps, burning, wiring and 
   assert.equal(screenReply('Rainwater from the barrel is safe to drink.').replaced, 'drinkingWater');
   assert.equal(screenReply('Store canned goods somewhere cool and dark.').replaced, undefined);
 });
+
+test('with "Show animal features" off, the plan leaves animals out', () => {
+  const plan = buildPlan({ ...family, animalInterest: ['laying_hens', 'honeybees'] }, site, KB, { animalFeatures: false });
+  assert.equal(plan.items.filter((i) => i.category === 'livestock').length, 0);
+  assert.ok(buildPlan(family, site, KB).items.some((i) => i.category === 'livestock'), 'on by default');
+  assert.ok(!plan.assumptions.some((a) => /allowed where you live/.test(a)), 'no nudge to answer the animals question');
+});

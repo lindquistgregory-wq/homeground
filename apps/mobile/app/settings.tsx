@@ -18,6 +18,8 @@ import { listParcels, saveUserEndpoint } from '../src/db/parcels';
 import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
 import { deleteAllPhotos, freeUpPhotos, photoStorage } from '../src/services/photos';
+import { activePrograms } from '@plotwright/core';
+import { affiliateRegistry } from '@plotwright/data';
 import { cancelHealthReminders } from '../src/services/healthReminders';
 import { alertsEnabled, alertsLastChecked, setAlertsEnabled } from '../src/services/alerts';
 import { cloudSyncAvailable, syncNow, wipeCloudData } from '../src/sync/userCloud';
@@ -68,7 +70,7 @@ function benchNative(): { ms: number; moveMs: number; maxDiffH: number } {
 
 export default function Settings() {
   const t = useTheme();
-  const { units, setUnits, animals, setAnimals, showProcessing, setShowProcessing } = useSettings();
+  const { units, setUnits, animals, setAnimals, showProcessing, setShowProcessing, showShopping, setShowShopping } = useSettings();
   const { entitlements, refresh, restore, storeError } = useEntitlements();
   const { privacyOptionsRequired, showPrivacyOptions, personalised, setPersonalised } = useAds();
   const [metricsOn, setMetricsOn] = useState(metricsConsent());
@@ -103,12 +105,14 @@ export default function Settings() {
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       <Card title="Explore" icon="compass-outline">
         <ListRow icon="database-outline" title="Data sources" detail="Where every map layer and number comes from" onPress={() => router.push('/data-sources')} />
+        <ListRow icon="information-outline" title="Disclosures" detail="Paid links and ads" onPress={() => router.push('/disclosures')} />
         <ListRow icon="star-circle-outline" title="Plans" detail="What each plan includes" onPress={() => router.push({ pathname: '/paywall', params: { source: 'settings' } })} />
       </Card>
 
       <Card title="Animals" icon="paw-outline">
         {animals === 'yes' && <ListRow icon="paw" title="Animal library" detail="Poultry, goats, sheep, bees and more" onPress={() => router.push('/animals')} />}
         {animals === 'yes' && <PhotoStorageRow />}
+        {activePrograms(affiliateRegistry()).length > 0 && <SwitchRow label="Show shopping links" hint="“Shop supplies” rows on plant and animal pages. Plotwright earns a commission on purchases." value={showShopping} onChange={setShowShopping} />}
         {animals === 'yes' && <ListRow icon="clipboard-text-outline" title="My animals and pets" detail="Health records, reminders, logs and breeding" onPress={() => router.push('/records')} />}
         <SwitchRow label="Show animal features" value={animals === 'yes'} onChange={(v) => setAnimals(v ? 'yes' : 'no')} />
         {animals === 'yes' && <SwitchRow label="Show harvest and processing details" hint="Processing dates, dressed weights and related rules for meat animals. Off by default." value={showProcessing} onChange={setShowProcessing} />}

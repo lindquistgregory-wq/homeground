@@ -18,6 +18,7 @@ import { listSensors } from '../db/sensors';
 import { dominantSoil, siteConditions } from './garden';
 import { http } from './http';
 import { newId } from './identity';
+import { useSettings } from './settings';
 import { frostOffset, soilSourceFor, waterAdvice } from './sensorInsights';
 
 const SQFT = 10.7639;
@@ -104,6 +105,7 @@ export async function plannerContext(parcelId: string, onGoals?: (g: HomesteadGo
   return {
     kb: KNOWLEDGE_BASE,
     tier: currentTier(),
+    animalFeatures: useSettings.getState().animals === 'yes',
     goals: () => goals,
     saveGoals: async (g) => {
       goals = g;
@@ -206,6 +208,9 @@ export interface ApplyResult {
   added: number;
   removed: number;
   plantings: number;
+  /** Objects placed by this draft (so a herd can be planned in new housing). */
+  placed: DesignObject[];
+  designId: string;
   unplaced: string[];
 }
 
@@ -218,7 +223,7 @@ export async function applyDesignDraft(parcelId: string, draft: DesignDraft): Pr
   if (!parcel) throw new Error('Property not found.');
   const design = await getOrCreateDesign(parcelId);
   let objects = [...design.objects];
-  const res: ApplyResult = { added: 0, removed: 0, plantings: 0, unplaced: [] };
+  const res: ApplyResult = { added: 0, removed: 0, plantings: 0, unplaced: [], placed: [], designId: design.id };
   const year = new Date().getFullYear();
   for (const c of draft.changes) {
     if (c.op === 'remove') {
@@ -232,6 +237,7 @@ export async function applyDesignDraft(parcelId: string, draft: DesignDraft): Pr
     const placed = placeObjects(parcel, objects, c.kind, n, c.near, { width: c.width, length: c.length });
     if (placed.length < n) res.unplaced.push(`${n - placed.length} × ${objectType(c.kind)?.name ?? c.kind} (no free space found)`);
     objects.push(...placed);
+    res.placed.push(...placed);
     res.added += placed.length;
     // Crops the planner chose become planned plantings (they show up in the calendar). With areas, beds
     // are filled in order, each crop taking the share of a bed its planned area needs; without, one

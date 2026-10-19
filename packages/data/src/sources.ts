@@ -247,4 +247,6 @@ export const NON_SERVICE_HOSTS = [
   'madis.ncep.noaa.gov', 'www.wxqa.com',
   // Safety notes and toxicity citations (links opened in the browser; the text is bundled)
   'ia-training.phmsa.dot.gov', 'www.epa.gov', 'www.cdc.gov', 'www.energy.gov', 'dwr.colorado.gov', 'www.leginfo.ca.gov', 'www.aspca.org', 'nchfp.uga.edu',
+  // "Find a vet" (AAHA's public hospital locator, opened in the browser)
+  'www.aaha.org',
 ];

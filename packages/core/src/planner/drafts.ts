@@ -35,6 +35,8 @@ export interface DesignDraft {
   changes: Array<DraftObject | DraftRemoval>;
   why: string[];
   createdBy: 'rules' | 'model';
+  /** From a livestock plan item: once the housing is placed, the app offers to plan this herd in it. */
+  herd?: { species: string; count: number };
 }
 
 export interface TaskDraft {
