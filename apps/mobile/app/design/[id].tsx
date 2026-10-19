@@ -10,7 +10,7 @@ import {
   OBJECT_LIBRARY, bbox, estimatePv, footprintAreaM2, footprintLonLat, formatArea, formatLength, materialList, newObject, objectType,
   project, siteSuitability, snapRotationToBoundary, snapToContour, snapToGridM, unproject, validateDesign,
   SCENARIO_SEASONS, compareScenarios, scenarioLabel, sunPeriodForSeason,
-  HOUSING_KINDS, ackKey, safetyNotesFor, safetyProximity, type SafetyNote, type SafetyWarning,
+  HOUSING_KINDS, animalById, ackKey, safetyNotesFor, safetyProximity, type SafetyNote, type SafetyWarning,
   type Design, type DesignObject, type DesignWarning, type LocalFrame, type ObjectCategory, type ScenarioSeason, type SitingTarget,
 } from '@plotwright/core';
 import { OPENFREEMAP_STYLE_URL, USGS_HILLSHADE, USGS_IMAGERY, solarClimatology } from '@plotwright/providers';
@@ -23,6 +23,8 @@ import { useEntitlements } from '../../src/billing/entitlements';
 import { Body, Button, Card, tapFeedback, useTheme } from '../../src/components/ui';
 import { Icon } from '../../src/components/Icon';
 import { CATEGORY_COLOR, objectIcon } from '../../src/components/objectIcons';
+import { artForAnimal, drawAnimal } from '../../src/components/AnimalArt';
+import Svg from 'react-native-svg';
 import { getParcel, getSiteProfile, type ParcelRecord } from '../../src/db/parcels';
 import { createScenario, deleteScenario, getOrCreateDesign, listScenarios, listVersions, saveDesign, saveVersion } from '../../src/db/designs';
 import { getPack } from '../../src/services/offlinePacks';
@@ -391,19 +393,23 @@ export default function DesignScreen() {
           {objectPins?.features.map((f) => {
             const sel = f.properties.selected === 1;
             const size = sel ? 40 : 32;
+            // Housing with animals living in it shows their drawing instead of the generic icon.
+            const housedId = animalsOn ? herds.find((h) => h.designId === design.id && h.objectId === f.properties.id)?.speciesId : undefined;
             return (
               <Marker key={f.properties.id} id={`pin-${f.properties.id}`} lngLat={f.geometry.coordinates as [number, number]}
                 onPress={() => { if (!placing && !moving) { badgeTapAt.current = Date.now(); tapFeedback(); selectObject(f.properties.id); } }}>
                 <View
                   accessibilityRole="button"
-                  accessibilityLabel={`${f.properties.label}${sel ? ', selected' : ''}`}
+                  accessibilityLabel={`${f.properties.label}${housedId ? `, ${animalById(housedId)?.commonName ?? 'animals'} living here` : ''}${sel ? ', selected' : ''}`}
                   style={{
                     width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: f.properties.existing ? '#757575' : CATEGORY_COLOR[f.properties.category] ?? '#2f7d32',
+                    backgroundColor: housedId ? '#fff6e8' : f.properties.existing ? '#757575' : CATEGORY_COLOR[f.properties.category] ?? '#2f7d32',
                     borderWidth: sel ? 3 : 2, borderColor: sel ? '#4ea8f2' : '#ffffff', elevation: 4,
                   }}
                 >
-                  <Icon name={objectIcon(f.properties.kind, f.properties.category)} size={sel ? 22 : 18} color="#ffffff" />
+                  {housedId
+                    ? <Svg width={size * 0.78} height={size * 0.78} viewBox="0 0 48 48">{drawAnimal(artForAnimal(housedId))}</Svg>
+                    : <Icon name={objectIcon(f.properties.kind, f.properties.category)} size={sel ? 22 : 18} color="#ffffff" />}
                 </View>
               </Marker>
             );

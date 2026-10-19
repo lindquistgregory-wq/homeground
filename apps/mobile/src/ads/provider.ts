@@ -35,7 +35,7 @@ export interface AdProvider {
   /** The user's own opt-in to personalised ads (off by default). */
   setPersonalised(on: boolean): void;
   /** The banner component, or null when ads are off. */
-  readonly Banner: null | ((p: { unitId: string }) => ReactElement);
+  readonly Banner: null | ((p: { unitId: string; keywords?: string[] }) => ReactElement);
 }
 
 type Gma = typeof import('react-native-google-mobile-ads');
@@ -50,7 +50,7 @@ class AdMobProvider implements AdProvider {
 
   constructor(private readonly gma: Gma) {
     const { BannerAd, BannerAdSize } = gma;
-    this.Banner = ({ unitId }) => createElement(BannerAd, { unitId, size: BannerAdSize.ANCHORED_ADAPTIVE_BANNER, requestOptions: adRequestOptions(this.personalised) });
+    this.Banner = ({ unitId, keywords }) => createElement(BannerAd, { unitId, size: BannerAdSize.ANCHORED_ADAPTIVE_BANNER, requestOptions: { ...adRequestOptions(this.personalised), ...(keywords?.length ? { keywords } : {}) } });
   }
 
   setPersonalised(on: boolean): void {

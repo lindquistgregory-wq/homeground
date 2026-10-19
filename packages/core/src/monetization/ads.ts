@@ -1,7 +1,8 @@
 /**
  * Ad placement rules (§10), kept pure so they can be tested and so any AdProvider (AdMob today, other
  * free mediation SDKs later) follows the same rules:
- *   - banners only on browse screens (plant library and plant guides);
+ *   - banners only on browse screens (plant and animal libraries and their guides), with topic
+ *     keywords at most (never health records or animal data: Google treats health as sensitive);
  *   - never on the design canvas, in the AI chat, on alerts, onboarding or the paywall;
  *   - at most one interstitial per session, only at a natural break, never at launch, and never when
  *     the user arrived from a frost/heat alert;
@@ -12,7 +13,20 @@
 import { AD_FREE_SCREENS, type Entitlements, type Feature, type RewardedUnlock } from '../entitlements';
 
 /** Screens that may carry a banner (browse screens only). */
-export const BANNER_SCREENS = new Set(['plants', 'plant-guide']);
+export const BANNER_SCREENS = new Set(['plants', 'plant-guide', 'animals', 'animal-guide']);
+
+/** Plain topic words for contextual ads on a browse screen. Animal guides use the species' kind only. */
+const KIND_KEYWORDS: Record<string, string[]> = {
+  poultry: ['poultry supplies', 'chicken coop'], waterfowl: ['poultry supplies', 'duck house'], 'small-stock': ['rabbit hutch', 'farm supplies'],
+  ruminant: ['goat supplies', 'livestock fencing'], pig: ['livestock supplies', 'farm fencing'], cattle: ['livestock supplies', 'farm fencing'],
+  pollinator: ['beekeeping supplies'], working: ['farm supplies', 'livestock fencing'],
+};
+export function bannerKeywords(screen: string, animalKind?: string): string[] {
+  if (screen === 'plants' || screen === 'plant-guide') return ['gardening', 'seeds'];
+  if (screen === 'animals') return ['farm supplies', 'pet supplies'];
+  if (screen === 'animal-guide') return KIND_KEYWORDS[animalKind ?? ''] ?? ['farm supplies'];
+  return [];
+}
 
 export function canShowBanner(screen: string, ent: Entitlements, adsReady: boolean): boolean {
   return adsReady && ent.showAds && BANNER_SCREENS.has(screen) && !AD_FREE_SCREENS.has(screen);

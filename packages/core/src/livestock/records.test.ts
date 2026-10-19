@@ -91,3 +91,23 @@ test('vet export lists the owner’s records, escaped, and says they are the own
   assert.match(html, /Rabies 3-yr/);
   assert.match(html, /not veterinary advice/);
 });
+
+test('ledger: totals, net per head, cost per dozen from the same period’s egg logs', async () => {
+  const { ledgerSummary, PRODUCTION_KINDS } = await import('./index');
+  const logs: AnimalLog[] = [
+    { id: '1', herdId: 'h', date: '2026-03-01', kind: 'expense', category: 'feed', value: 30, unit: 'USD' },
+    { id: '2', herdId: 'h', date: '2026-03-15', kind: 'expense', category: 'bedding', value: 6, unit: 'USD' },
+    { id: '3', herdId: 'h', date: '2026-03-20', kind: 'sale', category: 'eggs', quantity: 6, value: 24, unit: 'USD' },
+    { id: '4', herdId: 'h', date: '2026-03-31', kind: 'eggs', value: 144, unit: 'eggs' },
+    { id: '5', herdId: 'h', date: '2025-12-31', kind: 'expense', category: 'feed', value: 999, unit: 'USD' },
+  ];
+  const s = ledgerSummary(logs, { from: '2026-01-01', to: '2026-12-31', heads: 6 });
+  assert.equal(s.costs, 36);
+  assert.equal(s.sales, 24);
+  assert.equal(s.net, -12);
+  assert.equal(s.netPerHead, -2);
+  assert.equal(s.costPerDozen, 3, '$36 over 12 dozen');
+  assert.equal(s.byCategory[0]!.category, 'feed');
+  assert.equal(ledgerSummary([], { from: '2026-01-01', to: '2026-12-31' }).costPerDozen, null);
+  assert.ok(!PRODUCTION_KINDS.includes('sale') && !PRODUCTION_KINDS.includes('expense'));
+});

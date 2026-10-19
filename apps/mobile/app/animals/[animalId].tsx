@@ -16,6 +16,7 @@ import { ExternalLink, FactorList, VerdictBadge } from '../../src/components/pla
 import { FactGrid, Pill } from '../../src/components/kit';
 import { SafetyNoteRow } from '../../src/components/SafetyNote';
 import { ShopRow } from '../../src/components/ShopRow';
+import { BrowseBanner } from '../../src/ads/useAds';
 import { FindAVet } from '../../src/components/FindAVet';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { useGarden } from '../../src/services/useGarden';
@@ -182,6 +183,7 @@ export default function AnimalDetail() {
           </>
         );
       })()}
+      <BrowseBanner screen="animal-guide" animalKind={a.kind} />
     </ScrollView>
   );
 }

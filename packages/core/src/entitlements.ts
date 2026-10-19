@@ -166,7 +166,8 @@ export function resolveEntitlements(
 }
 
 /** Screens where ads must never appear, regardless of tier (§10 placement rules). */
-export const AD_FREE_SCREENS = new Set(['design', 'planner-chat', 'alerts', 'onboarding', 'paywall']);
+// Health records, the vet export, reminders and the Herd Book never carry ads (prompt §10).
+export const AD_FREE_SCREENS = new Set(['design', 'planner-chat', 'alerts', 'onboarding', 'paywall', 'records', 'health', 'vet-export', 'herdbook', 'housing']);
 
 export function canShowAdOn(screen: string, ent: Entitlements): boolean {
   return ent.showAds && !AD_FREE_SCREENS.has(screen);

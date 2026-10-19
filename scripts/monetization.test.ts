@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ANDROID_OFFLINE_DAYS, PRODUCT_IDS, REWARD_HOURS, adRevenue, atNaturalBreak, buildPlans, canOfferReward, canShowBanner,
+  ANDROID_OFFLINE_DAYS, PRODUCT_IDS, REWARD_HOURS, adRevenue, atNaturalBreak, bannerKeywords, buildPlans, canOfferReward, canShowBanner,
   compareModels, compareScenarios, copyObjects, countEvent, defaultPlan, disclosure, errorEntry, frameForBoundary, grantReward, mergeStoreCheck,
   needsFinish, newAdSession, newObject, objectType, parseScenarioMeta, planPack, resolveEntitlements, sanitizeEvent, scenarioLabel, scrubText, subscriptionRevenue,
   tileCount, tilesFor, toVerifiedTransactions, INTERSTITIAL_MIN_SESSION_MS, type StoreProduct, type StoreRecord,
@@ -111,6 +111,12 @@ test('ads: banners only on browse screens, only for ad tiers, only when ads are 
   for (const s of ['design', 'planner-chat', 'alerts', 'paywall', 'onboarding', 'calendar']) assert.equal(canShowBanner(s, free, true), false, s);
   assert.equal(canShowBanner('plants', grower, true), false);
   assert.equal(canShowBanner('plants', free, false), false);
+  // Animal libraries carry contextual banners; health and records screens never do.
+  assert.equal(canShowBanner('animals', free, true), true);
+  assert.equal(canShowBanner('animal-guide', free, true), true);
+  for (const s of ['records', 'health', 'vet-export', 'herdbook', 'housing']) assert.equal(canShowBanner(s, free, true), false, s);
+  assert.deepEqual(bannerKeywords('animal-guide', 'pollinator'), ['beekeeping supplies']);
+  for (const k of ['poultry', 'waterfowl', 'small-stock', 'ruminant', 'pig', 'cattle', 'pollinator', 'working', undefined]) for (const w of bannerKeywords('animal-guide', k)) assert.ok(!/medic|vaccin|health|disease|vet/i.test(w), w);
 });
 
 test('ads: one interstitial per session, at the second natural break at the earliest, never early or after an alert', () => {
