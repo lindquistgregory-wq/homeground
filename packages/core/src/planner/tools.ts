@@ -58,6 +58,8 @@ export interface PlannerContext {
   saveDesignDraft(d: DesignDraft): Promise<string>;
   saveTaskDrafts(t: TaskDraft[]): Promise<number>;
   tier: { full: boolean; income: boolean; multiYear: boolean };
+  /** "Show animal features"; when false the plan leaves animals out. Defaults to on. */
+  animalFeatures?: boolean;
   newId(): string;
   now(): Date;
 }
@@ -279,7 +281,7 @@ export const TOOLS: Tool[] = [
       if (!g.household?.length) return 'Household not known yet: ask who lives there first.';
       let crops = parseCropList(a.crops).crops, animals = parseAnimalList(a.animals, ctx.kb).animals;
       if (!crops.length && !animals.length) {
-        const plan = buildPlan(g, await ctx.sitePlanInput(), ctx.kb, { now: ctx.now() });
+        const plan = buildPlan(g, await ctx.sitePlanInput(), ctx.kb, { now: ctx.now(), animalFeatures: ctx.animalFeatures });
         // Lower tiers see years 0–1 only, so coverage is for what they can see.
         const visible = plan.items.filter((i) => ctx.tier.multiYear || i.phase !== 'years2to5');
         const expanded = visible.some((j) => j.id === 'garden-y2');
@@ -362,7 +364,7 @@ export const TOOLS: Tool[] = [
     parameters: { type: 'object', required: [], properties: {} },
     async run(ctx) {
       const g = ctx.goals();
-      const plan = buildPlan(g, await ctx.sitePlanInput(), ctx.kb, { now: ctx.now(), includeIncome: ctx.tier.income, showCosts: ctx.tier.multiYear });
+      const plan = buildPlan(g, await ctx.sitePlanInput(), ctx.kb, { now: ctx.now(), includeIncome: ctx.tier.income, showCosts: ctx.tier.multiYear, animalFeatures: ctx.animalFeatures });
       const phases = ctx.tier.multiYear ? (['year0', 'year1', 'years2to5'] as const) : (['year0', 'year1'] as const);
       const lines: string[] = [];
       for (const ph of phases) {

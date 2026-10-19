@@ -10,24 +10,29 @@ interface SettingsState {
   animals: AnimalsChoice;
   /** "Show harvest and processing details" (owner decision 5): off by default. */
   showProcessing: boolean;
+  /** "Show shopping links": on by default (links exist only for programs the owner activated). */
+  showShopping: boolean;
   loaded: boolean;
   load(): Promise<void>;
   setUnits(u: UnitSystem): void;
   setAnimals(v: 'yes' | 'no'): void;
   setShowProcessing(v: boolean): void;
+  setShowShopping(v: boolean): void;
 }
 
 export const useSettings = create<SettingsState>((set) => ({
   units: 'imperial',
   animals: null,
   showProcessing: false,
+  showShopping: true,
   loaded: false,
   async load() {
-    const [units, animals, processing] = await Promise.all([kvGet('units'), kvGet('animals.enabled'), kvGet('animals.showProcessing')]);
+    const [units, animals, processing, shopping] = await Promise.all([kvGet('units'), kvGet('animals.enabled'), kvGet('animals.showProcessing'), kvGet('shopping.links')]);
     set({
       units: (units as UnitSystem | undefined) ?? 'imperial',
       animals: animals === 'yes' || animals === 'no' ? animals : null,
       showProcessing: processing === '1',
+      showShopping: shopping !== '0',
       loaded: true,
     });
   },
@@ -42,5 +47,9 @@ export const useSettings = create<SettingsState>((set) => ({
   setShowProcessing(v) {
     set({ showProcessing: v });
     void kvSet('animals.showProcessing', v ? '1' : '0');
+  },
+  setShowShopping(v) {
+    set({ showShopping: v });
+    void kvSet('shopping.links', v ? '1' : '0');
   },
 }));

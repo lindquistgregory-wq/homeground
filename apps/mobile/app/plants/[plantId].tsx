@@ -10,6 +10,7 @@ import { Alert, ScrollView, View } from 'react-native';
 import { Text } from '../../src/components/Text';
 import { BrowseBanner, useNaturalBreakOnLeave } from '../../src/ads/useAds';
 import { useEntitlements } from '../../src/billing/entitlements';
+import { ShopRow } from '../../src/components/ShopRow';
 import { CalendarList, Chip, ExternalLink, FactorList, StaleProfileNotice, VerdictBadge } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { FactGrid } from '../../src/components/kit';
@@ -148,6 +149,7 @@ export default function PlantDetail() {
         </Card>
       ) : null}
 
+      {!mine && <ShopRow placement="plant-detail" topic={`${plant.commonName.replace(/(.*?)/g, '').trim()} seeds`} />}
       <Card title="Learn more from extension experts" icon="school-outline">
         {guide ? <ExternalLink link={guide} /> : <Body muted>No guide linked yet.</Body>}
         {hub && <ExternalLink link={hub} prefix="Your state" />}

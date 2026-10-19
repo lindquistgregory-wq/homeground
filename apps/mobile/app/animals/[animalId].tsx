@@ -4,7 +4,7 @@
  * awareness (never treatment), the rules to check, and where the figures come from.
  */
 import {
-  SAFETY_NOTES, animalById, animalCalendar, formatDoy, minimumGroup, objectType, scoreAnimal, spacePerHeadSqFt, waterGallons, type SafetyNote,
+  SAFETY_NOTES, animalById, isCustomAnimalId, animalCalendar, formatDoy, minimumGroup, objectType, scoreAnimal, spacePerHeadSqFt, waterGallons, type SafetyNote,
 } from '@plotwright/core';
 import { livestockGuide } from '@plotwright/data';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -15,10 +15,13 @@ import { AnimalArt } from '../../src/components/AnimalArt';
 import { ExternalLink, FactorList, VerdictBadge } from '../../src/components/plants';
 import { FactGrid, Pill } from '../../src/components/kit';
 import { SafetyNoteRow } from '../../src/components/SafetyNote';
+import { ShopRow } from '../../src/components/ShopRow';
+import { FindAVet } from '../../src/components/FindAVet';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { useGarden } from '../../src/services/useGarden';
 import { useSettings } from '../../src/services/settings';
 import { housingName, siteForAnimals } from '../../src/services/animals';
+import { useCustomAnimals } from '../../src/services/customAnimals';
 
 const range = (r: [number, number] | null | undefined, unit = '') => (r ? (r[0] === r[1] ? `${r[0]}${unit}` : `${r[0]}–${r[1]}${unit}`) : null);
 const SOURCE_TAG: Record<string, string> = { extension: 'Extension', government: 'Government', research: 'Research', industry: 'Industry', secondary: 'Secondary' };
@@ -28,12 +31,13 @@ export default function AnimalDetail() {
   const t = useTheme();
   const showProcessing = useSettings((s) => s.showProcessing);
   const { state } = useGarden(parcelId);
+  useCustomAnimals((s) => s.version); // re-render after an edit
   const a = animalById(animalId);
 
   const fit = useMemo(() => (a && state ? scoreAnimal(a, siteForAnimals(state)) : null), [a, state]);
   const cal = useMemo(() => (a && state?.site.frost ? animalCalendar(a, {}, { frost: state.site.frost, showProcessing, peakSummerMaxF: state.site.peakSummerMaxF }) : null), [a, state, showProcessing]);
 
-  if (!a) return <Body>Unknown animal.</Body>;
+  if (!a) return <View style={{ padding: 16 }}><Body>This animal isn’t in the library (it may have been deleted).</Body></View>;
   const guide = livestockGuide(a.id);
   const indoor = spacePerHeadSqFt(a, 'indoor');
   const outdoor = spacePerHeadSqFt(a, 'outdoor');
@@ -62,10 +66,12 @@ export default function AnimalDetail() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
             {a.purposes.filter((x) => showProcessing || x !== 'meat').map((x) => <Pill key={x} text={x.replace('-', ' ')} />)}
             {!showProcessing && a.purposes.includes('meat') && <Pill text="raised for meat" />}
+            {isCustomAnimalId(a.id) && <Pill icon="pencil" text="your own figures" tone="accent" />}
           </View>
         </View>
       </View>
 
+      {isCustomAnimalId(a.id) && <Button title="Edit your animal" kind="secondary" icon="pencil" onPress={() => router.push({ pathname: '/animals/edit', params: { id: a.id } })} />}
       {poultryNote && <SafetyNoteRow note={poultryNote} />}
       {beeNote && <SafetyNoteRow note={beeNote} />}
 
@@ -143,6 +149,7 @@ export default function AnimalDetail() {
         <Body>{a.diseasesToKnow.join(', ')}.</Body>
         {a.biosecurity && <Body muted>{a.biosecurity}</Body>}
         <Body muted>For any sign of illness or injury, call your veterinarian. Plotwright doesn’t diagnose or suggest treatments.</Body>
+        <FindAVet pet={false} />
       </Card>
 
       <Card title="Rules to check" icon="gavel">
@@ -152,6 +159,7 @@ export default function AnimalDetail() {
 
       {a.notes.length > 0 && <Card title="Notes" icon="note-text-outline">{a.notes.map((n) => <Body key={n}>• {n}</Body>)}</Card>}
 
+      {!isCustomAnimalId(a.id) && <ShopRow placement="animal-detail" topic={`${a.commonName.replace(/(.*?)/g, '').trim()} supplies`} />}
       <Card title="Learn more" icon="school-outline">
         {guide && <ExternalLink link={guide} />}
         {a.sources.map((s) => (

@@ -24,6 +24,7 @@ import { useAds } from '../src/ads/useAds';
 import { onAlertOpened, openedFromAlert } from '../src/services/alerts';
 import { configureMapCache } from '../src/services/offlinePacks';
 import { useCustomPlants } from '../src/services/customPlants';
+import { useCustomAnimals } from '../src/services/customAnimals';
 import { TermsGate, termsAccepted } from '../src/components/TermsGate';
 
 export default function RootLayout() {
@@ -44,7 +45,7 @@ export default function RootLayout() {
       // Entitlements resolve from the on-device cache; the store is asked in the background.
       await Promise.all([useSettings.getState().load(), useEntitlements.getState().init(), initMetrics(),
         // The user's own plants must be registered before any screen looks a plant up.
-        useCustomPlants.getState().load().catch(() => undefined)]);
+        useCustomPlants.getState().load().catch(() => undefined), useCustomAnimals.getState().load().catch(() => undefined)]);
       setAgreed(await termsAccepted());
       setReady(true);
       configureMapCache();
@@ -111,12 +112,14 @@ function Screens() {
       <Stack.Screen name="plants/edit" options={{ title: 'Your plant' }} />
       <Stack.Screen name="animals/index" options={{ title: 'Animals' }} />
       <Stack.Screen name="animals/[animalId]" options={{ title: 'Animal' }} />
+      <Stack.Screen name="animals/edit" options={{ title: 'Your animal' }} />
       <Stack.Screen name="housing/[id]" options={{ title: 'Animal housing' }} />
       <Stack.Screen name="records/index" options={{ title: 'My animals' }} />
       <Stack.Screen name="records/[id]" options={{ title: 'Records' }} />
       <Stack.Screen name="records/edit" options={{ title: 'Animal' }} />
       <Stack.Screen name="records/import" options={{ title: 'Import animals' }} />
       <Stack.Screen name="herdbook/index" options={{ title: 'Herd Book' }} />
+      <Stack.Screen name="disclosures" options={{ title: 'Disclosures' }} />
       <Stack.Screen name="herdbook/[animalId]" options={{ title: 'Pedigree' }} />
       <Stack.Screen name="garden/[id]" options={{ title: 'Bed planner' }} />
       <Stack.Screen name="calendar/[id]" options={{ title: 'Calendar' }} />

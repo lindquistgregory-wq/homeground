@@ -55,6 +55,7 @@ export const bundledZoneTable: Record<string, string> = zones as Record<string, 
 import cropGuides from '../extension/crop-guides.json';
 import stateHubs from '../extension/state-hubs.json';
 import livestockGuides from '../extension/livestock-guides.json';
+import affiliatePrograms from '../affiliates/programs.json';
 
 export interface ExtensionLink {
   url: string;
@@ -69,6 +70,11 @@ export interface ExtensionLink {
 /** Crop-specific growing guide from a land-grant extension service (link out only). */
 export function cropGuide(plantId: string): ExtensionLink | null {
   return ((cropGuides.crops as Record<string, ExtensionLink | null>)[plantId] ?? null);
+}
+
+/** Affiliate programs as shipped (status changes ship in app updates; there's no remote switch). */
+export function affiliateRegistry(): import('@plotwright/core').AffiliateProgram[] {
+  return affiliatePrograms.programs as unknown as import('@plotwright/core').AffiliateProgram[];
 }
 
 /** Species care guide from Cooperative Extension or a government agency (link out only). */

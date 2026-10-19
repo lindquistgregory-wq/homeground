@@ -8,6 +8,7 @@ import { LARGE_STOCK } from './largeStock';
 import { POULTRY } from './poultry';
 import { SMALL_STOCK } from './smallStock';
 import type { AnimalRange as Range, AnimalSpec } from './types';
+import { customAnimalById, customAnimals } from './custom';
 
 export * from './types';
 export { SRC as ANIMAL_SOURCES } from './sources';
@@ -20,17 +21,20 @@ export * from './housing';
 export * from './records';
 export * from './photos';
 export * from './breeding';
+export * from './custom';
 
 export const ANIMALS: AnimalSpec[] = [...POULTRY, ...SMALL_STOCK, ...LARGE_STOCK, ...BEES, ...WORKING];
 
 const byId = new Map(ANIMALS.map((a) => [a.id, a]));
 
 export function animalById(id: string): AnimalSpec | undefined {
-  return byId.get(id);
+  return byId.get(id) ?? customAnimalById(id);
 }
 
+/** Bundled species plus the user's own animals. */
 export function allAnimals(): AnimalSpec[] {
-  return ANIMALS;
+  const c = customAnimals();
+  return c.length ? [...ANIMALS, ...c] : ANIMALS;
 }
 
 /** Design-object kinds that some species can live in (coop, run, hutch, shelter, paddock, barn, hive). */
@@ -58,7 +62,8 @@ export function searchAnimals(query: string, list: AnimalSpec[] = allAnimals()):
 const ordered = (r: Range | null | undefined) => !r || (Number.isFinite(r[0]) && Number.isFinite(r[1]) && r[0] <= r[1] && r[0] >= 0);
 
 /** Problems that would make a spec misbehave; empty when usable. Bundled species must all pass. */
-export function validateAnimalSpec(a: AnimalSpec, known: ReadonlySet<string> = new Set(ANIMALS.map((x) => x.id))): string[] {
+/** `custom`: the user's own animal, whose figures are theirs, so no source is required. */
+export function validateAnimalSpec(a: AnimalSpec, known: ReadonlySet<string> = new Set(allAnimals().map((x) => x.id)), opts: { custom?: boolean } = {}): string[] {
   const e: string[] = [];
   if (!a.commonName.trim()) e.push('Give the animal a name.');
   if (!a.purposes.length) e.push('Choose at least one purpose.');
@@ -79,6 +84,6 @@ export function validateAnimalSpec(a: AnimalSpec, known: ReadonlySet<string> = n
     if (!a.sources[h.source]) e.push(`Heritability of ${trait}: its source is missing.`);
     if (!(h.value[0] >= 0 && h.value[1] <= 1 && h.value[0] <= h.value[1])) e.push(`Heritability of ${trait}: must be between 0 and 1.`);
   }
-  if (!a.sources.length) e.push('Add at least one source.');
+  if (!a.sources.length && !opts.custom) e.push('Add at least one source.');
   return e;
 }

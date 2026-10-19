@@ -5,7 +5,7 @@
  * Everything runs on the phone. The conversation isn't uploaded anywhere.
  */
 import {
-  buildPlan, plannerTurn, readyToPlan, validateDesignDraft,
+  animalById, buildPlan, plannerTurn, readyToPlan, validateDesignDraft,
   type DesignDraft, type HomesteadGoals, type HomesteadPlan, type PlanItem, type PlannerContext, type PlannerModel,
 } from '@plotwright/core';
 import { KNOWLEDGE_BASE } from '@plotwright/data';
@@ -24,6 +24,8 @@ import {
 } from '../../src/db/planner';
 import { newId } from '../../src/services/identity';
 import { applyDesignDraft, applyTaskDrafts, currentTier, plannerContext } from '../../src/services/planner';
+import { useSettings } from '../../src/services/settings';
+import { saveHerd } from '../../src/db/herds';
 
 type Tab = 'talk' | 'plan' | 'drafts' | 'tasks';
 
@@ -41,6 +43,7 @@ export default function Planner() {
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
   const [plan, setPlan] = useState<HomesteadPlan | null>(null);
+  const animalsOn = useSettings((s) => s.animals) === 'yes';
   const [drafts, setDrafts] = useState<DraftRow[]>([]);
   const [tasks, setTasks] = useState<TaskRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -75,11 +78,11 @@ export default function Planner() {
     if (!ctx || !readyToPlan(goals)) { setPlan(null); return; }
     let cancelled = false;
     void ctx.sitePlanInput().then((site) => {
-      if (!cancelled) setPlan(buildPlan(goals, site, KNOWLEDGE_BASE, { includeIncome: tier.income, showCosts: tier.multiYear }));
+      if (!cancelled) setPlan(buildPlan(goals, site, KNOWLEDGE_BASE, { includeIncome: tier.income, showCosts: tier.multiYear, animalFeatures: animalsOn }));
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ctx, goals, tier.income]);
+  }, [ctx, goals, tier.income, animalsOn]);
 
   // The context saves to the database (and syncs) and reports back through setGoals.
   const onSaveGoals = async (g: HomesteadGoals) => {
@@ -119,7 +122,7 @@ export default function Planner() {
 
   const draftFromItem = async (item: PlanItem) => {
     const design = await getOrCreateDesign(id);
-    const d: DesignDraft = { id: newId(), summary: item.title, changes: item.draft ?? [], why: item.why, createdBy: 'rules' };
+    const d: DesignDraft = { id: newId(), summary: item.title, changes: item.draft ?? [], why: item.why, createdBy: 'rules', ...(item.livestock ? { herd: item.livestock } : {}) };
     const v = validateDesignDraft(d, design.objects);
     if (!v.ok) return Alert.alert('Can’t add that', v.problems.join('\n'));
     await saveDraft(id, 'design', v.cleaned);
@@ -133,8 +136,13 @@ export default function Planner() {
     try {
       if (d.kind === 'design') {
         const r = await applyDesignDraft(id, d.payload);
+        // A livestock item: offer to plan the herd in the housing just placed (animal features on).
+        const herd = d.payload.herd && animalsOn ? d.payload.herd : undefined;
+        const sp = herd ? animalById(herd.species) : undefined;
+        const home = sp ? r.placed.find((o) => sp.housingObjects.includes(o.kind)) : undefined;
+        const planHerd = herd && sp && home ? [{ text: `Plan ${herd.count} ${sp.commonName.toLowerCase()} there`, onPress: async () => { await saveHerd({ parcelId: id, designId: r.designId, objectId: home.id, speciesId: sp.id, count: herd.count, status: 'planned' }); router.push({ pathname: '/housing/[id]', params: { id, objectId: home.id } }); } }] : [];
         Alert.alert('Added to your design', `${r.added} object${r.added === 1 ? '' : 's'} placed${r.plantings ? `, ${r.plantings} planting${r.plantings === 1 ? '' : 's'} planned` : ''}. They’re labelled “planner draft”: move them where they fit best (check the sun layer).${r.unplaced.length ? `\n\nNot placed: ${r.unplaced.join(', ')}.` : ''}`,
-          [{ text: 'OK' }, { text: 'Open design', onPress: () => router.push({ pathname: '/design/[id]', params: { id } }) }]);
+          [{ text: 'OK' }, ...planHerd, { text: 'Open design', onPress: () => router.push({ pathname: '/design/[id]', params: { id } }) }]);
       } else {
         const n = await applyTaskDrafts(id, d.id, d.payload);
         Alert.alert('Tasks added', `${n} task${n === 1 ? '' : 's'} added to your list.`);

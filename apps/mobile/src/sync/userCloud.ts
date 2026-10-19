@@ -9,6 +9,7 @@ import { UserSync } from '@plotwright/user-sync';
 import { getDb, kvGet, kvSet } from '../db/database';
 import { clock, getDeviceId, newId } from '../services/identity';
 import { useCustomPlants } from '../services/customPlants';
+import { useCustomAnimals } from '../services/customAnimals';
 
 const transport: CloudTransport = {
   async isAvailable() {
@@ -32,6 +33,7 @@ const transport: CloudTransport = {
 
 /** Set when a sync brings in another device's custom plants, so the library reloads them. */
 let customPlantsChanged = false;
+let customAnimalsChanged = false;
 
 const store: LocalStore = {
   async get(collection: SyncCollection, id: string): Promise<SyncRecord | undefined> {
@@ -72,6 +74,10 @@ const store: LocalStore = {
     }
     if (collection === 'herds') {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM herds WHERE id = ?', id);
+      return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
+    }
+    if (collection === 'customAnimals') {
+      const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM custom_animals WHERE id = ?', id);
       return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
     }
     if (collection === 'customPlants') {
@@ -184,6 +190,14 @@ const store: LocalStore = {
         rec.id, String(d.parcel_id ?? ''), String(d.design_id ?? ''), String(d.object_id ?? ''), String(d.species_id ?? ''), str(d.breed), str(d.purpose),
         Number(d.count ?? 1), String(d.status ?? 'planned'), str(d.arrived_on), str(d.bred_on), str(d.notes), String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
       );
+    } else if (rec.collection === 'customAnimals') {
+      const d = (rec.data ?? {}) as Record<string, unknown>;
+      await db.runAsync(
+        `INSERT INTO custom_animals (id, spec, art, created_at, updated_hlc, deleted) VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET spec = excluded.spec, art = excluded.art, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
+        rec.id, String(d.spec ?? '{}'), String(d.art ?? '{}'), String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
+      );
+      customAnimalsChanged = true;
     } else if (rec.collection === 'customPlants') {
       const d = (rec.data ?? {}) as Record<string, unknown>;
       await db.runAsync(
@@ -246,6 +260,10 @@ export async function syncNow() {
   if (customPlantsChanged) {
     customPlantsChanged = false;
     await useCustomPlants.getState().load();
+  }
+  if (customAnimalsChanged) {
+    customAnimalsChanged = false;
+    await useCustomAnimals.getState().load();
   }
   return result;
 }

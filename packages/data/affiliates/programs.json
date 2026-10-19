@@ -1,0 +1,169 @@
+{
+  "_about": "Affiliate programs (prompt §10). A link is only ever built for status \"active\" with an affiliateId and linkTemplate the owner fills in after joining the program personally and confirming its current terms. Candidates found 2026-10-16; all need sign-up. Leave out: Baker Creek (no affiliate marketing, by its own statement); live-animal sellers, medication or vaccine products, and any merchant without an official affiliate page or a major network listing. signupUrl is null where the official page still has to be found on the merchant or network site.",
+  "programs": [
+    {
+      "id": "chewy",
+      "name": "Chewy",
+      "category": "pet-supplies",
+      "network": "Impact",
+      "signupUrl": null,
+      "merchantHost": "www.chewy.com",
+      "trackingHosts": [],
+      "status": "needs-signup",
+      "affiliateId": null,
+      "linkTemplate": null,
+      "termsCheckedOn": null,
+      "disclosure": "Plotwright earns a commission on purchases from these links.",
+      "allowedPlacements": [
+        "animal-detail"
+      ],
+      "evidence": "Official affiliate page: 4% on orders."
+    },
+    {
+      "id": "tractor-supply",
+      "name": "Tractor Supply Co.",
+      "category": "livestock-supplies",
+      "network": "Partnerize",
+      "signupUrl": null,
+      "merchantHost": "www.tractorsupply.com",
+      "trackingHosts": [],
+      "status": "needs-signup",
+      "affiliateId": null,
+      "linkTemplate": null,
+      "termsCheckedOn": null,
+      "disclosure": "Plotwright earns a commission on purchases from these links.",
+      "allowedPlacements": [
+        "animal-detail"
+      ],
+      "evidence": "Official affiliate page."
+    },
+    {
+      "id": "lehmans",
+      "name": "Lehman's",
+      "category": "homestead",
+      "network": "Pepperjam",
+      "signupUrl": null,
+      "merchantHost": "www.lehmans.com",
+      "trackingHosts": [],
+      "status": "needs-signup",
+      "affiliateId": null,
+      "linkTemplate": null,
+      "termsCheckedOn": null,
+      "disclosure": "Plotwright earns a commission on purchases from these links.",
+      "allowedPlacements": [
+        "animal-detail",
+        "plant-detail"
+      ],
+      "evidence": "Official page: 6%, 30-day cookie; no trademark bidding."
+    },
+    {
+      "id": "true-leaf-market",
+      "name": "True Leaf Market",
+      "category": "seeds",
+      "network": "Pepperjam or Awin",
+      "signupUrl": null,
+      "merchantHost": "www.trueleafmarket.com",
+      "trackingHosts": [],
+      "status": "needs-signup",
+      "affiliateId": null,
+      "linkTemplate": null,
+      "termsCheckedOn": null,
+      "disclosure": "Plotwright earns a commission on purchases from these links.",
+      "allowedPlacements": [
+        "plant-detail"
+      ],
+      "evidence": "Official page."
+    },
+    {
+      "id": "botanical-interests",
+      "name": "Botanical Interests",
+      "category": "seeds",
+      "network": "Own program",
+      "signupUrl": null,
+      "merchantHost": "www.botanicalinterests.com",
+      "trackingHosts": [],
+      "status": "needs-signup",
+      "affiliateId": null,
+      "linkTemplate": null,
+      "termsCheckedOn": null,
+      "disclosure": "Plotwright earns a commission on purchases from these links.",
+      "allowedPlacements": [
+        "plant-detail"
+      ],
+      "evidence": "Official program page."
+    },
+    {
+      "id": "burpee",
+      "name": "Burpee",
+      "category": "seeds",
+      "network": "FlexOffers",
+      "signupUrl": "https://www.flexoffers.com/",
+      "merchantHost": "www.burpee.com",
+      "trackingHosts": [],
+      "status": "needs-signup",
+      "affiliateId": null,
+      "linkTemplate": null,
+      "termsCheckedOn": null,
+      "disclosure": "Plotwright earns a commission on purchases from these links.",
+      "allowedPlacements": [
+        "plant-detail"
+      ],
+      "evidence": "Network listing only: confirm on Burpee's own site before activating."
+    },
+    {
+      "id": "gardeners-supply",
+      "name": "Gardener's Supply Company",
+      "category": "garden-tools",
+      "network": "Impact (per a third party)",
+      "signupUrl": null,
+      "merchantHost": "www.gardeners.com",
+      "trackingHosts": [],
+      "status": "needs-signup",
+      "affiliateId": null,
+      "linkTemplate": null,
+      "termsCheckedOn": null,
+      "disclosure": "Plotwright earns a commission on purchases from these links.",
+      "allowedPlacements": [
+        "plant-detail"
+      ],
+      "evidence": "No official page found: confirm before activating."
+    },
+    {
+      "id": "hoss-tools",
+      "name": "Hoss Tools",
+      "category": "garden-tools",
+      "network": "ShareASale (per a third party)",
+      "signupUrl": null,
+      "merchantHost": "hosstools.com",
+      "trackingHosts": [],
+      "status": "needs-signup",
+      "affiliateId": null,
+      "linkTemplate": null,
+      "termsCheckedOn": null,
+      "disclosure": "Plotwright earns a commission on purchases from these links.",
+      "allowedPlacements": [
+        "plant-detail"
+      ],
+      "evidence": "Per third parties: confirm before activating."
+    },
+    {
+      "id": "amazon",
+      "name": "Amazon",
+      "category": "general",
+      "network": "Amazon Associates",
+      "signupUrl": "https://affiliate-program.amazon.com/",
+      "merchantHost": "www.amazon.com",
+      "trackingHosts": [],
+      "status": "needs-signup",
+      "affiliateId": null,
+      "linkTemplate": null,
+      "termsCheckedOn": null,
+      "disclosure": "As an Amazon Associate I earn from qualifying purchases.",
+      "allowedPlacements": [
+        "animal-detail",
+        "plant-detail"
+      ],
+      "evidence": "Official. Mobile Application Policy: the app must be approved and free to download, with links reachable without paying."
+    }
+  ]
+}

@@ -31,6 +31,16 @@ export const ANIMAL_ART: Record<string, AnimalArtSpec> = {
   alpacas: { shape: 'llama', main: '#c9a27a', alt: '#8a6a4a' },
   'household:dog': { shape: 'dog', main: '#c08a4f', alt: '#7a5532' },
   'household:cat': { shape: 'cat', main: '#8f8a84', alt: '#f2ede4' },
+  'household:other': { shape: 'rabbit', main: '#d9cfbd', alt: '#e9b8b0' },
 };
 
-export const artForAnimal = (id: string): AnimalArtSpec => ANIMAL_ART[id] ?? { shape: 'hen', main: '#b5652b' };
+/** Drawings the user picked for their own animals (set by the custom-animals store). */
+let customArt: Record<string, AnimalArtSpec> = {};
+export function setCustomAnimalArt(map: Record<string, AnimalArtSpec>): void {
+  customArt = map;
+}
+
+/** The drawings a custom animal can use, in picker order. */
+export const ANIMAL_SHAPES: AnimalShape[] = ['hen', 'turkey', 'duck', 'goose', 'guinea', 'quail', 'rabbit', 'goat', 'sheep', 'pig', 'cow', 'bee', 'donkey', 'llama', 'dog', 'cat'];
+
+export const artForAnimal = (id: string): AnimalArtSpec => ANIMAL_ART[id] ?? customArt[id] ?? { shape: 'hen', main: '#b5652b' };

@@ -21,6 +21,7 @@ import { deleteAnimalAndRecords, deleteRecord, getAnimal, listAnimals, recordsFo
 import { herdLabel, localToday } from '../../src/services/animals';
 import { refreshHealthReminders, speciesName } from '../../src/services/healthReminders';
 import { exportVetHistory } from '../../src/services/recordsExport';
+import { FindAVet } from '../../src/components/FindAVet';
 import { deletePhotoFile, photoUri, pickAnimalPhoto } from '../../src/services/photos';
 
 const METHODS: Array<[BreedingMethod, string]> = [['natural', 'Natural'], ['ai', 'AI'], ['eggs-set', 'Eggs set'], ['other', 'Other']];
@@ -228,6 +229,7 @@ function HealthCard({ records, pet, onAdd, onRemove, onExport }: {
       <MoreInfo label="About health records">
         <Body muted>Plotwright keeps what you and your veterinarian decide. It doesn’t suggest vaccines, treatments, schedules or doses. For any sign of illness or injury, call your veterinarian.</Body>
         {pet && <Body muted>Rabies vaccination rules for dogs and cats vary by state and county; check your local requirements.</Body>}
+        <FindAVet pet={pet} />
         <Body muted>Reminders come a week before and on the morning of each next-due date you enter.</Body>
       </MoreInfo>
     </Card>

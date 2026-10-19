@@ -14,6 +14,7 @@ import { Body, useTheme } from '../../src/components/ui';
 import { useGarden } from '../../src/services/useGarden';
 import { useSettings } from '../../src/services/settings';
 import { siteForAnimals } from '../../src/services/animals';
+import { useCustomAnimals } from '../../src/services/customAnimals';
 
 const KINDS: Array<{ key: AnimalKind | 'all' | 'stock'; label: string }> = [
   { key: 'all', label: 'All' }, { key: 'poultry', label: 'Poultry' }, { key: 'waterfowl', label: 'Ducks & geese' },
@@ -26,6 +27,8 @@ export default function AnimalLibrary() {
   const { parcelId } = useLocalSearchParams<{ parcelId?: string }>();
   const t = useTheme();
   const { animals, setAnimals, showProcessing } = useSettings();
+  // Re-read the list when the user's own animals change.
+  const customVersion = useCustomAnimals((s) => s.version);
   const { state } = useGarden(parcelId);
   const [q, setQ] = useState('');
   const [kind, setKind] = useState<(typeof KINDS)[number]['key']>('all');
@@ -35,7 +38,7 @@ export default function AnimalLibrary() {
     if (!state) return base.map((a) => ({ a, s: null }));
     const site = siteForAnimals(state);
     return base.map((a) => ({ a, s: scoreAnimal(a, site) })).sort((x, y) => y.s!.score - x.s!.score || x.a.commonName.localeCompare(y.a.commonName));
-  }, [q, kind, state]);
+  }, [q, kind, state, customVersion]);
 
   if (animals !== 'yes')
     return (
@@ -52,6 +55,7 @@ export default function AnimalLibrary() {
           {KINDS.map((k) => <Chip key={k.key} label={k.label} active={kind === k.key} onPress={() => setKind(k.key)} />)}
         </ScrollView>
         {state && <Body muted>Sorted by fit to {state.parcel.name}’s climate and size.</Body>}
+        <Chip label="Add your own animal" active={false} onPress={() => router.push('/animals/edit')} />
       </View>
       <FlatList
         data={list}
