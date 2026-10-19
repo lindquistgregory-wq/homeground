@@ -14,7 +14,8 @@ import { AnimalArt } from '../../src/components/AnimalArt';
 import { Chip } from '../../src/components/plants';
 import { EmptyState } from '../../src/components/kit';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
-import { herdsForParcel, type Herd } from '../../src/db/herds';
+import { deleteHerd, herdsForParcel, type Herd } from '../../src/db/herds';
+import { getDesign } from '../../src/db/designs';
 import { listParcels, type ParcelRecord } from '../../src/db/parcels';
 import { allRecords, listAnimals, saveRecord } from '../../src/db/records';
 import { herdLabel, isCurrent, localToday } from '../../src/services/animals';
@@ -25,6 +26,8 @@ import { useSettings } from '../../src/services/settings';
 interface Data {
   parcels: ParcelRecord[];
   herds: Herd[];
+  /** Herds whose coop or paddock is no longer in the design. */
+  orphans: Set<string>;
   animals: AnimalRecord[];
   due: Array<HealthDue & { who: string }>;
   eggsToday: Map<string, AnimalLog>;
@@ -40,11 +43,17 @@ export default function MyAnimals() {
     const parcels = await listParcels();
     const herds = (await Promise.all(parcels.map((p) => herdsForParcel(p.id)))).flat().filter(isCurrent);
     const animals = await listAnimals();
+    const orphans = new Set<string>();
+    const designs = new Map<string, Awaited<ReturnType<typeof getDesign>>>();
+    for (const h of herds) {
+      if (!designs.has(h.designId)) designs.set(h.designId, await getDesign(h.designId));
+      if (!designs.get(h.designId)?.objects.some((o) => o.id === h.objectId)) orphans.add(h.id);
+    }
     const today = localToday();
     const who = await healthSubjects();
     const due = healthDue(await allRecords('healthRecords'), today, 30).map((d) => ({ ...d, who: who(d.record) }));
     const eggsToday = new Map((await allRecords('animalLogs')).filter((l) => l.kind === 'eggs' && l.date === today && l.herdId && !l.animalId).map((l) => [l.herdId!, l]));
-    setData({ parcels, herds, animals, due, eggsToday, reminders: await remindersAllowed() });
+    setData({ parcels, herds, orphans, animals, due, eggsToday, reminders: await remindersAllowed() });
   }, []);
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
@@ -133,8 +142,14 @@ export default function MyAnimals() {
                 <Chip label="+1 egg" active onPress={() => void logEgg(h, 1)} />
               </View>
             )}
+            {data.orphans.has(h.id) && (
+              <View style={{ marginVertical: 4 }}>
+                <Text style={{ color: t.warn }}>Its housing is no longer in the design, so it gets no capacity checks or weather alerts.</Text>
+                <Chip label="Remove this group" active={false} onPress={() => Alert.alert('Remove group?', `Remove ${herdLabel(h, sp)}? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { await deleteHerd(h.id); await load(); } }])} />
+              </View>
+            )}
             {members.map(row)}
-            <Chip label={`Add ${sp?.commonName.toLowerCase() ?? 'animals'} by name or tag`} active={false} onPress={() => router.push({ pathname: '/records/edit', params: { parcelId: h.parcelId, herdId: h.id, speciesId: h.speciesId } })} />
+            {sp?.kind !== 'pollinator' && <Chip label={`Add ${sp?.commonName.toLowerCase() ?? 'animals'} by name or tag`} active={false} onPress={() => router.push({ pathname: '/records/edit', params: { parcelId: h.parcelId, herdId: h.id, speciesId: h.speciesId } })} />}
           </Card>
         );
       })}

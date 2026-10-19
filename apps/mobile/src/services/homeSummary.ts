@@ -43,8 +43,9 @@ export async function homeSummary(parcelId: string, profile: SiteProfile | undef
   let animals = 0;
   if (opts.animals) {
     const herds = (await herdsForParcel(parcelId)).filter(isCurrent);
-    animals = herds.reduce((n, h) => n + h.count, 0);
     const hc = herdCalendars(herds, designs[0], site, !!opts.showProcessing);
+    // Only herds whose housing is still in the design (herdCalendars drops the rest).
+    animals = hc.reduce((n, c) => n + c.herd.count, 0);
     const long = new Set<AnimalEventKind>(['winter-water', 'heat-prep', 'swarm-watch']);
     const starting = (x: { kind: AnimalEventKind; start: number }) => !long.has(x.kind) || (x.start >= today && x.start <= horizon);
     for (const e of upcomingAnimalTasks(hc.map((c) => ({ herdId: c.herd.id, animalId: c.animal.id, events: c.events.filter(starting) })), today, horizon))

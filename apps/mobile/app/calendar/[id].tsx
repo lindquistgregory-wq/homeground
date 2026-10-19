@@ -80,7 +80,7 @@ export default function CalendarScreen() {
       const out: Array<{ key: string; text: string; when: string; overdue: boolean }> = [];
       for (const b of mine(await allRecords('breedingRecords')))
         if (b.dueFrom && b.dueTo && b.born === undefined && b.dueTo >= today && b.dueFrom <= until)
-          out.push({ key: b.id, text: `${b.damId ? names.get(b.damId) ?? 'Dam' : 'Eggs set'}: ${b.method === 'eggs-set' ? 'hatch' : 'due'}`, when: `${b.dueFrom} – ${b.dueTo}`, overdue: false });
+          out.push({ key: b.id, text: `${b.damId ? names.get(b.damId) ?? 'Dam' : 'Eggs set'}: ${b.method === 'eggs-set' ? 'hatch' : 'due'}`, when: b.dueFrom === b.dueTo ? `around ${b.dueFrom}` : `${b.dueFrom} – ${b.dueTo}`, overdue: false });
       for (const d of healthDue(mine(await allRecords('healthRecords')), today, 42))
         out.push({ key: d.record.id, text: `${who(d.record)}: ${d.record.product || HEALTH_TYPES[d.record.type]}`, when: d.record.nextDue!, overdue: d.overdue });
       setDues(out.sort((a, b) => a.when.localeCompare(b.when)));

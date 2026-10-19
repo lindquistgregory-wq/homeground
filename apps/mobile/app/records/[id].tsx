@@ -277,7 +277,7 @@ function BreedingCard({ records, males, names, eggs, onAdd, onOutcome, onRemove 
       {records.map((r) => (
         <View key={r.id} style={[styles.item, { borderColor: t.border, flexDirection: 'column', alignItems: 'stretch' }]}>
           <Text style={{ color: t.text, fontWeight: '600' }}>{eggs ? 'Set' : 'Bred'} {r.bredOn}{r.sireId ? ` · ${names.get(r.sireId) ?? ''}` : r.sireName ? ` · ${r.sireName}` : ''}</Text>
-          {r.dueFrom && <Body muted>{eggs ? 'Hatch' : 'Due'} {r.dueFrom} to {r.dueTo}</Body>}
+          {r.dueFrom && <Body muted>{eggs ? 'Hatch' : 'Due'} {r.dueFrom === r.dueTo ? `around ${r.dueFrom}` : `${r.dueFrom} to ${r.dueTo}`}</Body>}
           {r.born !== undefined && <Body>{eggs ? 'Hatched' : 'Born'} {r.born}, alive {r.alive ?? r.born}</Body>}
           {outcome?.id === r.id ? (
             <View style={[styles.chips, { alignItems: 'center' }]}>

@@ -226,7 +226,7 @@ export function weanedPerLitter(logs: AnimalLog[]): number | null {
 export function welfareNote(a: AnimalSpec, activeCount: number): string | null {
   const min = minimumGroup(a);
   if (activeCount <= 0 || activeCount >= min) return null;
-  return `${a.commonName} are social and do best in groups of ${min} or more${a.socialNote ? `: ${a.socialNote}` : '.'}`;
+  return `${a.commonName} are social and do best in groups of ${min} or more.${a.socialNote ? ` ${a.socialNote}` : ''}`;
 }
 
 // ---------- CSV ----------
