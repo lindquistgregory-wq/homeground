@@ -78,6 +78,10 @@ export const OBJECT_LIBRARY: ObjectType[] = [
   T({ kind: 'rabbit-hutch', name: 'Rabbit hutches', category: 'animals', shape: 'rect', width: 0.9, length: 2.4, height: 1.5, material: Material.opaque, isStructure: true, tier: 'grower' }),
   T({ kind: 'goat-shelter', name: 'Goat/sheep shelter', category: 'animals', shape: 'rect', width: 3, length: 3.6, height: 2.4, material: Material.opaque, isStructure: true, tier: 'grower' }),
   T({ kind: 'paddock', name: 'Paddock', category: 'animals', shape: 'rect', width: 15, length: 20, height: 0, material: Material.none, tier: 'grower' }),
+  T({ kind: 'run-in-shed', name: 'Run-in shed', category: 'animals', shape: 'rect', width: 3.6, length: 7.3, height: 3, material: Material.opaque, isStructure: true, tier: 'free', notes: 'Three-sided field shelter for horses, cattle, goats or sheep; open side away from the prevailing wind' }),
+  T({ kind: 'stable', name: 'Horse stable', category: 'animals', shape: 'rect', width: 7.3, length: 7.3, height: 3.5, material: Material.opaque, isStructure: true, tier: 'free', notes: 'About 12 × 12 ft per stall (UC Davis)' }),
+  T({ kind: 'kennel', name: 'Dog kennel or house', category: 'animals', shape: 'rect', width: 1.8, length: 3, height: 1.8, material: Material.none, tier: 'free' }),
+  T({ kind: 'pasture', name: 'Pasture', category: 'animals', shape: 'rect', width: 64, length: 64, height: 0, material: Material.none, tier: 'free', notes: 'About an acre of grazing; fence and rotate it' }),
   T({ kind: 'beehive', name: 'Beehive', category: 'animals', shape: 'rect', width: 0.5, length: 0.5, height: 1, material: Material.opaque, tier: 'free', notes: 'Face the entrance away from paths; morning sun helps' }),
   T({ kind: 'mushroom-logs', name: 'Mushroom-log area', category: 'animals', shape: 'rect', width: 2, length: 3, height: 1, material: Material.none, tier: 'grower', notes: 'Wants shade' }),
   // Water & soil

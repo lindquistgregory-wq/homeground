@@ -47,7 +47,7 @@ export default function MyAnimals() {
     const designs = new Map<string, Awaited<ReturnType<typeof getDesign>>>();
     for (const h of herds) {
       if (!designs.has(h.designId)) designs.set(h.designId, await getDesign(h.designId));
-      if (!designs.get(h.designId)?.objects.some((o) => o.id === h.objectId)) orphans.add(h.id);
+      if (h.objectId && !designs.get(h.designId)?.objects.some((o) => o.id === h.objectId)) orphans.add(h.id);
     }
     const today = localToday();
     const who = await healthSubjects();

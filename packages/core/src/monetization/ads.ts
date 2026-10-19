@@ -20,6 +20,7 @@ const KIND_KEYWORDS: Record<string, string[]> = {
   poultry: ['poultry supplies', 'chicken coop'], waterfowl: ['poultry supplies', 'duck house'], 'small-stock': ['rabbit hutch', 'farm supplies'],
   ruminant: ['goat supplies', 'livestock fencing'], pig: ['livestock supplies', 'farm fencing'], cattle: ['livestock supplies', 'farm fencing'],
   pollinator: ['beekeeping supplies'], working: ['farm supplies', 'livestock fencing'],
+  equine: ['horse supplies', 'farm fencing'], aquatic: ['pond supplies'], invertebrate: ['composting supplies'],
 };
 export function bannerKeywords(screen: string, animalKind?: string): string[] {
   if (screen === 'plants' || screen === 'plant-guide') return ['gardening', 'seeds'];

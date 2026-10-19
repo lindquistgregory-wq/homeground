@@ -9,8 +9,8 @@ type Range = [number, number];
 /** A [low, high] range (named so it doesn't clash with the planner's Range). */
 export type AnimalRange = Range;
 
-export type AnimalKind = 'poultry' | 'waterfowl' | 'small-stock' | 'ruminant' | 'pig' | 'cattle' | 'pollinator' | 'working';
-export type Purpose = 'eggs' | 'meat' | 'milk' | 'fiber' | 'honey' | 'guardian' | 'pest-control' | 'grazing' | 'breeding';
+export type AnimalKind = 'poultry' | 'waterfowl' | 'small-stock' | 'ruminant' | 'pig' | 'cattle' | 'pollinator' | 'working' | 'equine' | 'aquatic' | 'invertebrate';
+export type Purpose = 'eggs' | 'meat' | 'milk' | 'fiber' | 'honey' | 'guardian' | 'pest-control' | 'grazing' | 'breeding' | 'riding' | 'work' | 'rodent-control' | 'compost';
 export type Tolerance = 'low' | 'medium' | 'high';
 
 /** extension / government / research are preferred; industry and secondary sources are flagged in the UI. */
@@ -28,6 +28,11 @@ export interface HeatThresholds {
   /** Temperature-humidity index at which stress begins (the scale named in `thiScale`). */
   thiOnset?: number;
   thiScale?: string;
+  /**
+   * Horses: the equine comfort index, air temperature (°F) plus relative humidity (%). Stress is
+   * flagged at or above this sum (the most conservative extension cutoff).
+   */
+  tPlusRhOnset?: number;
   note?: string;
 }
 
@@ -110,6 +115,8 @@ export interface AnimalSpec {
   spaceIndoorSqFt: Range | null;
   spaceOutdoorSqFt: Range | null;
   pastureAcresPerHead: Range | null;
+  /** Pond fish: how many per surface acre (capacity uses the lower, more cautious figure). */
+  stockingPerAcre?: Range | null;
   animalUnitEquivalent?: number | null;
   nestBoxesPer?: number | null;
   fence?: string;

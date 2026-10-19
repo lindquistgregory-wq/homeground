@@ -68,11 +68,13 @@ export function scoreAnimal(a: AnimalSpec, site: AnimalSite, housing?: HousingFi
   const n = count ?? housing?.planned ?? a.starterGroupSize?.[0] ?? minimumGroup(a);
 
   // Heat: how far summer highs go past the sourced onset.
-  if (site.peakSummerMaxF !== undefined && (a.heat.airOnsetF !== undefined || a.heat.thiOnset !== undefined)) {
+  if (site.peakSummerMaxF !== undefined && (a.heat.airOnsetF !== undefined || a.heat.thiOnset !== undefined || a.heat.tPlusRhOnset !== undefined)) {
     const s = heatStress(a, site.peakSummerMaxF, undefined, site.summerRhPct);
     const over = a.heat.airOnsetF !== undefined
       ? site.peakSummerMaxF - a.heat.airOnsetF
-      : thi(site.peakSummerMaxF, fallbackHumidity(site.summerRhPct)) - a.heat.thiOnset!;
+      : a.heat.tPlusRhOnset !== undefined
+        ? (site.peakSummerMaxF + fallbackHumidity(site.summerRhPct) - a.heat.tPlusRhOnset) / 2
+        : thi(site.peakSummerMaxF, fallbackHumidity(site.summerRhPct)) - a.heat.thiOnset!;
     add('heat', 'Summer heat', s.stressed ? 1 - over / 20 : 1,
       s.stressed ? `Summer highs reach about ${Math.round(site.peakSummerMaxF)} °F (${s.basis}): plan shade, water and air flow.` : `Summer highs (about ${Math.round(site.peakSummerMaxF)} °F) stay under the heat-stress threshold.`);
   } else if (site.peakSummerMaxF !== undefined) {

@@ -1,7 +1,7 @@
 /** Which drawing and colours each animal gets in AnimalArt. Pure data so scripts can check it. */
 export type AnimalShape =
   | 'hen' | 'turkey' | 'duck' | 'goose' | 'guinea' | 'quail' | 'rabbit' | 'goat' | 'sheep' | 'pig' | 'cow'
-  | 'bee' | 'donkey' | 'llama' | 'dog' | 'cat';
+  | 'bee' | 'donkey' | 'llama' | 'dog' | 'cat' | 'horse' | 'worm' | 'fish';
 
 export interface AnimalArtSpec { shape: AnimalShape; main: string; alt?: string }
 
@@ -32,6 +32,10 @@ export const ANIMAL_ART: Record<string, AnimalArtSpec> = {
   'household:dog': { shape: 'dog', main: '#c08a4f', alt: '#7a5532' },
   'household:cat': { shape: 'cat', main: '#8f8a84', alt: '#f2ede4' },
   'household:other': { shape: 'rabbit', main: '#d9cfbd', alt: '#e9b8b0' },
+  horses: { shape: 'horse', main: '#8a5a33', alt: '#3b2a1f' },
+  barn_cats: { shape: 'cat', main: '#d98b3a', alt: '#f2ede4' },
+  composting_worms: { shape: 'worm', main: '#c96a6a' },
+  pond_fish: { shape: 'fish', main: '#6f8f4e', alt: '#e8e3a8' },
 };
 
 /** Drawings the user picked for their own animals (set by the custom-animals store). */
@@ -41,6 +45,6 @@ export function setCustomAnimalArt(map: Record<string, AnimalArtSpec>): void {
 }
 
 /** The drawings a custom animal can use, in picker order. */
-export const ANIMAL_SHAPES: AnimalShape[] = ['hen', 'turkey', 'duck', 'goose', 'guinea', 'quail', 'rabbit', 'goat', 'sheep', 'pig', 'cow', 'bee', 'donkey', 'llama', 'dog', 'cat'];
+export const ANIMAL_SHAPES: AnimalShape[] = ['hen', 'turkey', 'duck', 'goose', 'guinea', 'quail', 'rabbit', 'goat', 'sheep', 'pig', 'cow', 'bee', 'horse', 'donkey', 'llama', 'dog', 'cat', 'fish', 'worm'];
 
 export const artForAnimal = (id: string): AnimalArtSpec => ANIMAL_ART[id] ?? customArt[id] ?? { shape: 'hen', main: '#b5652b' };

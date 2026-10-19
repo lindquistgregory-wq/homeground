@@ -14,6 +14,7 @@ const KIND_ICON: Record<string, IconName> = {
   'greenhouse-leanto': 'greenhouse', 'greenhouse-hoop': 'greenhouse', 'greenhouse-gable': 'greenhouse', 'greenhouse-dome': 'greenhouse', 'high-tunnel': 'greenhouse',
   building: 'home-outline', 'potting-shed': 'shovel', 'tool-shed': 'tools', 'root-cellar': 'stairs-down', barn: 'barn',
   'chicken-coop': 'egg-outline', 'chicken-run': 'egg-outline', 'duck-house': 'duck', 'rabbit-hutch': 'rabbit', 'goat-shelter': 'sheep', paddock: 'fence',
+  'run-in-shed': 'home-roof', stable: 'horse', kennel: 'dog-side', pasture: 'grass',
   beehive: 'bee', 'mushroom-logs': 'mushroom-outline',
   'rain-barrel': 'barrel-outline', 'ibc-tote': 'water-outline', cistern: 'water-well-outline', pond: 'waves', swale: 'wave', 'drip-line': 'water-pump',
   'hose-bib': 'water-pump', well: 'water-well-outline', 'compost-bays': 'recycle', 'worm-bin': 'bug-outline',

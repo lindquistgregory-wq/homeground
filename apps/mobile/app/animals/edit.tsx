@@ -23,9 +23,10 @@ import { newCustomAnimalId, useCustomAnimals } from '../../src/services/customAn
 
 const KINDS: Array<[AnimalKind, string]> = [
   ['poultry', 'Poultry'], ['waterfowl', 'Ducks & geese'], ['small-stock', 'Rabbits & small stock'], ['ruminant', 'Goats & sheep'],
-  ['pig', 'Pigs'], ['cattle', 'Cattle'], ['pollinator', 'Bees'], ['working', 'Guardian or fiber'],
+  ['pig', 'Pigs'], ['cattle', 'Cattle'], ['equine', 'Horses & donkeys'], ['pollinator', 'Bees'], ['working', 'Guardian, cat or fiber'],
+  ['aquatic', 'Fish'], ['invertebrate', 'Worms'],
 ];
-const PURPOSES: Purpose[] = ['eggs', 'meat', 'milk', 'fiber', 'honey', 'guardian', 'pest-control', 'grazing', 'breeding'];
+const PURPOSES: Purpose[] = ['eggs', 'meat', 'milk', 'fiber', 'honey', 'guardian', 'pest-control', 'grazing', 'breeding', 'riding', 'work', 'rodent-control', 'compost'];
 const LEVELS: Array<[Tolerance, string]> = [['low', 'Low'], ['medium', 'Medium'], ['high', 'High']];
 type Range = [number, number];
 

@@ -370,5 +370,65 @@
     "url": "https://journalofdairyresearch.org/erduran-2017.html",
     "year": 2017,
     "kind": "research"
+  },
+  "horsesLand": {
+    "title": "How much land do I need for a horse? (Extension Horses, extension.org)",
+    "url": "https://horses.extension.org/how-much-land-do-i-need-for-a-horse/",
+    "year": 2019,
+    "kind": "extension"
+  },
+  "ucdHorseHandbook": {
+    "title": "Horses: Small Farms Handbook (UC Davis Veterinary Extension)",
+    "url": "https://vetext.vetmed.ucdavis.edu/sites/g/files/dgvnsk5616/files/local_resources/pdfs/pdfs_animal_welfare/horse_small_farms_handbook.pdf",
+    "year": 2013,
+    "kind": "extension"
+  },
+  "ucanrHorseWater": {
+    "title": "Horse water requirements (UC Cooperative Extension presentation)",
+    "url": "https://class.ucanr.edu/sites/default/files/2017-04/261246.pdf",
+    "year": 2017,
+    "kind": "extension"
+  },
+  "ugaHorseHeat": {
+    "title": "Managing horses in hot weather (UGA Extension)",
+    "url": "https://equine.caes.uga.edu/2025/08/managing-horses-in-hot-weather",
+    "year": 2025,
+    "kind": "extension"
+  },
+  "nmsuHorseHeat": {
+    "title": "Help Your Horse Handle Heat Stress, B-711 (NMSU)",
+    "url": "https://pubs.nmsu.edu/_b/B711/",
+    "year": null,
+    "kind": "extension"
+  },
+  "jerseyHorseWelfare": {
+    "title": "Animal Welfare Code: Horses (Government of Jersey)",
+    "url": "https://www.gov.je/SiteCollectionDocuments/Industry%20and%20finance/ID%20Animal%20Welfare%20Code%20Horses.pdf",
+    "year": null,
+    "kind": "government"
+  },
+  "sacBarnCats": {
+    "title": "Barn & Garden Cat adoptions (Sacramento County Animal Care)",
+    "url": "https://animalcare.saccounty.gov/us/en/barn-garden-cat-adoptions.html",
+    "year": null,
+    "kind": "government"
+  },
+  "ncsuWorms": {
+    "title": "Worms Can Recycle Your Garbage, AG-473-18 (NC State Extension)",
+    "url": "https://content.ces.ncsu.edu/worms-can-recycle-your-garbage",
+    "year": 2017,
+    "kind": "extension"
+  },
+  "msuPonds": {
+    "title": "Stocking recommendations for ponds 1 acre or larger (Mississippi State Extension)",
+    "url": "https://extension.msstate.edu/natural-resources/fisheries/pond-and-lake-management/stocking/stocking-recommendations-for-ponds-1-acre-or-larger",
+    "year": null,
+    "kind": "extension"
+  },
+  "kyPonds": {
+    "title": "Farm Pond Management: Stocking and Harvesting (Kentucky Fish & Wildlife)",
+    "url": "https://fw.ky.gov/Fish/Pages/Farm-Pond-Management-Stocking-and-Harvesting.aspx",
+    "year": null,
+    "kind": "government"
   }
 }

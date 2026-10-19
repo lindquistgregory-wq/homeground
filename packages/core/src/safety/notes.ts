@@ -143,12 +143,12 @@ export const IN_GROUND_KINDS: ReadonlySet<string> = new Set([
   'in-ground-row', 'hugel', 'guild', 'berry-row', 'three-sisters',
   'fruit-tree-dwarf', 'fruit-tree-semi', 'fruit-tree-std', 'nut-tree', 'evergreen-tree', 'windbreak',
   'hoop-tunnel', 'high-tunnel', 'greenhouse-hoop', 'greenhouse-gable', 'greenhouse-dome', 'greenhouse-leanto',
-  'potting-shed', 'tool-shed', 'barn', 'root-cellar', 'chicken-run', 'paddock', 'goat-shelter',
+  'potting-shed', 'tool-shed', 'barn', 'root-cellar', 'chicken-run', 'paddock', 'goat-shelter', 'run-in-shed', 'stable', 'pasture', 'kennel',
   'pond', 'swale', 'cistern', 'well',
   'solar-array', 'fence-deer', 'fence-garden', 'fence-electric', 'gate', 'trellis', 'arch',
 ]);
 
-const STRUCTURES = new Set(['greenhouse-leanto', 'greenhouse-hoop', 'greenhouse-gable', 'greenhouse-dome', 'high-tunnel', 'potting-shed', 'tool-shed', 'barn', 'chicken-coop', 'duck-house', 'goat-shelter']);
+const STRUCTURES = new Set(['greenhouse-leanto', 'greenhouse-hoop', 'greenhouse-gable', 'greenhouse-dome', 'high-tunnel', 'potting-shed', 'tool-shed', 'barn', 'chicken-coop', 'duck-house', 'goat-shelter', 'run-in-shed', 'stable']);
 
 const BY_KIND: Record<string, SafetyNoteId[]> = {
   pond: ['pond', 'drainage'],

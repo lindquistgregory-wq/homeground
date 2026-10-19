@@ -33,8 +33,10 @@ const names = (hs: ActiveHerd[]) => {
   return `${n.slice(0, 3).join(', ')}${n.length > 3 ? ` and ${n.length - 3} more` : ''}`;
 };
 
-export function livestockAlerts(periods: ForecastPeriod[], herds: ActiveHerd[], opts: { summerRhPct?: number } = {}): AnimalAlert[] {
+export function livestockAlerts(periods: ForecastPeriod[], allHerds: ActiveHerd[], opts: { summerRhPct?: number } = {}): AnimalAlert[] {
   const out: AnimalAlert[] = [];
+  // Pond fish and worm bins aren't helped by this advice (shade, troughs, closing up); their care notes cover the weather.
+  const herds = allHerds.filter((h) => h.animal.kind !== 'aquatic' && h.animal.kind !== 'invertebrate');
   if (!herds.length) return out;
   for (const p of periods) {
     const day = dayLabel(p.start);

@@ -2,7 +2,7 @@
 
 ## The bundled database
 
-`packages/core/src/livestock/` holds 21 species: 8 poultry and waterfowl, 5 rabbits, goats and sheep, 3 pigs and cattle, honeybees, and 4 working or fiber animals (guardian dog, donkey and llama, plus alpacas). Each entry records:
+`packages/core/src/livestock/` holds 25 species: 8 poultry and waterfowl, 5 rabbits, goats and sheep, 3 pigs and cattle, honeybees, 5 working or fiber animals (guardian dog, donkey and llama, alpacas, and barn cats), horses, composting worms and farm-pond fish. Each entry records:
 - purposes and social needs (minimum group, whether a male is needed, whether it can live alone);
 - heat and cold thresholds, with the index each uses;
 - indoor, outdoor and pasture space, fencing, and which map objects can house it;
@@ -19,7 +19,14 @@ The data follows the conventions of `packages/data/knowledge/homestead.json`:
 
 Citations live in `sources.json`. Each source is tagged as extension, government or research (preferred), or industry or secondary. The app shows the tag, so a hatchery or magazine figure is never presented as an extension figure.
 
-**Left out of version 1:** horses, bison, deer, aquaculture and exotic species.
+**Added 2026-10-19** after a review of homestead sources (Iowa State CFSPH, Colorado State and Texas A&M small-acreage guides, NCAT ATTRA, the Farmers' Almanac, and homesteading guides):
+- **Horses** (including ponies): 12 × 12 ft stall (UC Davis), 1.5–2 acres of managed pasture each (Extension Horses; far more on dryland), 8–14 gal of water a day (UC Cooperative Extension), a companion (Government of Jersey welfare code), and about 11 months' gestation (Merck). Heat uses the equine index, °F plus % humidity, at 120, the most cautious of the extension cutoffs (UGA 120, NMSU 130 and 150).
+- **Barn cats:** at least two together, two weeks' settling in for adults and a month for kittens, daily food and water (Sacramento County Animal Care). There's no extension figure for space.
+- **Composting worms** (red wigglers): counted by the pound; 1 sq ft of bin per pound, 59–77 °F (NC State AG-473-18).
+- **Farm-pond fish** (bluegill, bass, catfish): about 550 per surface acre for unfertilized ponds of 1 acre or more (Mississippi State; Kentucky Fish & Wildlife is similar). Weather alerts skip fish and worms, since the advice is for land animals.
+- **Ducks:** Pekin and Muscovy are listed as breeds.
+
+**Still left out:** bison, deer and elk, pheasants and peafowl, and exotic species. They're uncommon on homesteads, and the care sources are thinner or the permits are specialised.
 
 ## Licence position
 

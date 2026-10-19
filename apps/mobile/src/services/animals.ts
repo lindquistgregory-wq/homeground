@@ -39,9 +39,10 @@ export function herdCalendars(herds: Herd[], design: Design | undefined, site: S
   for (const h of herds.filter(isCurrent)) {
     const animal = animalById(h.speciesId);
     const o = design?.objects.find((x) => x.id === h.objectId);
-    if (!animal || !o) continue;
+    // Free-roaming herds (no housing object) still get their care calendar.
+    if (!animal || (!o && h.objectId)) continue;
     const events = animalCalendar(animal, { arrivedDoy: doyOfIso(h.arrivedOn), bredDoy: doyOfIso(h.bredOn) }, { frost: site.frost, showProcessing, peakSummerMaxF: site.peakSummerMaxF });
-    out.push({ herd: h, animal, housing: housingName(o), events });
+    out.push({ herd: h, animal, housing: o ? housingName(o) : 'on the property', events });
   }
   return out;
 }
@@ -66,8 +67,8 @@ export async function activeHerds(parcelId: string): Promise<ActiveHerd[]> {
     if (!animal) continue;
     if (!designs.has(h.designId)) designs.set(h.designId, await getDesign(h.designId));
     const o = designs.get(h.designId)?.objects.find((x) => x.id === h.objectId);
-    if (!o) continue; // housing no longer in the design
-    out.push({ herdId: h.id, animal, count: h.count, housingName: housingName(o) });
+    if (!o && h.objectId) continue; // housing no longer in the design
+    out.push({ herdId: h.id, animal, count: h.count, housingName: o ? housingName(o) : 'on the property' });
   }
   return out;
 }

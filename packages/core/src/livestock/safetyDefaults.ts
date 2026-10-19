@@ -36,6 +36,11 @@ export const fallbackHumidity = (summerRhPct?: number) => Math.max(70, summerRhP
 export function heatStress(a: AnimalSpec, tempF: number, rhPct?: number, summerRhPct?: number): { stressed: boolean; basis?: string } {
   const h = a.heat;
   if (h.airOnsetF !== undefined && tempF >= h.airOnsetF) return { stressed: true, basis: `${Math.round(tempF)} °F ≥ ${h.airOnsetF} °F` };
+  if (h.tPlusRhOnset !== undefined) {
+    const rh = rhPct ?? fallbackHumidity(summerRhPct);
+    const v = tempF + rh;
+    if (v >= h.tPlusRhOnset) return { stressed: true, basis: `heat index (°F + humidity) ${Math.round(v)} ≥ ${h.tPlusRhOnset}${rhPct === undefined ? ', assuming humid air' : ''}` };
+  }
   if (h.thiOnset !== undefined) {
     const rh = rhPct ?? fallbackHumidity(summerRhPct);
     const v = thi(tempF, rh);

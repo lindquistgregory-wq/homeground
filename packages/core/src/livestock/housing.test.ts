@@ -85,3 +85,25 @@ test('counts read naturally: colonies for bees, the species name otherwise', asy
   assert.equal(countOf(hens, 6), '6 laying hens');
   assert.equal(countOf(undefined, 3), '3 animals');
 });
+
+test('new homestead species: horse heat index, pond stocking, worms by the pound, roaming guardians', async () => {
+  const { heatStress, housingCapacity, livestockAlerts } = await import('./index');
+  const horses = animalById('horses')!;
+  // Temperature + humidity: 80 °F at 40% = 120 (the most cautious extension cutoff) → stressed; 75 + 40 = 115 → fine.
+  assert.equal(heatStress(horses, 80, 40).stressed, true);
+  assert.equal(heatStress(horses, 75, 40).stressed, false);
+  assert.match(heatStress(horses, 80, 40).basis!, /humidity/);
+  const pond = { ...newObject('pond', { lat: 35.7, lon: -79.8 }, 'p'), width: 64, length: 64 }; // just over an acre (circle ≈ 0.8 acre)
+  const fish = housingCapacity(animalById('pond_fish')!, pond, frame, 300);
+  assert.equal(fish.limitingFactor, 'pond');
+  assert.ok(fish.fits! > 300 && fish.fits! < 600, String(fish.fits));
+  const bin = { ...newObject('worm-bin', { lat: 35.7, lon: -79.8 }, 'w'), width: 0.61, length: 0.61 }; // 2 × 2 ft
+  assert.equal(housingCapacity(animalById('composting_worms')!, bin, frame, 4).fits, 4, '4 lb in a 4 sq ft bin');
+  const { countOf } = await import('./index');
+  assert.equal(countOf(animalById('composting_worms')!, 3), '3 lb of worms');
+  assert.ok(animalById('guardian_dog')!.housingObjects.includes('chicken-run'), 'guardian dogs can live with the flock');
+  // Pond fish and worms get no weather alerts (the advice is for land animals).
+  const hot = [{ start: '2026-07-01T12:00:00-04:00', end: '2026-07-01T18:00:00-04:00', isNight: false, temperatureF: 99, relativeHumidityPct: 60 }] as never;
+  assert.equal(livestockAlerts(hot, [{ herdId: 'f', animal: animalById('pond_fish')!, count: 500, housingName: 'Pond' }]).length, 0);
+  assert.equal(livestockAlerts(hot, [{ herdId: 'h', animal: horses, count: 2, housingName: 'Pasture' }]).length, 1);
+});
