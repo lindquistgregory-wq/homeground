@@ -141,6 +141,7 @@ export default function HousingPlanner() {
             );
           })}
           <Body muted>Weather alerts cover herds marked as on the land. Turn on alerts in More.</Body>
+          <Button title="Records: health, eggs, breeding" kind="secondary" icon="clipboard-text-outline" onPress={() => router.push('/records')} />
         </Card>
       )}
 

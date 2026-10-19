@@ -27,6 +27,8 @@ Off by default. If you turn on *Keep usage statistics on this phone*, Plotwright
 
 The planner's household details (ages, sex and activity level, used to estimate food needs) and any animal or pet health records are stored **only on your phone and in your own cloud account**. The developer never receives them, and they are never shared with advertisers, affiliate partners or anyone else, or used to choose ads. Safety acknowledgements ("Got it" on a safety note) and your acceptance of the terms are stored the same way.
 
+Animal records (individual animals and pets, production logs, breeding and health records) follow the same rule. Health reminders are scheduled on your phone by its own notification system from the dates you enter; nothing is sent to a server. A vet history or CSV leaves the phone only when you share it yourself.
+
 ## Children
 
 Plotwright is for adults: you must be 18 or older to use it (the on-device Gemini Nano features also require it). It isn't directed at children.
@@ -34,7 +36,7 @@ Plotwright is for adults: you must be 18 or older to use it (the on-device Gemin
 ## Your choices
 
 - **Delete all my data** in Settings erases everything on the phone, including saved offline map packs and usage statistics, and deletes your cloud copy.
-- Export your designs and plans at any time (PDF, GeoJSON, KML, DXF).
+- Export your designs and plans at any time (PDF, GeoJSON, KML, DXF), and your animal records as CSV or JSON.
 - Change ad privacy choices in Settings (*Ad privacy choices*, when your region requires it) and in your phone's tracking settings.
 
 ## Contact

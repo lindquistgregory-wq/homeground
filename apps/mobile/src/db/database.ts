@@ -230,6 +230,32 @@ const MIGRATIONS: string[] = [
   CREATE INDEX IF NOT EXISTS herds_parcel ON herds(parcel_id);
   CREATE INDEX IF NOT EXISTS herds_object ON herds(design_id, object_id);
   `,
+  // 10 — animal records (free): individuals and pets, production logs, breeding and health records.
+  // Indexed fields are columns; the rest of each record is JSON in `data`, so fields can be added
+  // later without a migration. parcel_id is null for household pets.
+  `
+  CREATE TABLE IF NOT EXISTS animals (
+    id TEXT PRIMARY KEY, parcel_id TEXT, herd_id TEXT, species_id TEXT NOT NULL, status TEXT NOT NULL,
+    data TEXT NOT NULL, created_at TEXT NOT NULL, updated_hlc TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS animals_parcel ON animals(parcel_id);
+  CREATE INDEX IF NOT EXISTS animals_herd ON animals(herd_id);
+  CREATE TABLE IF NOT EXISTS animal_logs (
+    id TEXT PRIMARY KEY, parcel_id TEXT, animal_id TEXT, herd_id TEXT, date TEXT NOT NULL, kind TEXT NOT NULL,
+    data TEXT NOT NULL, created_at TEXT NOT NULL, updated_hlc TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS animal_logs_owner ON animal_logs(animal_id, herd_id, date);
+  CREATE TABLE IF NOT EXISTS breeding_records (
+    id TEXT PRIMARY KEY, parcel_id TEXT, animal_id TEXT, herd_id TEXT, date TEXT NOT NULL,
+    data TEXT NOT NULL, created_at TEXT NOT NULL, updated_hlc TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS breeding_owner ON breeding_records(animal_id, herd_id);
+  CREATE TABLE IF NOT EXISTS health_records (
+    id TEXT PRIMARY KEY, parcel_id TEXT, animal_id TEXT, herd_id TEXT, date TEXT NOT NULL,
+    data TEXT NOT NULL, created_at TEXT NOT NULL, updated_hlc TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS health_owner ON health_records(animal_id, herd_id);
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -285,7 +311,7 @@ export class SqliteHttpCache implements KeyValueCache {
 export async function maxStoredHlc(): Promise<string | undefined> {
   const db = await getDb();
   const r = await db.getFirstAsync<{ m: string | null }>(
-    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs UNION ALL SELECT MAX(updated_hlc) FROM plantings UNION ALL SELECT MAX(updated_hlc) FROM sensors UNION ALL SELECT MAX(updated_hlc) FROM sensor_days UNION ALL SELECT MAX(updated_hlc) FROM planner_goals UNION ALL SELECT MAX(updated_hlc) FROM tasks UNION ALL SELECT MAX(updated_hlc) FROM custom_plants UNION ALL SELECT MAX(updated_hlc) FROM herds)',
+    'SELECT MAX(m) AS m FROM (SELECT MAX(updated_hlc) AS m FROM parcels UNION ALL SELECT MAX(updated_hlc) FROM site_profiles UNION ALL SELECT MAX(updated_hlc) FROM designs UNION ALL SELECT MAX(updated_hlc) FROM plantings UNION ALL SELECT MAX(updated_hlc) FROM sensors UNION ALL SELECT MAX(updated_hlc) FROM sensor_days UNION ALL SELECT MAX(updated_hlc) FROM planner_goals UNION ALL SELECT MAX(updated_hlc) FROM tasks UNION ALL SELECT MAX(updated_hlc) FROM custom_plants UNION ALL SELECT MAX(updated_hlc) FROM herds UNION ALL SELECT MAX(updated_hlc) FROM animals UNION ALL SELECT MAX(updated_hlc) FROM animal_logs UNION ALL SELECT MAX(updated_hlc) FROM breeding_records UNION ALL SELECT MAX(updated_hlc) FROM health_records)',
   );
   return r?.m ?? undefined;
 }
@@ -294,6 +320,6 @@ export async function maxStoredHlc(): Promise<string | undefined> {
 export async function deleteAllLocalData(): Promise<void> {
   const db = await getDb();
   await db.execAsync(
-    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings; DELETE FROM sensors; DELETE FROM readings; DELETE FROM sensor_days; DELETE FROM ble_aliases; DELETE FROM planner_goals; DELETE FROM planner_messages; DELETE FROM planner_drafts; DELETE FROM tasks; DELETE FROM custom_plants; DELETE FROM herds;',
+    'DELETE FROM site_profiles; DELETE FROM parcels; DELETE FROM http_cache; DELETE FROM user_parcel_endpoints; DELETE FROM sync_pending; DELETE FROM kv; DELETE FROM designs; DELETE FROM design_versions; DELETE FROM sun_checks; DELETE FROM plantings; DELETE FROM sensors; DELETE FROM readings; DELETE FROM sensor_days; DELETE FROM ble_aliases; DELETE FROM planner_goals; DELETE FROM planner_messages; DELETE FROM planner_drafts; DELETE FROM tasks; DELETE FROM custom_plants; DELETE FROM herds; DELETE FROM animals; DELETE FROM animal_logs; DELETE FROM breeding_records; DELETE FROM health_records;',
   );
 }

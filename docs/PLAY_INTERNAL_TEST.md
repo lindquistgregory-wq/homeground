@@ -65,7 +65,7 @@ Play may also ask you to fill in parts of **App content** before the first rollo
 
 - **Privacy policy:** the published `docs/PRIVACY.md` (it's linked from the app's Settings and paywall).
 - **Ads:** yes, the app contains ads (free plan).
-- **Data safety:** approximate and precise location (used on the device for the property map; not collected by a server); AdMob's collection on the free plan (device identifiers, coarse location, app interactions, advertising data). Nothing for the app's own usage statistics, which never leave the phone.
+- **Data safety:** approximate and precise location (used on the device for the property map; not collected by a server); AdMob's collection on the free plan (device identifiers, coarse location, app interactions, advertising data). Nothing for the app's own usage statistics, which never leave the phone. Animal and pet records (including health records) stay on the phone and in the user's own cloud account; the developer doesn't collect them. Review this with counsel when declaring "Health info".
 - **Content rating** questionnaire, **target audience** (adults; not designed for children), **news app** (no), **government app** (no), **financial features** (none).
 
 ## 5. What testers will and won't see
