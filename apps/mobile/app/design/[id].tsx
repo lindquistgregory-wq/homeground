@@ -10,7 +10,7 @@ import {
   OBJECT_LIBRARY, bbox, estimatePv, footprintAreaM2, footprintLonLat, formatArea, formatLength, materialList, newObject, objectType,
   project, siteSuitability, snapRotationToBoundary, snapToContour, snapToGridM, unproject, validateDesign,
   SCENARIO_SEASONS, compareScenarios, scenarioLabel, sunPeriodForSeason,
-  ackKey, safetyNotesFor, safetyProximity, type SafetyNote, type SafetyWarning,
+  HOUSING_KINDS, ackKey, safetyNotesFor, safetyProximity, type SafetyNote, type SafetyWarning,
   type Design, type DesignObject, type DesignWarning, type LocalFrame, type ObjectCategory, type ScenarioSeason, type SitingTarget,
 } from '@plotwright/core';
 import { OPENFREEMAP_STYLE_URL, USGS_HILLSHADE, USGS_IMAGERY, solarClimatology } from '@plotwright/providers';
@@ -35,7 +35,8 @@ import {
 import { exportDesign, type ExportFormat } from '../../src/services/export';
 import { activePlantings, cropShadeObjects, isPlantable } from '../../src/services/garden';
 import { deletePlantingsForBed, plantingsForParcel, type Planting } from '../../src/db/plantings';
-import { deleteHerdsForObject } from '../../src/db/herds';
+import { deleteHerdsForObject, herdsForParcel, type Herd } from '../../src/db/herds';
+import { herdLabel, isCurrent } from '../../src/services/animals';
 import { listSensors } from '../../src/db/sensors';
 import { newId } from '../../src/services/identity';
 import { useSettings } from '../../src/services/settings';
@@ -84,6 +85,8 @@ export default function DesignScreen() {
   const [siting, setSiting] = useState<{ target: SitingTarget; geo: ReturnType<typeof heatmapGeoJSON>; factors: string[] } | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [plantings, setPlantings] = useState<Planting[]>([]);
+  const [herds, setHerds] = useState<Herd[]>([]);
+  const animalsOn = useSettings((s) => s.animals) === 'yes';
   const [sensorPins, setSensorPins] = useState<GeoJSON.FeatureCollection<GeoJSON.Point, { label: string }> | null>(null);
   const [shadeSeason, setShadeSeason] = useState({ fromDoy: 180, toDoy: 288 });
   const [offlineImagery, setOfflineImagery] = useState<{ template: string; maxZoom: number } | undefined>(undefined);
@@ -120,6 +123,8 @@ export default function DesignScreen() {
   useFocusEffect(
     useCallback(() => {
       void plantingsForParcel(id).then((ps) => setPlantings(activePlantings(ps, new Date().getFullYear())));
+      // Herds change in the housing planner.
+      void herdsForParcel(id).then((hs) => setHerds(hs.filter(isCurrent)));
       // Pinned sensors, shown as dots so the plan shows where readings come from.
       void listSensors(id).then((ss) => {
         const pinned = ss.filter((x) => x.location);
@@ -472,6 +477,7 @@ export default function DesignScreen() {
             onSnapContour={objectType(selected.kind)?.followsContour && ent.has('layers.advancedTerrain') && analysis?.terrain.status === 'ok' && frame ? () => replaceSelected(snapToContour(selected, analysis.ground, frame)) : undefined}
             onDelete={() => {
               const planted = plantings.filter((p) => p.bedObjectId === selected.id).length;
+              const housed = herds.filter((h) => h.designId === design.id && h.objectId === selected.id);
               const remove = async () => {
                 update(design.objects.filter((o) => o.id !== selected.id), [selected]);
                 setSelectedId(null);
@@ -481,13 +487,19 @@ export default function DesignScreen() {
                   setPlantings((ps) => ps.filter((p) => p.bedObjectId !== selected.id));
                 }
                 // Herds housed in it go too, so they don't keep raising alerts.
-                await deleteHerdsForObject(design.id, selected.id);
+                if (housed.length) {
+                  await deleteHerdsForObject(design.id, selected.id);
+                  setHerds((hs) => hs.filter((h) => h.objectId !== selected.id));
+                }
               };
-              if (planted) Alert.alert('Delete bed?', `This also removes its ${planted} planting${planted === 1 ? '' : 's'} and their history.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => void remove() }]);
+              if (housed.length) Alert.alert('Delete housing?', `This also removes ${housed.map((h) => herdLabel(h)).join(' and ')} living here.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => void remove() }]);
+              else if (planted) Alert.alert('Delete bed?', `This also removes its ${planted} planting${planted === 1 ? '' : 's'} and their history.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => void remove() }]);
               else void remove();
             }}
             onPlan={isPlantable(selected) && !design.scenario ? () => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } }) : undefined}
             planted={plantings.filter((p) => p.bedObjectId === selected.id).length}
+            onHouse={animalsOn && HOUSING_KINDS.has(selected.kind) && !design.scenario ? () => router.push({ pathname: '/housing/[id]', params: { id: parcel.id, objectId: selected.id } }) : undefined}
+            housed={herds.filter((h) => h.designId === design.id && h.objectId === selected.id)}
           />
         ) : <Body muted>Tap an object on the map to edit it.</Body>)}
 
@@ -642,9 +654,9 @@ function Stepper({ label, value, step, min, units, onChange }: { label: string; 
   );
 }
 
-function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted }: {
+function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted, onHouse, housed }: {
   o: DesignObject; units: 'imperial' | 'metric'; areaM2: number; notes: SafetyNote[]; safety: SafetyWarning[]; onPatch: (p: Partial<DesignObject>) => void;
-  onMove: () => void; onSnapAngle: () => void; onSnapContour?: () => void; onDelete: () => void; onPlan?: () => void; planted: number;
+  onMove: () => void; onSnapAngle: () => void; onSnapContour?: () => void; onDelete: () => void; onPlan?: () => void; planted: number; onHouse?: () => void; housed: Herd[];
 }) {
   const t = useTheme();
   const type = objectType(o.kind);
@@ -652,11 +664,12 @@ function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSna
   const step = units === 'imperial' ? 0.3048 : 0.25;
   return (
     <Card title={o.label ?? type?.name ?? o.kind}>
-      <Body muted>{formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}{planted ? ` · ${planted} planting${planted === 1 ? '' : 's'} this year` : ''}</Body>
+      <Body muted>{formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}{planted ? ` · ${planted} planting${planted === 1 ? '' : 's'} this year` : ''}{housed.length ? ` · ${housed.map((h) => herdLabel(h)).join(', ')}` : ''}</Body>
       {/* Point of use, but quiet: only notes still waiting for 'Got it' and distance problems sit up top. */}
       {notes.filter((n) => n.acknowledge && !acks[ackKey(n)]).map((n) => <SafetyNoteRow key={n.id} note={n} />)}
       {safety.map((w) => <SafetyLine key={w.kind} text={w.message} caution={w.level === 'caution'} />)}
       {onPlan && <Button title="Plan this bed: what grows best here" onPress={onPlan} />}
+      {onHouse && <Button title={housed.length ? 'Animals here: capacity and care' : 'Plan animals here: who fits and how many'} icon="paw" onPress={onHouse} />}
       {!o.polygon && o.shape === 'rect' && <Stepper label="Length" value={o.length} step={step} min={0.3} units={units} onChange={(v) => onPatch({ length: v })} />}
       {!o.polygon && <Stepper label={o.shape === 'circle' ? 'Diameter' : 'Width'} value={o.width} step={step} min={0.1} units={units} onChange={(v) => onPatch(o.shape === 'circle' ? { width: v, length: v } : { width: v })} />}
       <Stepper label="Height" value={o.height} step={step} min={0} units={units} onChange={(v) => onPatch({ height: v })} />

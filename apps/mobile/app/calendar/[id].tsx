@@ -1,9 +1,9 @@
 /**
  * Planting calendar (§7.3) for everything planned or planted on a property this year: the next six
  * weeks of tasks, the whole season month by month, and frost/heat/wind alerts from the NWS forecast
- * for crops already in the ground.
+ * for crops already in the ground. With animal features on, herds' care tasks and weather alerts too.
  */
-import { formatDoy, plantById, upcomingTasks, type PlantCalendar } from '@plotwright/core';
+import { formatDoy, formatWindow, plantById, upcomingAnimalTasks, upcomingTasks, type PlantCalendar } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
@@ -12,6 +12,9 @@ import { useEntitlements } from '../../src/billing/entitlements';
 import { Chip, StaleProfileNotice } from '../../src/components/plants';
 import { EmptyState, MoreInfo, Pill } from '../../src/components/kit';
 import { PlantArt } from '../../src/components/PlantArt';
+import { AnimalArt } from '../../src/components/AnimalArt';
+import { herdsForParcel, type Herd } from '../../src/db/herds';
+import { herdCalendars, herdLabel } from '../../src/services/animals';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { alertsEnabled, alertsForParcel, type ParcelAlerts } from '../../src/services/alerts';
 import { activePlantings, bedName, calendarFor } from '../../src/services/garden';
@@ -39,6 +42,9 @@ export default function CalendarScreen() {
   const [alerts, setAlerts] = useState<ParcelAlerts | null>(null);
   const [alertsError, setAlertsError] = useState<string | null>(null);
   const [notifyOn, setNotifyOn] = useState<boolean | null>(null);
+  const animalsOn = useSettings((s) => s.animals) === 'yes';
+  const showProcessing = useSettings((s) => s.showProcessing);
+  const [herds, setHerds] = useState<Herd[]>([]);
   const year = new Date().getFullYear();
 
   const active = useMemo(() => (state ? activePlantings(state.plantings, year) : []), [state, year]);
@@ -58,6 +64,11 @@ export default function CalendarScreen() {
     }
     return out;
   }, [state, active, risk, dynamic, ent]);
+
+  useEffect(() => {
+    if (state && animalsOn) void herdsForParcel(state.parcel.id).then(setHerds);
+  }, [state, animalsOn]);
+  const herdCals = useMemo(() => (state && animalsOn ? herdCalendars(herds, state.design, state.site, showProcessing) : []), [state, animalsOn, herds, showProcessing]);
 
   useEffect(() => {
     if (!state?.profile) return;
@@ -86,19 +97,48 @@ export default function CalendarScreen() {
         {!state.profile ? <Body muted>Build the site profile first.</Body>
           : alertsError ? <Body muted>Couldn’t check the forecast ({alertsError}).</Body>
           : !alerts ? <ActivityIndicator accessibilityLabel="Checking the forecast" />
-            : alerts.alerts.length ? alerts.alerts.map((a, i) => (
+            : alerts.alerts.length || (animalsOn && alerts.animalAlerts.length) ? [...alerts.alerts, ...(animalsOn ? alerts.animalAlerts : [])].map((a, i) => (
               <View key={i} style={{ marginBottom: 8 }}>
                 <Text style={{ color: a.kind === 'heat' || a.kind === 'wind' ? t.warn : t.bad, fontWeight: '700' }}>{a.title}</Text>
                 <Body>{a.body}</Body>
               </View>
             )) : (
-              <Body muted>{active.some((p) => p.status === 'planted') ? 'No frost, heat or wind trouble in the 7-day forecast for what’s planted.' : 'Mark crops as planted in the bed planner to get alerts for them.'}</Body>
+              <Body muted>
+                {active.some((p) => p.status === 'planted') || herdCals.some((c) => c.herd.status === 'active')
+                  ? `No frost, heat or wind trouble in the 7-day forecast for what’s ${herdCals.some((c) => c.herd.status === 'active') ? 'planted or living here' : 'planted'}.`
+                  : `Mark crops as planted in the bed planner${animalsOn ? ' (or animals as arrived in their housing)' : ''} to get alerts for them.`}
+              </Body>
             )}
         {alerts?.forecastNote && <Text style={{ color: t.muted, fontSize: 12 }}>{alerts.forecastNote}</Text>}
         <Text style={{ color: t.muted, fontSize: 12 }}>Not an official warning. For watches and warnings, see weather.gov.</Text>
         <Text style={{ color: t.muted, fontSize: 12 }}>Forecast: National Weather Service (public domain).</Text>
         {notifyOn === false && <Button title="Turn on alert notifications" kind="secondary" onPress={() => router.push('/settings')} />}
       </Card>
+
+      {herdCals.length > 0 && (() => {
+        const soonAnimal = upcomingAnimalTasks(herdCals.map((c) => ({ herdId: c.herd.id, animalId: c.animal.id, events: c.events })), today, Math.min(365, today + 42));
+        const byHerd = new Map(herdCals.map((c) => [c.herd.id, c]));
+        return (
+          <Card title="Animal care, next 6 weeks" icon="paw-outline">
+            {soonAnimal.length ? soonAnimal.map((e, i) => {
+              const c = byHerd.get(e.herdId)!;
+              return (
+                <View key={i} style={{ flexDirection: 'row', gap: 12, marginBottom: 10 }}>
+                  <AnimalArt animalId={e.animalId} size={40} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: t.text, fontWeight: '600' }}>{c.animal.commonName} ({c.housing}): {e.label}</Text>
+                    <Body muted>{formatWindow(e)} · {e.basis}</Body>
+                  </View>
+                </View>
+              );
+            }) : <Body muted>No animal care dates in the next six weeks.</Body>}
+            <MoreInfo label="Your herds">
+              {herdCals.map((c) => <Body key={c.herd.id} muted>{herdLabel(c.herd, c.animal)} in {c.housing} · {c.herd.status === 'active' ? 'on the land' : 'planned'}</Body>)}
+              <Body muted>Dates come from your frost dates and each herd’s arrival or breeding date. They’re reminders, not veterinary schedules.</Body>
+            </MoreInfo>
+          </Card>
+        );
+      })()}
 
       <SensorCard parcelId={state.parcel.id} profile={state.profile} year={year} />
 

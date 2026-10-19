@@ -24,7 +24,7 @@ export interface Capacity {
 
 export function housingCapacity(a: AnimalSpec, o: DesignObject, frame: LocalFrame, planned: number): Capacity {
   const sqft = footprintAreaM2(o, frame) * SQFT_PER_M2;
-  if (o.kind === 'beehive') return { fits: 1, planned, limitingFactor: 'hives', basis: 'One colony per hive.' };
+  if (o.kind === 'beehive' && a.kind === 'pollinator') return { fits: 1, planned, limitingFactor: 'hives', basis: 'One colony per hive.' };
   const per = (where: 'indoor' | 'outdoor') => spacePerHeadSqFt(a, where);
   if (INDOOR.has(o.kind) && per('indoor')) {
     const each = per('indoor')!;

@@ -26,7 +26,9 @@ import { localOffsetMin } from '../../src/services/sensorInsights';
 import { useSettings } from '../../src/services/settings';
 import { calibrateLightSensor, getCalibration, type StoredCalibration } from '../../src/services/sunCalibration';
 import { backfillStation, clearStationHistoryFlags, listenTempest, refreshStation } from '../../src/services/stations';
-import type { DesignObject } from '@plotwright/core';
+import { HOUSING_KINDS, animalById, housingSensorLimits, type DesignObject, type SensorLimits } from '@plotwright/core';
+import { herdsForParcel } from '../../src/db/herds';
+import { housingName, isCurrent } from '../../src/services/animals';
 
 const EXPOSURES: Exposure[] = ['open-air', 'shaded-air', 'greenhouse', 'soil', 'indoor'];
 const RANGES = { '24h': 86_400_000, '7d': 7 * 86_400_000, '30d': 30 * 86_400_000 } as const;
@@ -41,6 +43,9 @@ export default function SensorDetail() {
   const [s, setS] = useState<SensorRecord | null>(null);
   const [parcel, setParcel] = useState<ParcelRecord | null>(null);
   const [beds, setBeds] = useState<DesignObject[]>([]);
+  const [housing, setHousing] = useState<DesignObject[]>([]);
+  const [limits, setLimits] = useState<SensorLimits | null>(null);
+  const animalsOn = useSettings((st) => st.animals) === 'yes';
   const [others, setOthers] = useState<SensorRecord[]>([]);
   const [latest, setLatest] = useState<Awaited<ReturnType<typeof latestValues>>>({});
   const [metric, setMetric] = useState<Metric | null>(null);
@@ -57,7 +62,15 @@ export default function SensorDetail() {
     setS(x);
     const p = await getParcel(x.parcelId);
     setParcel(p ?? null);
-    if (p) setBeds((await getOrCreateDesign(p.id)).objects.filter(isPlantable));
+    if (p) {
+      const objs = (await getOrCreateDesign(p.id)).objects;
+      setBeds(objs.filter(isPlantable));
+      setHousing(animalsOn ? objs.filter((o) => HOUSING_KINDS.has(o.kind) && o.kind !== 'beehive') : []);
+      // Suggested limits from the animals living (or planned) where this sensor is.
+      const here = x.bedObjectId ? (await herdsForParcel(p.id)).filter((h) => isCurrent(h) && h.objectId === x.bedObjectId) : [];
+      const animals = [...new Set(here.map((h) => h.speciesId))].flatMap((sid) => animalById(sid) ?? []);
+      setLimits(animals.length ? housingSensorLimits(animals) : null);
+    }
     setOthers((await listSensors(x.parcelId)).filter((o) => o.id !== x.id && o.location));
     const l = await latestValues(x.id);
     setLatest(l);
@@ -65,7 +78,7 @@ export default function SensorDetail() {
     setCal(await getCalibration(x.id));
     const rh = await readingsBetween(x.id, Date.now() - 86_400_000, Date.now(), 'humidity');
     setWetHours(rh.length >= 6 ? leafWetHours(rh.map((r) => [r.t, r.value])) : null);
-  }, [id]);
+  }, [id, animalsOn]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -100,6 +113,8 @@ export default function SensorDetail() {
   const save = async (patch: Partial<SensorRecord>) => {
     const next = await saveSensor({ ...s, ...patch });
     setS(next);
+    // Moving it into (or out of) animal housing changes the suggested limits.
+    if ('bedObjectId' in patch) void load();
   };
   const fr = freshness(s.lastSeen, Date.now(), EXPECTED_MS[s.kind] ?? 3_600_000);
   const temp = latest.temperature?.value, rh = latest.humidity?.value;
@@ -160,12 +175,13 @@ export default function SensorDetail() {
             />
           </View>
           <Button title={pinning ? 'Tap the map where the sensor is…' : s.location ? 'Move the pin' : 'Pin it on the map'} kind="secondary" onPress={() => setPinning((p) => !p)} />
-          {beds.length > 0 && (
+          {(beds.length > 0 || housing.length > 0) && (
             <View>
-              <Text style={{ color: t.text, fontWeight: '600', marginTop: 6 }}>In a bed?</Text>
+              <Text style={{ color: t.text, fontWeight: '600', marginTop: 6 }}>{housing.length ? 'In a bed or animal housing?' : 'In a bed?'}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                 <Chip label="None" active={!s.bedObjectId} onPress={() => void save({ bedObjectId: undefined })} />
                 {beds.map((b, i) => <Chip key={b.id} label={bedName(b, i)} active={s.bedObjectId === b.id} onPress={() => void save({ bedObjectId: b.id, location: s.location ?? { lon: b.center[0], lat: b.center[1] } })} />)}
+                {housing.map((b) => <Chip key={b.id} label={housingName(b)} active={s.bedObjectId === b.id} onPress={() => void save({ bedObjectId: b.id, location: s.location ?? { lon: b.center[0], lat: b.center[1] } })} />)}
               </View>
             </View>
           )}
@@ -198,8 +214,8 @@ export default function SensorDetail() {
         </Card>
       )}
 
-      {(s.exposure === 'greenhouse' || s.exposure === 'open-air' || s.exposure === 'soil') && !isStation && (
-        <ThresholdsCard s={s} imperial={imperial} locked={!ent.has('sensors.greenhouseAlerts')} onSave={(thresholds) => void save({ thresholds })} />
+      {(s.exposure === 'greenhouse' || s.exposure === 'open-air' || s.exposure === 'soil' || limits) && !isStation && (
+        <ThresholdsCard key={s.bedObjectId ?? 'none'} s={s} imperial={imperial} locked={!ent.has('sensors.greenhouseAlerts')} limits={limits} onSave={(thresholds) => void save({ thresholds })} />
       )}
 
       {s.kind === 'ble' && !s.parentId && <BindkeyCard s={s} onSave={(mac) => void save({ mac })} />}
@@ -226,19 +242,29 @@ function HeightField({ value, imperial, onChange }: { value?: number; imperial: 
   );
 }
 
-function ThresholdsCard({ s, imperial, locked, onSave }: { s: SensorRecord; imperial: boolean; locked: boolean; onSave: (t: Thresholds | undefined) => void }) {
+function ThresholdsCard({ s, imperial, locked, limits, onSave }: { s: SensorRecord; imperial: boolean; locked: boolean; limits: SensorLimits | null; onSave: (t: Thresholds | undefined) => void }) {
   const t = useTheme();
   const [th, setTh] = useState<Thresholds>(s.thresholds ?? {});
+  // Fields are uncontrolled; bump the key to show suggested limits once they're filled in.
+  const [rev, setRev] = useState(0);
+  const toC = (f: number) => ((f - 32) * 5) / 9;
   const toShown = (c?: number) => (c === undefined ? '' : String(Math.round(imperial ? (c * 9) / 5 + 32 : c)));
   const fromShown = (v: string) => (v.trim() === '' || !Number.isFinite(Number(v)) ? undefined : imperial ? ((Number(v) - 32) * 5) / 9 : Number(v));
   const u = imperial ? '°F' : '°C';
   const field = (label: string, value: string, on: (v: string) => void) => (
-    <TextInput defaultValue={value} keyboardType="numbers-and-punctuation" placeholder={label} placeholderTextColor={t.muted} accessibilityLabel={label}
+    <TextInput key={`${label}-${rev}`} defaultValue={value} keyboardType="numbers-and-punctuation" placeholder={label} placeholderTextColor={t.muted} accessibilityLabel={label}
       editable={!locked} onEndEditing={(e) => on(e.nativeEvent.text)} style={[styles.input, { color: t.text, borderColor: t.border, opacity: locked ? 0.5 : 1 }]} />
   );
   return (
     <Card title="Alerts from this sensor">
       {locked ? <Body muted>Greenhouse and sensor threshold alerts are part of Homestead Pro.</Body> : <Body muted>Get a notification when a reading crosses a limit (checked when the app opens, and about twice a day in the background for stations). Turn on alerts in Settings.</Body>}
+      {limits && (
+        <View style={{ marginVertical: 4 }}>
+          <Body>Animals live here, so heat-stress and freezing alerts from this sensor are automatic once alerts are on.</Body>
+          {limits.basis.map((b) => <Body key={b} muted>{b}</Body>)}
+          {!locked && <Button title="Use these as my limits" kind="secondary" onPress={() => { const next = { ...th, minC: toC(limits.minF), maxC: limits.maxF !== undefined ? toC(limits.maxF) : th.maxC }; setTh(next); setRev((r) => r + 1); onSave(next); }} />}
+        </View>
+      )}
       {field(`Alert below (${u})`, toShown(th.minC), (v) => setTh((x) => ({ ...x, minC: fromShown(v) })))}
       {field(`Alert above (${u})`, toShown(th.maxC), (v) => setTh((x) => ({ ...x, maxC: fromShown(v) })))}
       {field('Alert when humidity is above (%)', th.maxRhPct === undefined ? '' : String(th.maxRhPct), (v) => setTh((x) => ({ ...x, maxRhPct: v.trim() ? Number(v) : undefined })))}

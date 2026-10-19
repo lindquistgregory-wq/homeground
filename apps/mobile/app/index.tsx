@@ -1,11 +1,11 @@
 /**
  * Home: a greeting, each property as a card (map with its name, key facts, four action tiles), and
- * what's coming up in the garden. With no property yet, an illustrated welcome and one button.
+ * what's coming up in the garden (and, with animal features on, for the herds). With no property yet, an illustrated welcome and one button.
  */
-import { formatArea, formatDoy, type EventKind } from '@plotwright/core';
+import { formatArea, formatDoy, windowOverlaps } from '@plotwright/core';
 import type { SiteProfile } from '@plotwright/providers';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -13,6 +13,7 @@ import { FactChips } from '../src/components/facts';
 import { Icon, type IconName } from '../src/components/Icon';
 import { FieldScene } from '../src/components/Illustration';
 import { PlantArt } from '../src/components/PlantArt';
+import { AnimalArt } from '../src/components/AnimalArt';
 import { plantById } from '@plotwright/core';
 import { EmptyState, Tile, TileRow } from '../src/components/kit';
 import { ParcelMap } from '../src/components/ParcelMap';
@@ -20,10 +21,10 @@ import { Text } from '../src/components/Text';
 import { Body, Button, Card, Skeleton, tapFeedback, useTheme } from '../src/components/ui';
 import { useEntitlements } from '../src/billing/entitlements';
 import { getSiteProfile, listParcels, type ParcelRecord } from '../src/db/parcels';
-import { homeSummary, todayDoy, type HomeSummary } from '../src/services/homeSummary';
+import { homeSummary, todayDoy, type HomeSummary, type HomeTask } from '../src/services/homeSummary';
 import { useSettings } from '../src/services/settings';
 
-const TASK_ICON: Record<EventKind, IconName> = {
+const TASK_ICON: Partial<Record<HomeTask['kind'], IconName>> = {
   'start-indoors': 'sprout-outline', 'harden-off': 'weather-sunny', transplant: 'shovel', 'direct-sow': 'seed-outline', plant: 'shovel',
   succession: 'repeat', 'fall-sow': 'seed-outline', 'fall-transplant': 'shovel', harvest: 'basket-outline', 'fall-harvest': 'basket-outline',
 };
@@ -43,6 +44,12 @@ export default function Home() {
   const [parcels, setParcels] = useState<ParcelRecord[] | null>(null);
   const [profiles, setProfiles] = useState<Record<string, SiteProfile | undefined>>({});
   const [summaries, setSummaries] = useState<Record<string, HomeSummary>>({});
+  const showProcessing = useSettings((s) => s.showProcessing);
+  // Read inside the focus effect without re-running it on every settings change.
+  const animalsRef = useRef(animals);
+  animalsRef.current = animals;
+  const processingRef = useRef(showProcessing);
+  processingRef.current = showProcessing;
 
   useFocusEffect(
     useCallback(() => {
@@ -53,7 +60,7 @@ export default function Home() {
         const profs = Object.fromEntries(await Promise.all(ps.map(async (p) => [p.id, await getSiteProfile(p.id)] as const)));
         if (cancelled) return;
         setProfiles(profs);
-        const sums = await Promise.all(ps.map(async (p) => [p.id, await homeSummary(p.id, profs[p.id]).catch(() => undefined)] as const));
+        const sums = await Promise.all(ps.map(async (p) => [p.id, await homeSummary(p.id, profs[p.id], 28, { animals: animalsRef.current === 'yes', showProcessing: processingRef.current }).catch(() => undefined)] as const));
         if (!cancelled) setSummaries(Object.fromEntries(sums.filter((s): s is readonly [string, HomeSummary] => !!s[1])));
       });
       return () => { cancelled = true; };
@@ -168,7 +175,7 @@ export default function Home() {
                   <>
                     <View style={{ height: 10 }} />
                     <TileRow>
-                      <Tile icon="paw" label="Animals" caption="Fit, housing, care" onPress={() => router.push({ pathname: '/animals', params: { parcelId: item.id } })} />
+                      <Tile icon="paw" label="Animals" caption={sum?.animals ? `${sum.animals} animal${sum.animals === 1 ? '' : 's'}` : 'Fit, housing, care'} onPress={() => router.push({ pathname: '/animals', params: { parcelId: item.id } })} />
                     </TileRow>
                   </>
                 )}
@@ -183,22 +190,22 @@ export default function Home() {
               ) : undefined}>
                 {tasks.length === 0 ? (
                   <Body muted>
-                    {sum.crops
+                    {sum.crops || sum.animals
                       ? (sum.next ? `Nothing in the next four weeks. Next: ${sum.next.plantName}, ${sum.next.label.toLowerCase()}, ${formatDoy(sum.next.start)}.` : 'Nothing in the next four weeks.')
-                      : 'Add crops to a bed and their sowing, planting and harvest dates show up here.'}
+                      : (animals === 'yes' ? 'Add crops to a bed or animals to their housing, and their dates show up here.' : 'Add crops to a bed and their sowing, planting and harvest dates show up here.')}
                   </Body>
                 ) : tasks.slice(0, 4).map((e, i) => (
                   <View key={i} style={[styles.task, i > 0 && { borderTopColor: t.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                    {plantById(e.plantId) ? <PlantArt plant={plantById(e.plantId)!} size={42} /> : <View style={[styles.taskIcon, { backgroundColor: t.accentSoft }]}><Icon name={TASK_ICON[e.kind]} size={20} color={t.accent} /></View>}
+                    {e.animalId ? <AnimalArt animalId={e.animalId} size={42} /> : plantById(e.plantId) ? <PlantArt plant={plantById(e.plantId)!} size={42} /> : <View style={[styles.taskIcon, { backgroundColor: t.accentSoft }]}><Icon name={TASK_ICON[e.kind] ?? 'paw'} size={20} color={t.accent} /></View>}
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: t.text, fontWeight: '600', fontSize: 15 }}>{e.plantName}</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Icon name={TASK_ICON[e.kind]} size={14} color={t.muted} />
+                        <Icon name={TASK_ICON[e.kind] ?? 'paw'} size={14} color={t.muted} />
                         <Text style={{ color: t.muted, fontSize: 13 }}>{e.label}</Text>
                       </View>
                     </View>
-                    <Text style={{ color: e.start <= d ? t.accent : t.muted, fontSize: 13, fontWeight: '600' }}>
-                      {e.start <= d ? `Now – ${formatDoy(e.end)}` : formatDoy(e.start)}
+                    <Text style={{ color: windowOverlaps(e, d, d) ? t.accent : t.muted, fontSize: 13, fontWeight: '600' }}>
+                      {windowOverlaps(e, d, d) ? `Now – ${formatDoy(e.end)}` : formatDoy(e.start)}
                     </Text>
                   </View>
                 ))}

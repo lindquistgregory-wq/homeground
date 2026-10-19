@@ -108,8 +108,9 @@ function Screens() {
       <Stack.Screen name="plants/edit" options={{ title: 'Your plant' }} />
       <Stack.Screen name="animals/index" options={{ title: 'Animals' }} />
       <Stack.Screen name="animals/[animalId]" options={{ title: 'Animal' }} />
+      <Stack.Screen name="housing/[id]" options={{ title: 'Animal housing' }} />
       <Stack.Screen name="garden/[id]" options={{ title: 'Bed planner' }} />
-      <Stack.Screen name="calendar/[id]" options={{ title: 'Planting calendar' }} />
+      <Stack.Screen name="calendar/[id]" options={{ title: 'Calendar' }} />
       <Stack.Screen name="sensors/index" options={{ title: 'Sensors' }} />
       <Stack.Screen name="sensors/scan" options={{ title: 'Find Bluetooth sensors' }} />
       <Stack.Screen name="sensors/station" options={{ title: 'Connect a weather station' }} />

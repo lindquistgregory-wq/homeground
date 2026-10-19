@@ -282,7 +282,7 @@ function SwitchRow({ label, hint, value, onChange }: { label: string; hint?: str
         <Text style={{ color: t.text, fontSize: 15, fontWeight: '600' }}>{label}</Text>
         {hint ? <Text style={{ color: t.muted, fontSize: 13 }}>{hint}</Text> : null}
       </View>
-      <Switch value={value} onValueChange={onChange} accessibilityLabel={label} trackColor={{ true: t.accent, false: t.border }} thumbColor={t.card} />
+      <Switch value={value} onValueChange={onChange} accessibilityLabel={label} trackColor={{ true: t.accent, false: t.border }} thumbColor={value ? '#ffffff' : t.muted} />
     </View>
   );
 }
