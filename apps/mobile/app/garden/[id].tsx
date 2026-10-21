@@ -18,7 +18,7 @@ import { Chip, FactorList, LayoutSvg, StaleProfileNotice, VerdictBadge } from '.
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { deletePlanting, savePlanting, type Planting, type PlantingStatus } from '../../src/db/plantings';
 import { computeSun, loadAnalysis, type ParcelAnalysis, type SunResult } from '../../src/services/analysis';
-import { activePlantings, bedConditions, bedHistory, bedName, cropShadeObjects, cropShadeSeason, isTreeSpot, plantsForSpot, type BedReport } from '../../src/services/garden';
+import { activePlantings, bedConditions, bedHistory, bedName, cropShadeObjects, cropShadeSeason, isSpacedSpot, plantsForSpot, type BedReport } from '../../src/services/garden';
 import { useGarden } from '../../src/services/useGarden';
 import { calibratedSunHours } from '@plotwright/core';
 import { listSensors } from '../../src/db/sensors';
@@ -207,7 +207,7 @@ export default function BedPlanner() {
         )}
       </Card>
 
-      {!isTreeSpot(bed) && gridPlantings.length > 0 && (() => {
+      {!isSpacedSpot(bed) && gridPlantings.length > 0 && (() => {
         const grid = bedGrid(bed.width, bed.length);
         return (
           <Card title="Bed layout (1 ft squares)" icon="grid">
@@ -232,8 +232,9 @@ export default function BedPlanner() {
             {elsewhere.length > 0 && (
               <Body muted>
                 {elsewhere.map((p) => p.commonName).join(', ')}: {elsewhere.every((p) => p.kind === 'fruit-tree' || p.kind === 'nut-tree')
-                  ? 'trees go in a fruit or nut tree spot. Add one in Design, then plan it from there.'
-                  : 'not for this kind of spot (tree spots take only trees; small containers skip plants over 6 ft).'}
+                  ? 'trees go in a fruit or nut tree spot or an orchard. Add one in Design, then plan it from there.'
+                  : bed.kind === 'vineyard-row' ? 'a vineyard row takes vining fruit, such as grapes, muscadine or kiwi.'
+                  : 'not for this kind of spot (tree spots and orchards take only trees; small containers skip plants over 6 ft).'}
               </Body>
             )}
             {visible.map((s) => {
@@ -248,7 +249,7 @@ export default function BedPlanner() {
                     </Text>
                     <VerdictBadge s={s} />
                   </View>
-                  {isOpen && <PlantPanel plant={plant} s={s} bedWidth={bedWidth} bedLength={bedLength} share={share} setShare={setShare} history={history} year={year} onAdd={() => add(plant)} parcelId={state.parcel.id} />}
+                  {isOpen && <PlantPanel plant={plant} s={s} bedWidth={bedWidth} bedLength={bedLength} share={share} setShare={setShare} history={history} year={year} onAdd={() => add(plant)} parcelId={state.parcel.id} multi={bed.kind === 'orchard' || bed.kind === 'vineyard-row'} />}
                 </View>
               );
             })}
@@ -260,9 +261,9 @@ export default function BedPlanner() {
   );
 }
 
-function PlantPanel({ plant, s, bedWidth, bedLength, share, setShare, history, year, onAdd, parcelId }: {
+function PlantPanel({ plant, s, bedWidth, bedLength, share, setShare, history, year, onAdd, parcelId, multi }: {
   plant: PlantSpec; s: Suitability; bedWidth: number; bedLength: number; share: number; setShare: (n: number) => void;
-  history: ReturnType<typeof bedHistory>; year: number; onAdd: () => void; parcelId: string;
+  history: ReturnType<typeof bedHistory>; year: number; onAdd: () => void; parcelId: string; multi?: boolean;
 }) {
   const t = useTheme();
   const ent = useEntitlements((st) => st.entitlements);
@@ -276,9 +277,10 @@ function PlantPanel({ plant, s, bedWidth, bedLength, share, setShare, history, y
       <Body>{s.summary}</Body>
       {ent.has('planting.bedScoring') ? <View style={{ marginTop: 6 }}><FactorList factors={s.factors} /></View> : <Body muted>Grower shows the full factor breakdown.</Body>}
       {ent.has('planting.successionRotation') && !perennial && <Text style={{ color: rot.ok ? t.muted : t.warn, marginTop: 4 }}>Rotation: {rot.message}</Text>}
-      {!perennial && (
+      {/* Annuals share beds; in an orchard or vineyard row, perennials share it too (half apples, half pears). */}
+      {(!perennial || multi) && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
-          {SHARES.map(([v, label]) => <Chip key={v} label={label} active={share === v} onPress={() => setShare(v)} />)}
+          {SHARES.map(([v, label]) => <Chip key={v} label={multi && v === 1 ? 'All of it' : label} active={share === v} onPress={() => setShare(v)} />)}
         </View>
       )}
       <LayoutSvg layout={layout} widthM={bedWidth} lengthM={bedLength} share={share} spreadM={plant.spreadIn * 0.0254} />
@@ -288,7 +290,7 @@ function PlantPanel({ plant, s, bedWidth, bedLength, share, setShare, history, y
       {ent.has('planting.yieldStorage') && yieldLb && (
         <Body>Typical yield: {units === 'imperial' ? `${Math.round(yieldLb[0])}–${Math.round(yieldLb[1])} lb` : `${Math.round(yieldLb[0] * 0.4536)}–${Math.round(yieldLb[1] * 0.4536)} kg`}{perennial ? ' a year once mature' : ' a season'} (home-garden ranges; varies a lot with care and weather)</Body>
       )}
-      <Button title="Add to this bed" onPress={onAdd} disabled={s.verdict === 'not-suitable'} />
+      <Button title={multi ? 'Add here' : 'Add to this bed'} onPress={onAdd} disabled={s.verdict === 'not-suitable'} />
       <Button title="Details & calendar" kind="secondary" onPress={() => router.push({ pathname: '/plants/[plantId]', params: { plantId: plant.id, parcelId } })} />
     </View>
   );

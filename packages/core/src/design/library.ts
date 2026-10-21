@@ -47,6 +47,7 @@ export const OBJECT_LIBRARY: ObjectType[] = [
   T({ kind: 'arch', name: 'Arch trellis', category: 'growing', shape: 'rect', width: 1.2, length: 1.5, height: 2.1, material: Material.deciduous, tier: 'grower' }),
   T({ kind: 'hugel', name: 'Hügelkultur mound', category: 'growing', shape: 'rect', width: 1.8, length: 6, height: 1.2, material: Material.opaque, tier: 'grower' }),
   T({ kind: 'guild', name: 'Food-forest guild', category: 'growing', shape: 'circle', width: 6, length: 6, height: 5, material: Material.deciduous, crownBase: 0.3, tier: 'grower' }),
+  T({ kind: 'vineyard-row', name: 'Vineyard row', category: 'growing', shape: 'rect', width: 1.83, length: 9.14, height: 0, material: Material.none, tier: 'free', notes: '30 × 6 ft trellised row to start; plan grapes (or other vining fruit) in it. Resize like any object.' }),
   T({ kind: 'berry-row', name: 'Berry row', category: 'growing', shape: 'rect', width: 1, length: 8, height: 1.5, material: Material.deciduous, crownBase: 0.1, tier: 'free' }),
   T({ kind: 'herb-spiral', name: 'Herb spiral', category: 'growing', shape: 'circle', width: 2, length: 2, height: 0.9, material: Material.opaque, tier: 'grower' }),
   T({ kind: 'three-sisters', name: 'Three-sisters block', category: 'growing', shape: 'rect', width: 3, length: 3, height: 2, material: Material.deciduous, crownBase: 0.1, tier: 'grower', notes: 'Corn height in midsummer' }),
@@ -56,6 +57,7 @@ export const OBJECT_LIBRARY: ObjectType[] = [
   // Trees
   T({ kind: 'fruit-tree-dwarf', name: 'Fruit tree (dwarf, mature)', category: 'trees', shape: 'circle', width: 3, length: 3, height: 3, material: Material.deciduous, crownBase: 0.3, tier: 'free' }),
   T({ kind: 'fruit-tree-semi', name: 'Fruit tree (semi-dwarf, mature)', category: 'trees', shape: 'circle', width: 4.5, length: 4.5, height: 4.5, material: Material.deciduous, crownBase: 0.3, tier: 'free' }),
+  T({ kind: 'orchard', name: 'Orchard', category: 'trees', shape: 'rect', width: 18.3, length: 18.3, height: 0, material: Material.none, tier: 'free', notes: 'A block for several fruit or nut trees (60 × 60 ft to start); plan the trees in it and their shade is modelled from what you plant.' }),
   T({ kind: 'fruit-tree-std', name: 'Fruit tree (standard, mature)', category: 'trees', shape: 'circle', width: 7, length: 7, height: 7, material: Material.deciduous, crownBase: 0.3, tier: 'grower' }),
   T({ kind: 'nut-tree', name: 'Nut tree (mature)', category: 'trees', shape: 'circle', width: 12, length: 12, height: 15, material: Material.deciduous, crownBase: 0.3, tier: 'grower' }),
   T({ kind: 'evergreen-tree', name: 'Evergreen tree', category: 'trees', shape: 'circle', width: 5, length: 5, height: 12, material: Material.evergreen, crownBase: 0.1, tier: 'free' }),
