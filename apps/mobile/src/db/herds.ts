@@ -18,6 +18,8 @@ export interface Herd {
   speciesId: string;
   /** The owner's own name for it ("Bruno", "The girls"); shown instead of "1 livestock guardian dog". */
   name?: string;
+  /** Up to 5 photos, the first the profile picture (thumbnail data URIs sync; full-size files stay local). */
+  photos?: Array<{ id: string; addedOn: string; thumb: string; file?: string }>;
   breed?: string;
   purpose?: string;
   count: number;
@@ -31,13 +33,15 @@ export interface Herd {
 interface Row {
   id: string; parcel_id: string; design_id: string; object_id: string; species_id: string; breed: string | null; purpose: string | null;
   count: number; status: HerdStatus; arrived_on: string | null; bred_on: string | null; notes: string | null; created_at: string;
-  lon: number | null; lat: number | null; name: string | null;
+  lon: number | null; lat: number | null; name: string | null; photos: string | null;
 }
+
+const parsePhotos = (s: string | null): Herd['photos'] => { if (!s) return undefined; try { return JSON.parse(s) as Herd['photos']; } catch { return undefined; } };
 
 const fromRow = (r: Row): Herd => ({
   id: r.id, parcelId: r.parcel_id, designId: r.design_id, objectId: r.object_id, speciesId: r.species_id, breed: r.breed ?? undefined,
   purpose: r.purpose ?? undefined, count: r.count, status: r.status, arrivedOn: r.arrived_on ?? undefined, bredOn: r.bred_on ?? undefined,
-  notes: r.notes ?? undefined, createdAt: r.created_at, name: r.name ?? undefined, location: r.lon !== null && r.lat !== null ? { lon: r.lon, lat: r.lat } : undefined,
+  notes: r.notes ?? undefined, createdAt: r.created_at, name: r.name ?? undefined, photos: parsePhotos(r.photos), location: r.lon !== null && r.lat !== null ? { lon: r.lon, lat: r.lat } : undefined,
 });
 
 export async function herdsForParcel(parcelId: string): Promise<Herd[]> {
@@ -55,13 +59,13 @@ export async function saveHerd(h: Omit<Herd, 'id' | 'createdAt'> & { id?: string
   const rec: Herd = { ...h, id: h.id ?? newId(), createdAt: h.createdAt ?? new Date().toISOString() };
   const hlc = clock().tick();
   await db.runAsync(
-    `INSERT INTO herds (id, parcel_id, design_id, object_id, species_id, breed, purpose, count, status, arrived_on, bred_on, notes, created_at, updated_hlc, deleted, lon, lat, name)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+    `INSERT INTO herds (id, parcel_id, design_id, object_id, species_id, breed, purpose, count, status, arrived_on, bred_on, notes, created_at, updated_hlc, deleted, lon, lat, name, photos)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET species_id = excluded.species_id, breed = excluded.breed, purpose = excluded.purpose, count = excluded.count,
        status = excluded.status, arrived_on = excluded.arrived_on, bred_on = excluded.bred_on, notes = excluded.notes, updated_hlc = excluded.updated_hlc, deleted = 0,
-       lon = excluded.lon, lat = excluded.lat, name = excluded.name`,
+       lon = excluded.lon, lat = excluded.lat, name = excluded.name, photos = excluded.photos`,
     rec.id, rec.parcelId, rec.designId, rec.objectId, rec.speciesId, rec.breed ?? null, rec.purpose ?? null, rec.count, rec.status,
-    rec.arrivedOn ?? null, rec.bredOn ?? null, rec.notes ?? null, rec.createdAt, hlc, rec.location?.lon ?? null, rec.location?.lat ?? null, rec.name?.trim() || null,
+    rec.arrivedOn ?? null, rec.bredOn ?? null, rec.notes ?? null, rec.createdAt, hlc, rec.location?.lon ?? null, rec.location?.lat ?? null, rec.name?.trim() || null, rec.photos?.length ? JSON.stringify(rec.photos) : null,
   );
   await db.runAsync('INSERT OR REPLACE INTO sync_pending (collection, id, hlc) VALUES (?, ?, ?)', 'herds', rec.id, hlc);
   return rec;

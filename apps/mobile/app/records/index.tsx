@@ -8,7 +8,7 @@ import {
 } from '@plotwright/core';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../src/components/Text';
 import { AnimalArt } from '../../src/components/AnimalArt';
 import { Chip } from '../../src/components/plants';
@@ -22,6 +22,7 @@ import { herdCount, herdLabel, isCurrent, localToday } from '../../src/services/
 import { enableReminders, healthSubjects, remindersAllowed, speciesName } from '../../src/services/healthReminders';
 import { exportRecords, type RecordsExport } from '../../src/services/recordsExport';
 import { useSettings } from '../../src/services/settings';
+import { deletePhotoFiles } from '../../src/services/photos';
 
 interface Data {
   parcels: ParcelRecord[];
@@ -130,7 +131,7 @@ export default function MyAnimals() {
         return (
           <Card key={h.id} title={herdLabel(h, sp)} icon="paw-outline">
             <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/records/[id]', params: { id: h.id, type: 'herd', parcelId: h.parcelId } })} style={[styles.row, { borderColor: t.border, borderTopWidth: 0 }]}>
-              <AnimalArt animalId={h.speciesId} size={44} />
+              {h.photos?.[0] ? <Image source={{ uri: h.photos[0].thumb }} style={{ width: 44, height: 44, borderRadius: 12 }} accessibilityLabel={`Photo of ${herdLabel(h, sp)}`} /> : <AnimalArt animalId={h.speciesId} size={44} />}
               <View style={{ flex: 1 }}>
                 <Body>{h.name ? `${herdCount(h, sp)} · ` : ''}{h.status === 'active' ? 'On the land' : 'Planned'}{data.parcels.length > 1 ? ` · ${data.parcels.find((p) => p.id === h.parcelId)?.name ?? ''}` : ''}</Body>
                 <Body muted>Group logs, health and breeding ›</Body>
@@ -146,7 +147,7 @@ export default function MyAnimals() {
             {data.orphans.has(h.id) && (
               <View style={{ marginVertical: 4 }}>
                 <Text style={{ color: t.warn }}>Its housing is no longer in the design, so it gets no capacity checks or weather alerts.</Text>
-                <Chip label="Remove this group" active={false} onPress={() => Alert.alert('Remove group?', `Remove ${herdLabel(h, sp)}? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { await deleteHerd(h.id); await load(); } }])} />
+                <Chip label="Remove this group" active={false} onPress={() => Alert.alert('Remove group?', `Remove ${herdLabel(h, sp)}? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(h.photos); await deleteHerd(h.id); await load(); } }])} />
               </View>
             )}
             {members.map(row)}
