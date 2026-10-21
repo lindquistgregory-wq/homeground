@@ -144,7 +144,7 @@ export const IN_GROUND_KINDS: ReadonlySet<string> = new Set([
   'fruit-tree-dwarf', 'fruit-tree-semi', 'fruit-tree-std', 'nut-tree', 'evergreen-tree', 'windbreak',
   'hoop-tunnel', 'high-tunnel', 'greenhouse-hoop', 'greenhouse-gable', 'greenhouse-dome', 'greenhouse-leanto',
   'potting-shed', 'tool-shed', 'barn', 'root-cellar', 'chicken-run', 'paddock', 'goat-shelter', 'run-in-shed', 'stable', 'pasture', 'kennel',
-  'pond', 'swale', 'cistern', 'well',
+  'pond', 'swale', 'cistern', 'well', 'vineyard-row', 'orchard',
   'solar-array', 'fence-deer', 'fence-garden', 'fence-electric', 'gate', 'trellis', 'arch',
 ]);
 

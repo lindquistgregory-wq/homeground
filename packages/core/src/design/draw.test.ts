@@ -28,3 +28,15 @@ test('drawn objects exist in the library', () => {
   assert.equal(objectType('custom-line')?.shape, 'line');
   assert.ok(objectType('custom-area'));
 });
+
+test('vineyard row starts at 30 × 6 ft and the orchard is a plantable block; both get the dig-safe note', async () => {
+  const { safetyNotesFor } = await import('../safety/notes');
+  const row = objectType('vineyard-row')!;
+  assert.equal(Math.round(row.length / 0.3048), 30);
+  assert.equal(Math.round(row.width / 0.3048), 6);
+  assert.equal(row.category, 'growing');
+  const orchard = objectType('orchard')!;
+  assert.equal(orchard.category, 'trees');
+  assert.equal(Math.round(orchard.length / 0.3048), 60);
+  for (const k of ['vineyard-row', 'orchard']) assert.ok(safetyNotesFor(k).some((n) => n.id === 'dig811'), k);
+});

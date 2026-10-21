@@ -7,7 +7,7 @@ import type { IconName } from './Icon';
 const KIND_ICON: Record<string, IconName> = {
   'raised-bed': 'grid', 'raised-bed-l': 'grid', 'round-bed': 'circle-slice-8', 'keyhole-bed': 'key-variant', 'in-ground-row': 'reorder-horizontal',
   'sfg-grid': 'grid', container: 'pot-mix-outline', 'vertical-tower': 'layers-triple-outline', trellis: 'fence', arch: 'gate-arrow-right', hugel: 'terrain',
-  guild: 'forest', 'berry-row': 'fruit-grapes', 'herb-spiral': 'spa-outline', 'three-sisters': 'corn', 'cold-frame': 'window-closed-variant',
+  guild: 'forest', 'berry-row': 'fruit-grapes', 'vineyard-row': 'fruit-grapes', orchard: 'fruit-pear', 'herb-spiral': 'spa-outline', 'three-sisters': 'corn', 'cold-frame': 'window-closed-variant',
   'low-tunnel': 'tunnel-outline', 'hoop-tunnel': 'tunnel-outline',
   'fruit-tree-dwarf': 'fruit-cherries', 'fruit-tree-semi': 'food-apple-outline', 'fruit-tree-std': 'tree', 'nut-tree': 'peanut-outline',
   'evergreen-tree': 'pine-tree', windbreak: 'forest',
