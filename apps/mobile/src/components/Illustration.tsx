@@ -8,7 +8,7 @@ import { useTheme } from './ui';
 /** Rolling fields under a rising sun, with planted rows: the welcome / empty-property scene. */
 export function FieldScene({ width = 320, height = 170 }: { width?: number; height?: number }) {
   const t = useTheme();
-  const sky = t.dark ? ['#1c2b22', '#0f1411'] : ['#dff0f7', '#f3f6f0'];
+  const sky = t.dark ? ['#1e2b3a', '#16181C'] : ['#cfe0ee', '#F7F4EC'];
   const hillBack = t.dark ? '#24432a' : '#b9dca2';
   const hillFront = t.dark ? '#2f5a33' : '#8cc46f';
   const soil = t.dark ? '#4a3a2a' : '#a77f58';
