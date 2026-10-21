@@ -1,4 +1,5 @@
 import { Inter_400Regular, Inter_400Regular_Italic, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
+import { Bitter_600SemiBold, Bitter_700Bold } from '@expo-google-fonts/bitter';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -32,7 +33,7 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const [agreed, setAgreed] = useState<boolean | null>(null);
   // Bundled fonts load from the app package in a few milliseconds; a failure falls back to the system font.
-  const [fontsLoaded, fontError] = useFonts({ Inter_400Regular, Inter_400Regular_Italic, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
+  const [fontsLoaded, fontError] = useFonts({ Inter_400Regular, Inter_400Regular_Italic, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Bitter_600SemiBold, Bitter_700Bold });
   const t = useTheme();
   const path = usePathname();
   useEffect(() => { if (ready) track('screen_view', { screen: screenName(path) }); }, [path, ready]);
@@ -98,7 +99,7 @@ function Screens() {
         // Header in the app's own theme (it otherwise stays white in dark mode): title in the text colour, back arrow in the accent.
         headerStyle: { backgroundColor: t.bg },
         headerShadowVisible: false,
-        headerTitleStyle: { color: t.text, fontFamily: FONTS.bold, fontWeight: 'normal' },
+        headerTitleStyle: { color: t.text, fontFamily: FONTS.displayBold, fontWeight: 'normal' },
         headerTintColor: t.accent,
         animation: 'slide_from_right',
       })}
