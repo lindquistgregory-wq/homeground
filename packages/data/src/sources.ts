@@ -54,6 +54,19 @@ export const DATA_SOURCES: DataSource[] = [
     attribution: 'USDA, USGS The National Map: Orthoimagery', url: 'https://basemap.nationalmap.gov/', reviewed: '2026-09-28',
   },
   {
+    id: 'usgs-naip-plus', name: 'NAIP Plus orthoimagery', provider: 'USGS / USDA',
+    use: 'Sharper aerial imagery on the design map (NAIP about 0.6 m, plus state and city imagery to 6 in where USGS has it)',
+    hosts: ['imagery.nationalmap.gov'], license: 'Public domain (U.S. Government work)', commercialUse: true,
+    attribution: 'USDA NAIP, USGS The National Map: Orthoimagery', url: 'https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer', reviewed: '2026-10-21',
+  },
+  {
+    id: 'nc-onemap-ortho', name: 'NC OneMap statewide orthoimagery', provider: 'NC Center for Geographic Information and Analysis',
+    use: '6-inch aerial imagery on the design map for North Carolina properties',
+    hosts: ['services.nconemap.gov'], license: 'North Carolina public data (NC OneMap terms)', commercialUse: true,
+    attribution: 'NC OneMap, NC Center for Geographic Information and Analysis', url: 'https://www.nconemap.gov/pages/terms', reviewed: '2026-10-21',
+    caveat: 'The service answers without a login; the owner must confirm NC OneMap’s terms allow display in a commercial app before release.',
+  },
+  {
     id: 'epqs', name: '3DEP Elevation Point Query Service', provider: 'USGS',
     use: 'Point elevations on the parcel', hosts: ['epqs.nationalmap.gov'],
     license: 'Public domain (U.S. Government work)', commercialUse: true, attribution: 'USGS 3D Elevation Program',
@@ -249,4 +262,6 @@ export const NON_SERVICE_HOSTS = [
   'ia-training.phmsa.dot.gov', 'www.epa.gov', 'www.cdc.gov', 'www.energy.gov', 'dwr.colorado.gov', 'www.leginfo.ca.gov', 'www.aspca.org', 'nchfp.uga.edu',
   // "Find a vet" (AAHA's public hospital locator, opened in the browser)
   'www.aaha.org',
+  // NC OneMap terms page (link only; the imagery comes from services.nconemap.gov)
+  'www.nconemap.gov',
 ];

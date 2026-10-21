@@ -58,6 +58,69 @@ export const USGS_HILLSHADE: RasterSource = {
 
 export const RASTER_SOURCES = [USGS_IMAGERY, USGS_TOPO, USGS_HILLSHADE];
 
+// ---------- Sharper aerial imagery (served by ArcGIS ImageServer exportImage, keyless) ----------
+
+/** An aerial imagery source with its finest pixel size, so the map never zooms past what it holds. */
+export interface ImagerySource extends RasterSource {
+  /** Finest ground pixel, metres (where the source has it). */
+  resolutionM: number;
+  /** Plain-language label for the Layers picker. */
+  short: string;
+  /** Anything the owner still has to confirm before release (e.g. state terms). */
+  termsNote?: string;
+}
+
+const exportTiles = (base: string) => [`${base}/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=512,512&format=jpgpng&f=image`];
+
+/** USGS NAIP Plus: NAIP (about 0.6 m) mixed with sharper state and city orthoimagery (to 6 in) where USGS has it. */
+export const USGS_NAIP_PLUS: ImagerySource = {
+  id: 'usgs-naip-plus', short: 'USGS NAIP Plus',
+  name: 'Aerial imagery (USGS NAIP Plus: NAIP and high-resolution orthoimagery)',
+  tiles: exportTiles('https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer'),
+  tileSize: 512, minzoom: 0, maxzoom: 20,
+  attribution: 'USDA NAIP, USGS The National Map: Orthoimagery',
+  license: 'Public domain (U.S. Government work)',
+  resolutionM: 0.6,
+  captureNote: 'NAIP is flown every 2–3 years per state at about 0.6 m; some areas have sharper state or city imagery (down to 6 in).',
+};
+
+/**
+ * Statewide orthoimagery programs, by two-digit state FIPS. Add a state only after checking its
+ * service answers without a login and its terms allow use in an app.
+ */
+export const STATE_IMAGERY: Record<string, ImagerySource> = {
+  '37': {
+    id: 'nc-onemap-ortho', short: 'NC OneMap 6-inch',
+    name: 'Aerial imagery (NC OneMap statewide orthoimagery, latest)',
+    tiles: exportTiles('https://services.nconemap.gov/secure/rest/services/Imagery/Orthoimagery_Latest/ImageServer'),
+    tileSize: 512, minzoom: 0, maxzoom: 21,
+    attribution: 'NC OneMap, NC Center for Geographic Information and Analysis',
+    license: 'North Carolina public data (NC OneMap terms)',
+    resolutionM: 0.1524,
+    captureNote: '6-inch imagery from the statewide program, re-flown about a quarter of the state each year (four-year cycle).',
+    termsNote: 'Confirm NC OneMap’s terms of use allow display in a commercial app before release.',
+  },
+};
+
+export type ImageryChoice = 'best' | 'state' | 'naip-plus' | 'standard';
+
+/** The source for a choice and the parcel's state; best is the sharpest available there. */
+export function imageryFor(choice: ImageryChoice, stateFips: string | undefined): ImagerySource | RasterSource {
+  const state = stateFips ? STATE_IMAGERY[stateFips] : undefined;
+  if (choice === 'standard') return USGS_IMAGERY;
+  if (choice === 'naip-plus') return USGS_NAIP_PLUS;
+  return state ?? USGS_NAIP_PLUS;
+}
+
+/**
+ * The deepest zoom that still shows real detail: half a level past the zoom whose pixels match the
+ * imagery's ground resolution at this latitude (so things look crisp, not smeared).
+ */
+export function maxUsefulZoom(resolutionM: number, latDeg: number): number {
+  const z = Math.log2((156543.034 * Math.cos((latDeg * Math.PI) / 180)) / resolutionM);
+  return Math.min(22, Math.max(15, Math.round((z + 0.5) * 10) / 10));
+}
+
 /**
  * Layers saved in an offline parcel pack (Pro): the aerial imagery the maps draw. Only USGS services, which are public domain and
  * publish `exportTilesAllowed: true` (checked 2026-09-29). Saved to zoom 16, the deepest scale the

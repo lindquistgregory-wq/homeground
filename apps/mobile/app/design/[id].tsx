@@ -13,7 +13,7 @@ import {
   HOUSING_KINDS, animalById, ackKey, safetyNotesFor, safetyProximity, type SafetyNote, type SafetyWarning,
   type Design, type DesignObject, type DesignWarning, type LocalFrame, type ObjectCategory, type ScenarioSeason, type SitingTarget,
 } from '@plotwright/core';
-import { OPENFREEMAP_STYLE_URL, USGS_HILLSHADE, USGS_IMAGERY, solarClimatology } from '@plotwright/providers';
+import { OPENFREEMAP_STYLE_URL, STATE_IMAGERY, USGS_HILLSHADE, USGS_IMAGERY, USGS_NAIP_PLUS, imageryFor, maxUsefulZoom, solarClimatology, type ImageryChoice } from '@plotwright/providers';
 import { http } from '../../src/services/http';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -113,6 +113,13 @@ export default function DesignScreen() {
   const sunRef = useRef<SunResult | null>(null);
   // Parcel facts for safety notes: the state (state-specific rules) and whether it's in a mapped flood zone.
   const [siteCtx, setSiteCtx] = useState<{ stateFips?: string; flood?: boolean }>({});
+  // Aerial imagery: the sharpest free source for the property's state, or a choice from Layers.
+  const [imageryChoice, setImageryChoice] = useState<ImageryChoice>('best');
+  useEffect(() => { void kvGet('imagery.choice').then((v) => { if (v === 'best' || v === 'state' || v === 'naip-plus' || v === 'standard') setImageryChoice(v); }); }, []);
+  const imagery = imageryFor(imageryChoice, siteCtx.stateFips);
+  const imageryRes = 'resolutionM' in imagery ? imagery.resolutionM : 1;
+  // All mounted from the first render (the parcel's state loads later), so their order never changes.
+  const imagerySources = [USGS_IMAGERY, USGS_NAIP_PLUS, ...Object.values(STATE_IMAGERY)];
 
   // ---------- load ----------
   useEffect(() => {
@@ -375,17 +382,19 @@ export default function DesignScreen() {
           attribution
           onPress={(e) => onMapPress(e.nativeEvent.lngLat[0], e.nativeEvent.lngLat[1])}
         >
-          <Camera ref={cameraRef} initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding: CAMERA_PADDING }} />
+          <Camera ref={cameraRef} initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding: CAMERA_PADDING }} maxZoom={layers.imagery ? maxUsefulZoom(imageryRes, (b[1] + b[3]) / 2) : 21} />
           {layers.imagery && offlineImagery && (
             <RasterSource id="img-offline" tiles={[offlineImagery.template]} tileSize={256} maxzoom={offlineImagery.maxZoom} attribution={USGS_IMAGERY.attribution}>
               <Layer type="raster" id="img-offline-l" />
             </RasterSource>
           )}
-          {layers.imagery && (
-            <RasterSource id="img" tiles={USGS_IMAGERY.tiles} tileSize={256} maxzoom={USGS_IMAGERY.maxzoom} attribution={USGS_IMAGERY.attribution}>
-              <Layer type="raster" id="img-l" />
+          {/* Every imagery source stays mounted in this place, so overlays always draw on top; only the chosen one
+              is visible (hidden layers fetch no tiles). */}
+          {imagerySources.map((src) => (
+            <RasterSource key={src.id} id={`img-${src.id}`} tiles={src.tiles} tileSize={src.tileSize} maxzoom={src.maxzoom} attribution={src.attribution}>
+              <Layer type="raster" id={`img-l-${src.id}`} layout={{ visibility: layers.imagery && src.id === imagery.id ? 'visible' : 'none' }} />
             </RasterSource>
-          )}
+          ))}
           {layers.hillshade && ent.has('layers.standard') && (
             <RasterSource id="hs" tiles={USGS_HILLSHADE.tiles} tileSize={256} maxzoom={USGS_HILLSHADE.maxzoom} attribution={USGS_HILLSHADE.attribution}>
               <Layer type="raster" id="hs-l" paint={{ 'raster-opacity': 0.45 }} />
@@ -639,6 +648,24 @@ export default function DesignScreen() {
                   onPress={() => (locked ? router.push({ pathname: '/paywall', params: { feature, source: 'design' } }) : setLayers((l) => ({ ...l, [k]: !l[k] })))} />
               );
             })}
+            {layers.imagery && (
+              <View style={{ marginVertical: 6 }}>
+                <Text style={{ color: t.text, fontWeight: '600' }}>Aerial imagery source</Text>
+                <View style={styles.row}>
+                  {([
+                    ['best', 'Sharpest available'],
+                    ...(siteCtx.stateFips && STATE_IMAGERY[siteCtx.stateFips] ? [['state', STATE_IMAGERY[siteCtx.stateFips]!.short]] : []),
+                    ['naip-plus', 'USGS NAIP Plus'], ['standard', 'Standard (fastest)'],
+                  ] as Array<[ImageryChoice, string]>).map(([k, l]) => (
+                    <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: imageryChoice === k }} onPress={() => { setImageryChoice(k); void kvSet('imagery.choice', k); }}
+                      style={[styles.chip, { borderColor: imageryChoice === k ? t.accent : t.border }]}>
+                      <Text style={{ color: imageryChoice === k ? t.accent : t.text }}>{l}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Body muted>Showing {imagery.name.replace(/^Aerial imagery \(/, '').replace(/\)$/, '')}. {imagery.captureNote} Zoom stops where the photos run out of detail.</Body>
+              </View>
+            )}
             {contourGeo && Math.abs(contourGeo.intervalM - contourInterval) > 1e-6 && (
               <Body muted>Contour interval widened to {formatLength(contourGeo.intervalM, units)} so the map stays responsive on this much relief.</Body>
             )}
