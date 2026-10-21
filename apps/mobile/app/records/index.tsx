@@ -18,7 +18,7 @@ import { deleteHerd, herdsForParcel, type Herd } from '../../src/db/herds';
 import { getDesign } from '../../src/db/designs';
 import { listParcels, type ParcelRecord } from '../../src/db/parcels';
 import { allRecords, listAnimals, saveRecord } from '../../src/db/records';
-import { herdLabel, isCurrent, localToday } from '../../src/services/animals';
+import { herdCount, herdLabel, isCurrent, localToday } from '../../src/services/animals';
 import { enableReminders, healthSubjects, remindersAllowed, speciesName } from '../../src/services/healthReminders';
 import { exportRecords, type RecordsExport } from '../../src/services/recordsExport';
 import { useSettings } from '../../src/services/settings';
@@ -132,7 +132,7 @@ export default function MyAnimals() {
             <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/records/[id]', params: { id: h.id, type: 'herd', parcelId: h.parcelId } })} style={[styles.row, { borderColor: t.border, borderTopWidth: 0 }]}>
               <AnimalArt animalId={h.speciesId} size={44} />
               <View style={{ flex: 1 }}>
-                <Body>{h.status === 'active' ? 'On the land' : 'Planned'}{data.parcels.length > 1 ? ` · ${data.parcels.find((p) => p.id === h.parcelId)?.name ?? ''}` : ''}</Body>
+                <Body>{h.name ? `${herdCount(h, sp)} · ` : ''}{h.status === 'active' ? 'On the land' : 'Planned'}{data.parcels.length > 1 ? ` · ${data.parcels.find((p) => p.id === h.parcelId)?.name ?? ''}` : ''}</Body>
                 <Body muted>Group logs, health and breeding ›</Body>
               </View>
             </Pressable>

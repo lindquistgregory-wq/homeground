@@ -19,7 +19,8 @@ import { EmptyState, MoreInfo } from '../../src/components/kit';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { deleteHerd, herdsForObject, saveHerd, type Herd } from '../../src/db/herds';
 import { listSensors, type SensorRecord } from '../../src/db/sensors';
-import { herdLabel, housingName, isCurrent, siteForAnimals } from '../../src/services/animals';
+import { herdCount, herdLabel, housingName, isCurrent, siteForAnimals } from '../../src/services/animals';
+import { HerdNameField } from '../../src/components/HerdName';
 import { useGarden } from '../../src/services/useGarden';
 import { useSettings } from '../../src/services/settings';
 
@@ -126,9 +127,11 @@ export default function HousingPlanner() {
                   <AnimalArt animalId={h.speciesId} size={44} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: t.text, fontWeight: '600', fontSize: 16 }}>{herdLabel(h, a)}</Text>
+                    {h.name && <Body muted>{herdCount(h, a)}</Body>}
                     <Body muted>{h.status === 'active' ? `On the land${h.arrivedOn ? ` since ${h.arrivedOn}` : ''}` : 'Planned'}</Body>
                   </View>
                 </View>
+                <HerdNameField herd={h} onSave={async (name) => { await saveHerd({ ...h, name }); await load(); }} />
                 {a && h.count < group && <Text style={{ color: t.warn }}>{a.commonName} do best in groups of {group} or more.</Text>}
                 <View style={styles.row}>
                   <Chip label="−" active={false} disabled={h.count <= 1} onPress={async () => { await saveHerd({ ...h, count: h.count - 1 }); await load(); }} />

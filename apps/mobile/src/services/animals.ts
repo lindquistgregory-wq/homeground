@@ -24,11 +24,17 @@ export function housingName(o: DesignObject): string {
 /** Herds that are on the land now or planned (not retired, sold or processed). */
 export const isCurrent = (h: Herd) => h.status === 'planned' || h.status === 'active';
 
-/** "6 laying hens", with the species name lower-cased. */
-export function herdLabel(h: Pick<Herd, 'count' | 'speciesId' | 'breed'>, a: AnimalSpec | undefined = animalById(h.speciesId)): string {
+/** "Bruno" when the owner named it; otherwise "6 laying hens" or "1 colony". */
+export function herdLabel(h: Pick<Herd, 'count' | 'speciesId' | 'breed' | 'name'>, a: AnimalSpec | undefined = animalById(h.speciesId)): string {
+  if (h.name?.trim()) return h.name.trim();
   if (a?.kind === 'pollinator') return countOf(a, h.count);
   const name = (a?.commonName ?? h.speciesId).toLowerCase();
   return `${h.count} ${h.breed ? `${h.breed} ` : ''}${name}`;
+}
+
+/** The plain count, for showing under a name: "1 livestock guardian dog". */
+export function herdCount(h: Pick<Herd, 'count' | 'speciesId' | 'breed'>, a: AnimalSpec | undefined = animalById(h.speciesId)): string {
+  return herdLabel({ ...h, name: undefined }, a);
 }
 
 export interface HerdCalendar { herd: Herd; animal: AnimalSpec; housing: string; events: AnimalEvent[] }

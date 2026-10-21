@@ -187,14 +187,14 @@ const store: LocalStore = {
       const d = (rec.data ?? {}) as Record<string, unknown>;
       const str = (v: unknown) => (v === null || v === undefined ? null : String(v));
       await db.runAsync(
-        `INSERT INTO herds (id, parcel_id, design_id, object_id, species_id, breed, purpose, count, status, arrived_on, bred_on, notes, created_at, updated_hlc, deleted, lon, lat)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO herds (id, parcel_id, design_id, object_id, species_id, breed, purpose, count, status, arrived_on, bred_on, notes, created_at, updated_hlc, deleted, lon, lat, name)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET species_id = excluded.species_id, breed = excluded.breed, purpose = excluded.purpose, count = excluded.count,
            status = excluded.status, arrived_on = excluded.arrived_on, bred_on = excluded.bred_on, notes = excluded.notes, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted,
-           lon = excluded.lon, lat = excluded.lat`,
+           lon = excluded.lon, lat = excluded.lat, name = excluded.name`,
         rec.id, String(d.parcel_id ?? ''), String(d.design_id ?? ''), String(d.object_id ?? ''), String(d.species_id ?? ''), str(d.breed), str(d.purpose),
         Number(d.count ?? 1), String(d.status ?? 'planned'), str(d.arrived_on), str(d.bred_on), str(d.notes), String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
-        d.lon === null || d.lon === undefined ? null : Number(d.lon), d.lat === null || d.lat === undefined ? null : Number(d.lat),
+        d.lon === null || d.lon === undefined ? null : Number(d.lon), d.lat === null || d.lat === undefined ? null : Number(d.lat), str(d.name),
       );
     } else if (rec.collection === 'calendarEvents') {
       const d = (rec.data ?? {}) as Record<string, unknown>;

@@ -42,7 +42,8 @@ import { allAnimals, countOf, minimumGroup, searchAnimals, tidyStroke } from '@p
 import { DrawOverlay, DrawnDialog } from '../../src/components/DrawOverlay';
 import { AnimalArt } from '../../src/components/AnimalArt';
 import { Chip } from '../../src/components/plants';
-import { herdLabel, isCurrent } from '../../src/services/animals';
+import { herdCount, herdLabel, isCurrent } from '../../src/services/animals';
+import { HerdNameField } from '../../src/components/HerdName';
 import { listSensors } from '../../src/db/sensors';
 import { newId } from '../../src/services/identity';
 import { useSettings } from '../../src/services/settings';
@@ -735,8 +736,9 @@ function HerdPanel({ h, onChange, onMove, onRecords, onCare, onRemove }: {
     <Card title={herdLabel(h, a)} icon="paw">
       <View style={[styles.row, { alignItems: 'center' }]}>
         <AnimalArt animalId={h.speciesId} size={44} />
-        <Body muted>{h.status === 'active' ? 'On the land' : 'Planned'} · roaming the property (no housing)</Body>
+        <Body muted>{h.name ? `${herdCount(h, a)} · ` : ''}{h.status === 'active' ? 'On the land' : 'Planned'} · roaming the property (no housing)</Body>
       </View>
+      <HerdNameField herd={h} onSave={(name) => onChange({ ...h, name })} />
       <View style={styles.row}>
         <Chip label="−" active={false} disabled={h.count <= 1} onPress={() => void onChange({ ...h, count: h.count - 1 })} />
         <Chip label="+" active={false} onPress={() => void onChange({ ...h, count: h.count + 1 })} />

@@ -49,7 +49,7 @@ export async function homeSummary(parcelId: string, profile: SiteProfile | undef
     const long = new Set<AnimalEventKind>(['winter-water', 'heat-prep', 'swarm-watch']);
     const starting = (x: { kind: AnimalEventKind; start: number }) => !long.has(x.kind) || (x.start >= today && x.start <= horizon);
     for (const e of upcomingAnimalTasks(hc.map((c) => ({ herdId: c.herd.id, animalId: c.animal.id, events: c.events.filter(starting) })), today, horizon))
-      tasks.push({ plantId: '', plantName: animalById(e.animalId)?.commonName ?? e.animalId, label: e.label, kind: e.kind, start: e.start, end: e.end, animalId: e.animalId });
+      tasks.push({ plantId: '', plantName: hc.find((c) => c.herd.id === e.herdId)?.herd.name?.trim() || (animalById(e.animalId)?.commonName ?? e.animalId), label: e.label, kind: e.kind, start: e.start, end: e.end, animalId: e.animalId });
     tasks.sort((a, b) => a.start - b.start);
   }
   // Seasons repeat yearly, so the first event after the window is either later this year or early next year.
