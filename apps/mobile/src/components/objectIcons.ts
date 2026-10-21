@@ -19,7 +19,7 @@ const KIND_ICON: Record<string, IconName> = {
   'rain-barrel': 'barrel-outline', 'ibc-tote': 'water-outline', cistern: 'water-well-outline', pond: 'waves', swale: 'wave', 'drip-line': 'water-pump',
   'hose-bib': 'water-pump', well: 'water-well-outline', 'compost-bays': 'recycle', 'worm-bin': 'bug-outline',
   'solar-array': 'solar-panel', 'wood-storage': 'axe', 'fence-deer': 'fence', 'fence-garden': 'fence', 'fence-electric': 'fence-electric', gate: 'gate',
-  path: 'walk', driveway: 'car-outline',
+  path: 'walk', driveway: 'car-outline', 'custom-line': 'draw', 'custom-area': 'vector-polygon',
 };
 
 const CATEGORY_ICON: Record<string, IconName> = {
@@ -28,7 +28,8 @@ const CATEGORY_ICON: Record<string, IconName> = {
 
 /** Badge colours by category; all carry white icons at ≥ 4.5:1 contrast. */
 export const CATEGORY_COLOR: Record<string, string> = {
-  growing: '#2f7d32', trees: '#1f6b3a', structure: '#795548', animals: '#a35c00', 'water-soil': '#1f6fa8', 'energy-utility': '#5a5a6e',
+  // Prairie palette: beds sage, trees deep green, buildings neutral, animals wheat, water teal.
+  growing: '#4F6E3A', trees: '#2F5A2C', structure: '#6B5D50', animals: '#8E6A16', 'water-soil': '#1D6F7A', 'energy-utility': '#55596B',
 };
 
 export function objectIcon(kind: string, category?: string): IconName {

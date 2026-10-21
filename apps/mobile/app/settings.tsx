@@ -21,6 +21,7 @@ import { deleteAllPhotos, freeUpPhotos, photoStorage } from '../src/services/pho
 import { activePrograms } from '@plotwright/core';
 import { affiliateRegistry } from '@plotwright/data';
 import { cancelHealthReminders } from '../src/services/healthReminders';
+import { cancelEventReminders } from '../src/services/eventReminders';
 import { alertsEnabled, alertsLastChecked, setAlertsEnabled } from '../src/services/alerts';
 import { cloudSyncAvailable, syncNow, wipeCloudData } from '../src/sync/userCloud';
 import { useAds } from '../src/ads/useAds';
@@ -264,6 +265,7 @@ export default function Settings() {
                   deleteAllPacks();
                   deleteAllPhotos();
                   await cancelHealthReminders().catch(() => undefined);
+                  await cancelEventReminders().catch(() => undefined);
                   await setMetricsConsent(false).catch(() => undefined);
                   await deleteAllLocalData();
                   const cloudResult = await wipeCloudData();

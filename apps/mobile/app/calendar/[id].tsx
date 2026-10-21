@@ -1,38 +1,31 @@
 /**
- * Planting calendar (§7.3) for everything planned or planted on a property this year: the next six
- * weeks of tasks, the whole season month by month, and frost/heat/wind alerts from the NWS forecast
- * for crops already in the ground. With animal features on, herds' care tasks and weather alerts too.
+ * Calendar (§7.3): a month view of everything on the property — planting tasks, animal care,
+ * breeding and health dates, planner tasks, weather alerts and the user's own events — as title
+ * cards on each day. Tapping a day lists it; tapping an event shows its details. Frost, heat and
+ * wind alerts from the NWS forecast sit on top.
  */
-import { HEALTH_TYPES, addDaysIso, formatDoy, formatWindow, healthDue, plantById, upcomingAnimalTasks, upcomingTasks, type PlantCalendar } from '@plotwright/core';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { formatDoy, isoAdd, itemsOn, plantById, type AgendaItem, type CustomEvent } from '@plotwright/core';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, View } from 'react-native';
 import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Chip, StaleProfileNotice } from '../../src/components/plants';
-import { EmptyState, MoreInfo, Pill } from '../../src/components/kit';
-import { PlantArt } from '../../src/components/PlantArt';
-import { AnimalArt } from '../../src/components/AnimalArt';
-import { herdsForParcel, type Herd } from '../../src/db/herds';
-import { herdCalendars, herdLabel, localToday } from '../../src/services/animals';
-import { allRecords, listAnimals } from '../../src/db/records';
-import { healthSubjects } from '../../src/services/healthReminders';
+import { MoreInfo, Pill } from '../../src/components/kit';
+import { EventEditor, EventRow, EventSheet, MonthCalendar } from '../../src/components/calendar';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { alertsEnabled, alertsForParcel, type ParcelAlerts } from '../../src/services/alerts';
+import { agendaFor, monthRange } from '../../src/services/agenda';
+import { localToday } from '../../src/services/animals';
 import { activePlantings, bedName, calendarFor } from '../../src/services/garden';
 import { useGarden } from '../../src/services/useGarden';
 import { dominantSoil } from '../../src/services/garden';
 import { frostOffset, measuredGdd, waterAdvice, type FrostOffset, type WaterAdvice } from '../../src/services/sensorInsights';
 import { latestValues, listSensors } from '../../src/db/sensors';
+import { deleteEvent, eventsForParcel, saveEvent } from '../../src/db/calendarEvents';
+import { ensureReminderPermission, refreshEventReminders } from '../../src/services/eventReminders';
 import type { SiteProfile } from '@plotwright/providers';
 import { useSettings } from '../../src/services/settings';
-
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const monthOf = (doy: number) => new Date(Date.UTC(2023, 0, doy)).getUTCMonth();
-const todayDoy = () => {
-  const n = new Date();
-  return Math.floor((Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()) - Date.UTC(n.getFullYear(), 0, 0)) / 86_400_000);
-};
 
 export default function CalendarScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -45,48 +38,14 @@ export default function CalendarScreen() {
   const [alertsError, setAlertsError] = useState<string | null>(null);
   const [notifyOn, setNotifyOn] = useState<boolean | null>(null);
   const animalsOn = useSettings((s) => s.animals) === 'yes';
-  const showProcessing = useSettings((s) => s.showProcessing);
-  const [herds, setHerds] = useState<Herd[]>([]);
-  const year = new Date().getFullYear();
-
-  const active = useMemo(() => (state ? activePlantings(state.plantings, year) : []), [state, year]);
-  const cals = useMemo(() => {
-    if (!state) return [] as Array<PlantCalendar & { beds: string[] }>;
-    const byPlant = new Map<string, string[]>();
-    for (const p of active) {
-      const i = state.design.objects.findIndex((o) => o.id === p.bedObjectId);
-      const name = i >= 0 ? bedName(state.design.objects[i]!, i) : 'removed bed';
-      byPlant.set(p.plantId, [...(byPlant.get(p.plantId) ?? []), name]);
-    }
-    const out: Array<PlantCalendar & { beds: string[] }> = [];
-    for (const [plantId, beds] of byPlant) {
-      const plant = plantById(plantId);
-      const cal = plant && calendarFor(plant, state.site, { risk, dynamicGdd: dynamic && ent.has('planting.dynamicScheduling'), soilF: state.soil.soilF, soilLabel: state.soil.basisLabel });
-      if (cal) out.push({ ...cal, beds });
-    }
-    return out;
-  }, [state, active, risk, dynamic, ent]);
-
-  // Record due dates: breeding and hatch windows, and health dates, for this property's animals.
-  const [dues, setDues] = useState<Array<{ key: string; text: string; when: string; overdue: boolean }>>([]);
-  useEffect(() => {
-    if (!state || !animalsOn) return;
-    void herdsForParcel(state.parcel.id).then(setHerds);
-    void (async () => {
-      const today = localToday(), until = addDaysIso(today, 42);
-      const names = new Map((await listAnimals()).map((a) => [a.id, a.name]));
-      const who = await healthSubjects();
-      const mine = <T extends { parcelId?: string }>(xs: T[]) => xs.filter((x) => x.parcelId === state.parcel.id);
-      const out: Array<{ key: string; text: string; when: string; overdue: boolean }> = [];
-      for (const b of mine(await allRecords('breedingRecords')))
-        if (b.dueFrom && b.dueTo && b.born === undefined && b.dueTo >= today && b.dueFrom <= until)
-          out.push({ key: b.id, text: `${b.damId ? names.get(b.damId) ?? 'Dam' : 'Eggs set'}: ${b.method === 'eggs-set' ? 'hatch' : 'due'}`, when: b.dueFrom === b.dueTo ? `around ${b.dueFrom}` : `${b.dueFrom} – ${b.dueTo}`, overdue: false });
-      for (const d of healthDue(mine(await allRecords('healthRecords')), today, 42))
-        out.push({ key: d.record.id, text: `${who(d.record)}: ${d.record.product || HEALTH_TYPES[d.record.type]}`, when: d.record.nextDue!, overdue: d.overdue });
-      setDues(out.sort((a, b) => a.when.localeCompare(b.when)));
-    })();
-  }, [state, animalsOn]);
-  const herdCals = useMemo(() => (state && animalsOn ? herdCalendars(herds, state.design, state.site, showProcessing) : []), [state, animalsOn, herds, showProcessing]);
+  const today = localToday();
+  const [ym, setYm] = useState({ year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) });
+  const [selected, setSelected] = useState(today);
+  const [items, setItems] = useState<AgendaItem[] | null>(null);
+  const [open, setOpen] = useState<AgendaItem | null>(null);
+  const [editor, setEditor] = useState<{ initial?: CustomEvent } | null>(null);
+  const [version, setVersion] = useState(0);
+  const year = Number(today.slice(0, 4));
 
   useEffect(() => {
     if (!state?.profile) return;
@@ -95,74 +54,94 @@ export default function CalendarScreen() {
     alertsForParcel(state.parcel.id, state.parcel.name, c.lat, c.lon).then(setAlerts).catch((e: Error) => setAlertsError(e.message));
   }, [state]);
 
+  // Everything on the calendar for the visible month (and the next two weeks for "Coming up").
+  const load = useCallback(async () => {
+    if (!state) return;
+    const r = monthRange(ym.year, ym.month);
+    const from = today < r.from ? today : r.from, to = isoAdd(today, 14) > r.to ? isoAdd(today, 14) : r.to;
+    const all = alerts ? [...alerts.alerts, ...(animalsOn ? alerts.animalAlerts : [])] : [];
+    setItems(await agendaFor(state, { from, to, risk, dynamicGdd: dynamic && ent.has('planting.dynamicScheduling'), alerts: all }));
+  }, [state, ym, today, alerts, animalsOn, risk, dynamic, ent]);
+  useEffect(() => { void load(); }, [load, version]);
+  useFocusEffect(useCallback(() => { setVersion((v) => v + 1); }, []));
+
+  const day = useMemo(() => (items ? itemsOn(items, selected) : { shown: [], ongoing: [] }), [items, selected]);
+  const soon = useMemo(() => (items ?? []).filter((i) => i.start > today && i.start <= isoAdd(today, 14)).sort((a, b) => a.start.localeCompare(b.start)).slice(0, 8), [items, today]);
+  const active = useMemo(() => (state ? activePlantings(state.plantings, year) : []), [state, year]);
+
   if (error) return <Body>{error}</Body>;
   if (!state) return <ActivityIndicator style={{ marginTop: 40 }} accessibilityLabel="Loading calendar" />;
 
-  const today = todayDoy();
-  const soon = upcomingTasks(cals, today, Math.min(365, today + 42));
-  const byMonth = new Map<number, Array<{ plantId: string; label: string; start: number; end: number }>>();
-  for (const c of cals) for (const e of c.events) {
-    const m = monthOf(e.start);
-    byMonth.set(m, [...(byMonth.get(m) ?? []), { plantId: c.plantId, label: e.label, start: e.start, end: e.end }]);
-  }
   const frost = state.site.frost;
   const climate = state.profile?.climate;
+  const weatherAlerts = alerts ? [...alerts.alerts, ...(animalsOn ? alerts.animalAlerts : [])] : [];
+
+  const saveCustom = async (e: Parameters<Parameters<typeof EventEditor>[0]['onSave']>[0]) => {
+    if (e.remindMinutes !== null && !(await ensureReminderPermission()))
+      Alert.alert('Reminders', 'Notifications are off for Plotwright, so this event is saved without a reminder. You can allow them in your phone’s settings.');
+    await saveEvent({ ...(editor?.initial ?? {}), ...e, parcelId: state.parcel.id });
+    setEditor(null);
+    setOpen(null);
+    setSelected(e.date);
+    void refreshEventReminders();
+    setVersion((v) => v + 1);
+  };
+  const removeCustom = (customId: string) => Alert.alert('Delete event?', 'This removes every repeat of it too.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Delete', style: 'destructive', onPress: async () => { await deleteEvent(customId); setOpen(null); void refreshEventReminders(); setVersion((v) => v + 1); } },
+  ]);
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       {state.profileStale && <StaleProfileNotice parcelId={state.parcel.id} />}
-      <Card title="Weather alerts" icon="weather-lightning-rainy">
-        {!state.profile ? <Body muted>Build the site profile first.</Body>
-          : alertsError ? <Body muted>Couldn’t check the forecast ({alertsError}).</Body>
-          : !alerts ? <ActivityIndicator accessibilityLabel="Checking the forecast" />
-            : alerts.alerts.length || (animalsOn && alerts.animalAlerts.length) ? [...alerts.alerts, ...(animalsOn ? alerts.animalAlerts : [])].map((a, i) => (
-              <View key={i} style={{ marginBottom: 8 }}>
-                <Text style={{ color: a.kind === 'heat' || a.kind === 'wind' ? t.warn : t.bad, fontWeight: '700' }}>{a.title}</Text>
-                <Body>{a.body}</Body>
-              </View>
-            )) : (
-              <Body muted>
-                {active.some((p) => p.status === 'planted') || herdCals.some((c) => c.herd.status === 'active')
-                  ? `No frost, heat or wind trouble in the 7-day forecast for what’s ${herdCals.some((c) => c.herd.status === 'active') ? 'planted or living here' : 'planted'}.`
-                  : `Mark crops as planted in the bed planner${animalsOn ? ' (or animals as arrived in their housing)' : ''} to get alerts for them.`}
-              </Body>
-            )}
-        {alerts?.forecastNote && <Text style={{ color: t.muted, fontSize: 12 }}>{alerts.forecastNote}</Text>}
-        <Text style={{ color: t.muted, fontSize: 12 }}>Not an official warning. For watches and warnings, see weather.gov.</Text>
-        <Text style={{ color: t.muted, fontSize: 12 }}>Forecast: National Weather Service (public domain).</Text>
-        {notifyOn === false && <Button title="Turn on alert notifications" kind="secondary" onPress={() => router.push('/settings')} />}
+      {(weatherAlerts.length > 0 || alertsError || notifyOn === false) && (
+        <Card title="Weather alerts" icon="weather-lightning-rainy">
+          {alertsError && <Body muted>Couldn’t check the forecast ({alertsError}).</Body>}
+          {weatherAlerts.map((a, i) => (
+            <View key={i} style={{ marginBottom: 8 }}>
+              <Text style={{ color: a.kind === 'heat' || a.kind === 'wind' ? t.warn : t.bad, fontWeight: '700' }}>{a.title}</Text>
+              <Body>{a.body}</Body>
+            </View>
+          ))}
+          {alerts?.forecastNote && <Text style={{ color: t.muted, fontSize: 12 }}>{alerts.forecastNote}</Text>}
+          <Text style={{ color: t.muted, fontSize: 12 }}>Not an official warning. For watches and warnings, see weather.gov. Forecast: National Weather Service (public domain).</Text>
+          {notifyOn === false && <Button title="Turn on alert notifications" kind="secondary" onPress={() => router.push('/settings')} />}
+        </Card>
+      )}
+
+      <Card title="Calendar" icon="calendar-month" right={<Chip label="+ Event" active onPress={() => setEditor({})} />}>
+        {!items ? <ActivityIndicator accessibilityLabel="Loading the calendar" /> : (
+          <MonthCalendar year={ym.year} month={ym.month} items={items} selected={selected} today={today}
+            onSelect={setSelected} onMonth={(y, m) => setYm({ year: y, month: m })} />
+        )}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 6 }}>
+          {!weatherAlerts.length && alerts && !alertsError && <Text style={{ color: t.muted, fontSize: 12 }}>No frost, heat or wind trouble in the 7-day forecast.</Text>}
+        </View>
       </Card>
 
-      {(herdCals.length > 0 || dues.length > 0) && (() => {
-        const soonAnimal = upcomingAnimalTasks(herdCals.map((c) => ({ herdId: c.herd.id, animalId: c.animal.id, events: c.events })), today, Math.min(365, today + 42));
-        const byHerd = new Map(herdCals.map((c) => [c.herd.id, c]));
-        return (
-          <Card title="Animal care, next 6 weeks" icon="paw-outline">
-            {soonAnimal.length ? soonAnimal.map((e, i) => {
-              const c = byHerd.get(e.herdId)!;
-              return (
-                <View key={i} style={{ flexDirection: 'row', gap: 12, marginBottom: 10 }}>
-                  <AnimalArt animalId={e.animalId} size={40} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: t.text, fontWeight: '600' }}>{c.animal.commonName} ({c.housing}): {e.label}</Text>
-                    <Body muted>{formatWindow(e)} · {e.basis}</Body>
-                  </View>
-                </View>
-              );
-            }) : !dues.length && <Body muted>No animal care dates in the next six weeks.</Body>}
-            {dues.map((x) => (
-              <View key={x.key} style={{ marginBottom: 8 }}>
-                <Text style={{ color: x.overdue ? t.bad : t.text, fontWeight: '600' }}>{x.text}</Text>
-                <Body muted>{x.overdue ? `Was due ${x.when}` : x.when} · from your records</Body>
-              </View>
-            ))}
-            <MoreInfo label="Your herds">
-              {herdCals.map((c) => <Body key={c.herd.id} muted>{herdLabel(c.herd, c.animal)} in {c.housing} · {c.herd.status === 'active' ? 'on the land' : 'planned'}</Body>)}
-              <Body muted>Dates come from your frost dates and each herd’s arrival or breeding date. They’re reminders, not veterinary schedules.</Body>
-            </MoreInfo>
-          </Card>
-        );
-      })()}
+      <Card title={selected === today ? 'Today' : new Date(`${selected}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} icon="calendar-today">
+        {day.shown.map((i) => <EventRow key={i.id} item={i} onPress={() => setOpen(i)} />)}
+        {day.shown.length === 0 && <Body muted>Nothing starts this day.</Body>}
+        {day.ongoing.length > 0 && (
+          <MoreInfo label={`Ongoing (${day.ongoing.length})`}>
+            {day.ongoing.map((i) => <EventRow key={i.id} item={i} onPress={() => setOpen(i)} />)}
+          </MoreInfo>
+        )}
+        <Button title="Add an event this day" kind="secondary" icon="calendar-plus" onPress={() => setEditor({})} />
+      </Card>
+
+      {soon.length > 0 && (
+        <Card title="Next two weeks" icon="calendar-clock">
+          {soon.map((i) => <EventRow key={i.id} item={i} onPress={() => setOpen(i)} />)}
+        </Card>
+      )}
+
+      {active.length === 0 && (
+        <Card title="Nothing planted yet" icon="sprout-outline">
+          <Body muted>Add crops to a bed (Design, tap a bed, Plan this bed) and their sowing, planting and harvest dates appear on the calendar.</Body>
+          <Button title="Open Design" kind="secondary" onPress={() => router.push({ pathname: '/design/[id]', params: { id: state.parcel.id } })} />
+        </Card>
+      )}
 
       <SensorCard parcelId={state.parcel.id} profile={state.profile} year={year} />
 
@@ -183,46 +162,37 @@ export default function CalendarScreen() {
         </MoreInfo>
       </Card>
 
-      {cals.length === 0 ? (
-        <EmptyState icon="sprout-outline" title="Nothing planned yet"
-          text="Add crops to a bed (Design, tap a bed, Plan this bed) and their sowing, planting and harvest dates appear here."
-          action="Open Design" onAction={() => router.push({ pathname: '/design/[id]', params: { id: state.parcel.id } })} />
-      ) : (
-        <>
-          <Card title="Next 6 weeks" icon="calendar-clock">
-            {soon.length ? soon.map((e, i) => (
-              <View key={i} style={{ flexDirection: 'row', gap: 12, marginBottom: 10 }}>
-                {plantById(e.plantId) && <PlantArt plant={plantById(e.plantId)!} size={40} />}
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: t.text, fontWeight: '600' }}>{plantById(e.plantId)?.commonName}: {e.label}</Text>
-                  <Body muted>{formatDoy(e.start)}{e.end !== e.start ? ` – ${formatDoy(e.end)}` : ''} · {e.basis}</Body>
-                </View>
-              </View>
-            )) : <Body muted>No tasks in the next six weeks.</Body>}
-          </Card>
+      {active.length > 0 && <PlantedCard state={state} year={year} risk={risk} />}
 
-          <Card title={`Season ${year}`} icon="calendar-month">
-            {[...byMonth.keys()].sort((a, b) => a - b).map((m) => (
-              <View key={m} style={{ marginBottom: 10 }}>
-                <Text style={{ color: t.accent, fontWeight: '700' }} accessibilityRole="header">{MONTHS[m]}</Text>
-                {byMonth.get(m)!.sort((a, b) => a.start - b.start).map((e, i) => (
-                  <Body key={i}>{formatDoy(e.start)}{e.end !== e.start ? `–${formatDoy(e.end)}` : ''} · {plantById(e.plantId)?.commonName}: {e.label}</Body>
-                ))}
-              </View>
-            ))}
-          </Card>
-
-          <Card title="Where it’s planted" icon="map-marker-outline">
-            {cals.map((c) => (
-              <View key={c.plantId} style={{ marginBottom: 6 }}>
-                <Body>{plantById(c.plantId)?.commonName}: {c.beds.join(', ')}</Body>
-                {c.warnings.map((w, i) => <Text key={i} style={{ color: t.warn, fontSize: 13 }}>• {w}</Text>)}
-              </View>
-            ))}
-          </Card>
-        </>
-      )}
+      <EventSheet item={open} onClose={() => setOpen(null)}
+        onEdit={async () => { const e = (await eventsForParcel(state.parcel.id)).find((x) => x.id === open?.customId); setOpen(null); if (e) setEditor({ initial: e }); }}
+        onDelete={() => open?.customId && removeCustom(open.customId)} />
+      {editor && <EventEditor visible initial={editor.initial} date={selected} onClose={() => setEditor(null)} onSave={saveCustom} />}
     </ScrollView>
+  );
+}
+
+/** Which beds each crop is in, with its calendar warnings. */
+function PlantedCard({ state, year, risk }: { state: NonNullable<ReturnType<typeof useGarden>['state']>; year: number; risk: 'cautious' | 'typical' }) {
+  const t = useTheme();
+  const byPlant = new Map<string, string[]>();
+  for (const p of activePlantings(state.plantings, year)) {
+    const i = state.design.objects.findIndex((o) => o.id === p.bedObjectId);
+    byPlant.set(p.plantId, [...(byPlant.get(p.plantId) ?? []), i >= 0 ? bedName(state.design.objects[i]!, i) : 'removed bed']);
+  }
+  return (
+    <Card title="Where it’s planted" icon="map-marker-outline">
+      {[...byPlant].map(([plantId, beds]) => {
+        const plant = plantById(plantId);
+        const cal = plant && calendarFor(plant, state.site, { risk, soilF: state.soil.soilF, soilLabel: state.soil.basisLabel });
+        return (
+          <View key={plantId} style={{ marginBottom: 6 }}>
+            <Body>{plant?.commonName ?? plantId}: {beds.join(', ')}</Body>
+            {cal?.warnings.map((w, i) => <Text key={i} style={{ color: t.warn, fontSize: 13 }}>• {w}</Text>)}
+          </View>
+        );
+      })}
+    </Card>
   );
 }
 

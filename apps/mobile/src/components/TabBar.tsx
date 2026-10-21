@@ -1,5 +1,5 @@
 /**
- * Bottom tab bar on the app's main screens: Home, Plants, Calendar, Sensors and More. Switching tabs
+ * Bottom tab bar on the app's main screens: Home, Calendar, Sensors and More (Plants opens from Home). Switching tabs
  * keeps the history shallow (Home, then at most one tab screen), so Back always returns Home.
  */
 import { router, usePathname } from 'expo-router';
@@ -10,10 +10,9 @@ import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 import { tapFeedback, useTheme } from './ui';
 
-type TabKey = 'home' | 'plants' | 'calendar' | 'sensors' | 'more';
+type TabKey = 'home' | 'calendar' | 'sensors' | 'more';
 const TABS: Array<{ key: TabKey; label: string; icon: IconName; iconActive: IconName }> = [
   { key: 'home', label: 'Home', icon: 'home-outline', iconActive: 'home' },
-  { key: 'plants', label: 'Plants', icon: 'sprout-outline', iconActive: 'sprout' },
   { key: 'calendar', label: 'Calendar', icon: 'calendar-blank-outline', iconActive: 'calendar-month' },
   { key: 'sensors', label: 'Sensors', icon: 'thermometer', iconActive: 'thermometer-lines' },
   { key: 'more', label: 'More', icon: 'dots-horizontal-circle-outline', iconActive: 'dots-horizontal-circle' },
@@ -22,7 +21,6 @@ const TABS: Array<{ key: TabKey; label: string; icon: IconName; iconActive: Icon
 /** The tab a path belongs to, or null on screens that have no tab bar. */
 export function tabFor(path: string): TabKey | null {
   if (path === '/') return 'home';
-  if (path === '/plants') return 'plants';
   if (/^\/calendar\/[^/]+$/.test(path)) return 'calendar';
   if (path === '/sensors') return 'sensors';
   if (path === '/settings') return 'more';
@@ -30,7 +28,7 @@ export function tabFor(path: string): TabKey | null {
 }
 
 /** Stack route names (as in app/_layout) that show the tab bar. */
-export const TAB_ROUTES = new Set(['index', 'plants/index', 'calendar/[id]', 'sensors/index', 'settings']);
+export const TAB_ROUTES = new Set(['index', 'calendar/[id]', 'sensors/index', 'settings']);
 
 async function open(key: TabKey, from: TabKey) {
   if (key === 'home') {
@@ -43,7 +41,7 @@ async function open(key: TabKey, from: TabKey) {
     // The calendar belongs to a property; with none yet, the tab starts the add-property flow.
     const parcel = (await listParcels())[0];
     href = parcel ? { pathname: '/calendar/[id]', params: { id: parcel.id } } : '/locate';
-  } else href = key === 'plants' ? '/plants' : key === 'sensors' ? '/sensors' : '/settings';
+  } else href = key === 'sensors' ? '/sensors' : '/settings';
   if (from === 'home') router.push(href);
   else router.replace(href);
 }
@@ -69,10 +67,10 @@ export function TabBar() {
             onPress={() => { if (!active) { tapFeedback(); void open(tab.key, current); } }}
             style={styles.tab}
           >
-            <View collapsable={false} style={[styles.iconWell, { backgroundColor: active ? t.accentSoft : 'transparent' }]}>
-              <Icon name={active ? tab.iconActive : tab.icon} size={22} color={active ? t.accent : t.muted} />
+            <View collapsable={false} style={[styles.iconWell, { backgroundColor: active ? t.secondarySoft : 'transparent' }]}>
+              <Icon name={active ? tab.iconActive : tab.icon} size={22} color={active ? t.onSecondarySoft : t.muted} />
             </View>
-            <Text style={[styles.label, { color: active ? t.accent : t.muted }, active && { fontWeight: '600' }]}>{tab.label}</Text>
+            <Text style={[styles.label, { color: active ? t.text : t.muted }, active && { fontWeight: '600' }]}>{tab.label}</Text>
           </Pressable>
         );
       })}

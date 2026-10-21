@@ -8,23 +8,35 @@ import { Text } from './Text';
 
 export function useTheme() {
   const dark = useColorScheme() === 'dark';
-  // Text colours meet WCAG AA (4.5:1) on bg, card and surface; accent meets it on card for labels.
+  // The Prairie palette (Plotwright Design Review): work denim for actions, wheat for selection,
+  // oat and cream surfaces, warm charcoal in dark mode. Text pairings meet WCAG AA (4.5:1 or better).
   return {
     dark,
-    bg: dark ? '#0f1411' : '#f3f6f0',
-    card: dark ? '#18201b' : '#ffffff',
+    bg: dark ? '#16181C' : '#F7F4EC',
+    card: dark ? '#202328' : '#FFFFFF',
     /** Raised or inset areas inside a card (chips, input fields, icon wells). */
-    surface: dark ? '#212b24' : '#edf2e9',
-    text: dark ? '#e9efe7' : '#17211a',
-    muted: dark ? '#a5afa6' : '#56615a',
-    accent: dark ? '#8fd16a' : '#2e6b25',
-    /** Tinted background behind accent icons and selected items. */
-    accentSoft: dark ? '#22381f' : '#e2efdb',
+    surface: dark ? '#2A2E34' : '#EDE7D9',
+    text: dark ? '#ECEAE4' : '#22252B',
+    muted: dark ? '#B9BBC0' : '#5E6168',
+    /** Primary (denim): main actions, links, selected controls. */
+    accent: dark ? '#A7C7EA' : '#35577A',
+    /** Primary container: tinted background behind accent icons and selected items. */
+    accentSoft: dark ? '#284563' : '#D6E3F2',
     /** Text and icons drawn on an accent fill. */
-    onAccent: dark ? '#0d1f08' : '#ffffff',
-    border: dark ? '#2a352d' : '#dfe6da',
-    warn: dark ? '#f2c14e' : '#8a5a00',
-    bad: dark ? '#ff8a80' : '#a8231f',
+    onAccent: dark ? '#0E2840' : '#FFFFFF',
+    /** Secondary container (wheat): the active tab and other quiet highlights. */
+    secondarySoft: dark ? '#4A3800' : '#F3E1B0',
+    onSecondarySoft: dark ? '#F8E2A6' : '#2D2000',
+    border: dark ? '#353A41' : '#DED6C5',
+    warn: dark ? '#EBC75F' : '#8A6200',
+    bad: dark ? '#F4AE9F' : '#9B3B2C',
+    /** Semantic data colours, fixed by meaning (never for buttons); always paired with an icon or word. */
+    frost: dark ? '#9CC8F0' : '#2F6FA3',
+    heat: dark ? '#F5A97A' : '#B4501C',
+    water: dark ? '#7FD0DA' : '#1D6F7A',
+    soil: dark ? '#D9B48E' : '#7A5230',
+    sun: dark ? '#EBC75F' : '#8A6200',
+    growth: dark ? '#A9CF8C' : '#4F6E3A',
   };
 }
 

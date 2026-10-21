@@ -38,7 +38,8 @@ import { exportDesign, type ExportFormat } from '../../src/services/export';
 import { activePlantings, cropShadeObjects, isPlantable } from '../../src/services/garden';
 import { deletePlantingsForBed, plantingsForParcel, type Planting } from '../../src/db/plantings';
 import { deleteHerd, deleteHerdsForObject, herdsForParcel, saveHerd, type Herd } from '../../src/db/herds';
-import { allAnimals, countOf, minimumGroup, searchAnimals } from '@plotwright/core';
+import { allAnimals, countOf, minimumGroup, searchAnimals, tidyStroke } from '@plotwright/core';
+import { DrawOverlay, DrawnDialog } from '../../src/components/DrawOverlay';
 import { AnimalArt } from '../../src/components/AnimalArt';
 import { Chip } from '../../src/components/plants';
 import { herdLabel, isCurrent } from '../../src/services/animals';
@@ -100,6 +101,9 @@ export default function DesignScreen() {
   const [movingHerd, setMovingHerd] = useState<string | null>(null);
   const [selectedHerdId, setSelectedHerdId] = useState<string | null>(null);
   const [animalPickerOpen, setAnimalPickerOpen] = useState(false);
+  // Freehand drawing: a finger stroke becomes a custom line or area.
+  const [drawing, setDrawing] = useState(false);
+  const [drawn, setDrawn] = useState<{ coords: Array<[number, number]>; closed: boolean } | null>(null);
   const selectedHerd = selectedHerdId ? herds.find((h) => h.id === selectedHerdId) : undefined;
   const [sensorPins, setSensorPins] = useState<GeoJSON.FeatureCollection<GeoJSON.Point, { label: string }> | null>(null);
   const [shadeSeason, setShadeSeason] = useState({ fromDoy: 180, toDoy: 288 });
@@ -475,6 +479,19 @@ export default function DesignScreen() {
             <Text style={{ color: t.accent, fontWeight: '600' }}>⤢ Whole property</Text>
           </Pressable>
         )}
+        {drawing && (
+          <DrawOverlay onCancel={() => setDrawing(false)} onStroke={async (pts) => {
+            const tidy = tidyStroke(pts);
+            setDrawing(false);
+            if (!tidy || !mapRef.current) return;
+            try {
+              const coords = await Promise.all(tidy.points.map(async (p) => { const c = await mapRef.current!.unproject(p); return [c[0], c[1]] as [number, number]; }));
+              setDrawn({ coords, closed: tidy.closed });
+            } catch (e) {
+              Alert.alert('Drawing', (e as Error).message);
+            }
+          }} />
+        )}
         {(placing || moving || placingAnimal || movingHerd) && (
           <View style={[styles.banner, { backgroundColor: t.card }]}>
             <Text style={{ color: t.text }}>{placing ? `Tap the map to place: ${objectType(placing)?.name}` : placingAnimal ? `Tap where the ${countOf(animalById(placingAnimal.speciesId), placingAnimal.count)} will be` : 'Tap the new spot'}</Text>
@@ -508,6 +525,7 @@ export default function DesignScreen() {
         {tab === 'add' && (
           <>
             <Button title="Browse object library" onPress={() => setLibraryOpen(true)} />
+            {!design.scenario && <Button title="Draw on the map" kind="secondary" icon="draw" accessibilityHint="Draw a line or a closed shape with your finger" onPress={() => { setSelectedId(null); setSelectedHerdId(null); setDrawing(true); }} />}
             {animalsOn && !design.scenario && <Button title="Place animals on the map" kind="secondary" icon="paw" accessibilityHint="Adds animals that roam the property, without a coop or shelter" onPress={() => setAnimalPickerOpen(true)} />}
             <Button title="Add existing buildings from the map" kind="secondary" onPress={detectBuildings} />
             <Body muted>{design.objects.filter((o) => !o.existing).length} of {Number.isFinite(ent.limits.designObjects) ? ent.limits.designObjects : 'unlimited'} objects used.</Body>
@@ -660,6 +678,27 @@ export default function DesignScreen() {
         )}
       </ScrollView>
 
+      <DrawnDialog value={drawn} onCancel={() => setDrawn(null)} onSave={({ label, closed, height }) => {
+        if (!drawn || !frame) return;
+        if (design.objects.filter((o) => !o.existing).length >= ent.limits.designObjects) {
+          setDrawn(null);
+          return Alert.alert('Object limit reached', `Your plan allows ${ent.limits.designObjects} objects. Upgrade for unlimited objects.`);
+        }
+        const pts = drawn.coords;
+        const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length, cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+        const o = newObject(closed ? 'custom-area' : 'custom-line', { lon: cx, lat: cy }, newId());
+        if (closed) o.polygon = pts;
+        else {
+          o.path = pts;
+          o.length = pts.slice(1).reduce((a, p, i) => { const [x0, y0] = project(frame, pts[i]!), [x1, y1] = project(frame, p); return a + Math.hypot(x1 - x0, y1 - y0); }, 0);
+        }
+        o.label = label || undefined;
+        o.height = height;
+        update([...design.objects, o], [o]);
+        setDrawn(null);
+        setSelectedId(o.id);
+        setTab('selected');
+      }} />
       <AnimalPicker visible={animalPickerOpen} onClose={() => setAnimalPickerOpen(false)} onPick={(speciesId, count) => { setAnimalPickerOpen(false); setSelectedId(null); setPlacingAnimal({ speciesId, count }); }} />
       <Modal visible={libraryOpen} animationType="slide" onRequestClose={() => setLibraryOpen(false)}>
         <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 48, backgroundColor: t.bg }}>
@@ -782,7 +821,7 @@ function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSna
   const step = units === 'imperial' ? 0.3048 : 0.25;
   return (
     <Card title={o.label ?? type?.name ?? o.kind}>
-      <Body muted>{formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}{planted ? ` · ${planted} planting${planted === 1 ? '' : 's'} this year` : ''}{housed.length ? ` · ${housed.map((h) => herdLabel(h)).join(', ')}` : ''}</Body>
+      <Body muted>{o.path && o.shape === 'line' ? `${formatLength(o.length, units)} long` : formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}{planted ? ` · ${planted} planting${planted === 1 ? '' : 's'} this year` : ''}{housed.length ? ` · ${housed.map((h) => herdLabel(h)).join(', ')}` : ''}</Body>
       {/* Point of use, but quiet: only notes still waiting for 'Got it' and distance problems sit up top. */}
       {notes.filter((n) => n.acknowledge && !acks[ackKey(n)]).map((n) => <SafetyNoteRow key={n.id} note={n} />)}
       {safety.map((w) => <SafetyLine key={w.kind} text={w.message} caution={w.level === 'caution'} />)}

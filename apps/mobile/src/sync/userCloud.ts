@@ -76,6 +76,10 @@ const store: LocalStore = {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM herds WHERE id = ?', id);
       return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
     }
+    if (collection === 'calendarEvents') {
+      const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM calendar_events WHERE id = ?', id);
+      return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
+    }
     if (collection === 'customAnimals') {
       const r = await db.getFirstAsync<Record<string, unknown>>('SELECT * FROM custom_animals WHERE id = ?', id);
       return r ? { collection, id, hlc: String(r.updated_hlc), deleted: r.deleted === 1, data: r } : undefined;
@@ -191,6 +195,13 @@ const store: LocalStore = {
         rec.id, String(d.parcel_id ?? ''), String(d.design_id ?? ''), String(d.object_id ?? ''), String(d.species_id ?? ''), str(d.breed), str(d.purpose),
         Number(d.count ?? 1), String(d.status ?? 'planned'), str(d.arrived_on), str(d.bred_on), str(d.notes), String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
         d.lon === null || d.lon === undefined ? null : Number(d.lon), d.lat === null || d.lat === undefined ? null : Number(d.lat),
+      );
+    } else if (rec.collection === 'calendarEvents') {
+      const d = (rec.data ?? {}) as Record<string, unknown>;
+      await db.runAsync(
+        `INSERT INTO calendar_events (id, parcel_id, date, data, created_at, updated_hlc, deleted) VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET parcel_id = excluded.parcel_id, date = excluded.date, data = excluded.data, updated_hlc = excluded.updated_hlc, deleted = excluded.deleted`,
+        rec.id, String(d.parcel_id ?? ''), String(d.date ?? ''), String(d.data ?? '{}'), String(d.created_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0,
       );
     } else if (rec.collection === 'customAnimals') {
       const d = (rec.data ?? {}) as Record<string, unknown>;
