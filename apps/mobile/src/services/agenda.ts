@@ -64,7 +64,7 @@ export async function agendaFor(state: GardenState, opts: AgendaOptions): Promis
     for (const c of herdCalendars(herds, state.design, state.site, settings.showProcessing))
       for (const e of c.events)
         for (const w of seasonal(e.start, e.end, from, to))
-          items.push({ id: `herd-${c.herd.id}-${e.kind}-${w.start}`, source: 'animal', title: `${c.animal.commonName}: ${e.label}`, short: e.label, start: w.start, end: w.end !== w.start ? w.end : undefined, animalId: c.animal.id, details: [e.basis, `${herdLabel(c.herd, c.animal)}, ${c.housing}`] });
+          items.push({ id: `herd-${c.herd.id}-${e.kind}-${w.start}`, source: 'animal', title: `${c.herd.name?.trim() || c.animal.commonName}: ${e.label}`, short: e.label, start: w.start, end: w.end !== w.start ? w.end : undefined, animalId: c.animal.id, details: [e.basis, `${herdLabel(c.herd, c.animal)}, ${c.housing}`] });
     const names = new Map((await listAnimals()).map((a) => [a.id, a]));
     for (const b of (await allRecords('breedingRecords')).filter((r) => r.parcelId === parcelId && r.dueFrom && r.born === undefined))
       if (b.dueTo! >= from && b.dueFrom! <= to)

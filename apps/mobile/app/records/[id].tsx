@@ -16,9 +16,10 @@ import { AnimalArt } from '../../src/components/AnimalArt';
 import { Chip } from '../../src/components/plants';
 import { MoreInfo } from '../../src/components/kit';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
-import { herdsForParcel, type Herd } from '../../src/db/herds';
+import { herdsForParcel, saveHerd, type Herd } from '../../src/db/herds';
 import { deleteAnimalAndRecords, deleteRecord, getAnimal, listAnimals, recordsFor, saveRecord } from '../../src/db/records';
-import { herdLabel, localToday } from '../../src/services/animals';
+import { herdCount, herdLabel, localToday } from '../../src/services/animals';
+import { HerdNameField } from '../../src/components/HerdName';
 import { refreshHealthReminders, speciesName } from '../../src/services/healthReminders';
 import { exportVetHistory } from '../../src/services/recordsExport';
 import { FindAVet } from '../../src/components/FindAVet';
@@ -80,9 +81,10 @@ export default function RecordsScreen() {
         {a?.photos?.[0] ? <Image source={{ uri: a.photos[0].thumb }} style={styles.avatar} accessibilityLabel={`Photo of ${a.name}`} /> : <AnimalArt animalId={d.speciesId} size={72} />}
         <View style={{ flex: 1 }}>
           <Text style={{ color: t.text, fontSize: 24, fontWeight: '700' }} accessibilityRole="header">{d.title}</Text>
-          <Body muted>{[a?.breed ?? speciesName(d.speciesId), a && a.sex !== 'unknown' ? a.sex : null, a?.tag, a && a.status !== 'active' ? a.status : null].filter(Boolean).join(' · ')}</Body>
+          <Body muted>{[d.herd?.name ? herdCount(d.herd) : null, a?.breed ?? speciesName(d.speciesId), a && a.sex !== 'unknown' ? a.sex : null, a?.tag, a && a.status !== 'active' ? a.status : null].filter(Boolean).join(' · ')}</Body>
         </View>
       </View>
+      {d.herd && <HerdNameField herd={d.herd} onSave={async (name) => { await saveHerd({ ...d.herd!, name }); await load(); }} />}
       {welfare && <Text style={{ color: t.warn, marginBottom: 8 }}>{welfare}</Text>}
 
       {a && (

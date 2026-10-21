@@ -276,6 +276,10 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX IF NOT EXISTS calendar_events_parcel ON calendar_events(parcel_id, date);
   `,
+  // 14 — a name the owner gives a herd or animal on the map ("Bruno", "The girls").
+  `
+  ALTER TABLE herds ADD COLUMN name TEXT;
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
