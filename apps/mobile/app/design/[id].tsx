@@ -821,7 +821,7 @@ function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSna
   const step = units === 'imperial' ? 0.3048 : 0.25;
   return (
     <Card title={o.label ?? type?.name ?? o.kind}>
-      <Body muted>{formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}{planted ? ` · ${planted} planting${planted === 1 ? '' : 's'} this year` : ''}{housed.length ? ` · ${housed.map((h) => herdLabel(h)).join(', ')}` : ''}</Body>
+      <Body muted>{o.path && o.shape === 'line' ? `${formatLength(o.length, units)} long` : formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}{planted ? ` · ${planted} planting${planted === 1 ? '' : 's'} this year` : ''}{housed.length ? ` · ${housed.map((h) => herdLabel(h)).join(', ')}` : ''}</Body>
       {/* Point of use, but quiet: only notes still waiting for 'Got it' and distance problems sit up top. */}
       {notes.filter((n) => n.acknowledge && !acks[ackKey(n)]).map((n) => <SafetyNoteRow key={n.id} note={n} />)}
       {safety.map((w) => <SafetyLine key={w.kind} text={w.message} caution={w.level === 'caution'} />)}
