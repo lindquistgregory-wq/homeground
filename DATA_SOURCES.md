@@ -84,6 +84,17 @@ Nothing here is contacted over the network. The datasets ship inside the app, an
 | Usage statistics and error log | Which screens and features are used; app errors | On the phone only | Off by default; the user can read, share or clear them. Crash reports otherwise come from the OS's own opt-in reports (App Store Connect / Xcode Organizer, Play Console Android vitals) |
 | Offline parcel packs | USGS imagery tiles saved to the phone (Homestead Pro) | Public domain; the USGS services advertise tile export (`exportTilesAllowed`) | Parcel + 250 m, zoom 12–16, at most 3,000 tiles, two downloads at a time with the identifying User-Agent. OpenFreeMap vector tiles are not bulk-downloaded (its terms don't cover it); MapLibre's cache (raised to 150 MB) keeps what you've viewed |
 
+## Sharper aerial imagery (design map)
+
+Keyless ArcGIS ImageServer `exportImage` requests, drawn by MapLibre like other tiles. Layers → Aerial imagery source picks one; "Sharpest available" is the default.
+
+| Source | Host | Resolution | Licence |
+|---|---|---|---|
+| USGS NAIP Plus | imagery.nationalmap.gov | NAIP about 0.6 m, plus state and city imagery to 6 in where USGS has it | Public domain |
+| NC OneMap statewide orthoimagery (latest) | services.nconemap.gov | 6 in, re-flown a quarter of the state each year | North Carolina public data. **Owner to confirm** NC OneMap's terms allow display in a commercial app before release. |
+
+States are added to `STATE_IMAGERY` in `packages/providers/src/basemaps.ts` only after checking the service answers without a login and its terms allow use in an app. The map stops zooming half a level past where the imagery pixels match the ground, so photos never look smeared.
+
 ## Outbound links only (livestock phase 7)
 
 These open in the phone's browser. The app never calls them, sends them nothing, and shows no in-app web view.
