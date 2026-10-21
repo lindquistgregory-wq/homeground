@@ -10,7 +10,7 @@ import {
 } from '@plotwright/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState, type ReactElement } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Svg, { Circle, Rect } from 'react-native-svg';
 import { Text } from '../../src/components/Text';
 import { AnimalArt } from '../../src/components/AnimalArt';
@@ -21,6 +21,8 @@ import { deleteHerd, herdsForObject, saveHerd, type Herd } from '../../src/db/he
 import { listSensors, type SensorRecord } from '../../src/db/sensors';
 import { herdCount, herdLabel, housingName, isCurrent, siteForAnimals } from '../../src/services/animals';
 import { HerdNameField } from '../../src/components/HerdName';
+import { AnimalPhotos } from '../../src/components/AnimalPhotos';
+import { deletePhotoFiles } from '../../src/services/photos';
 import { useGarden } from '../../src/services/useGarden';
 import { useSettings } from '../../src/services/settings';
 
@@ -81,7 +83,7 @@ export default function HousingPlanner() {
   const remove = (h: Herd) =>
     Alert.alert('Remove herd?', `Remove ${herdLabel(h)} from ${name}?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: async () => { await deleteHerd(h.id); await load(); } },
+      { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(h.photos); await deleteHerd(h.id); await load(); } },
     ]);
 
   return (
@@ -124,7 +126,7 @@ export default function HousingPlanner() {
             return (
               <View key={h.id} style={[styles.herd, { borderColor: t.border }]}>
                 <View style={styles.herdHead}>
-                  <AnimalArt animalId={h.speciesId} size={44} />
+                  {h.photos?.[0] ? <Image source={{ uri: h.photos[0].thumb }} style={{ width: 44, height: 44, borderRadius: 12 }} accessibilityLabel={`Photo of ${herdLabel(h, a)}`} /> : <AnimalArt animalId={h.speciesId} size={44} />}
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: t.text, fontWeight: '600', fontSize: 16 }}>{herdLabel(h, a)}</Text>
                     {h.name && <Body muted>{herdCount(h, a)}</Body>}
@@ -132,6 +134,7 @@ export default function HousingPlanner() {
                   </View>
                 </View>
                 <HerdNameField herd={h} onSave={async (name) => { await saveHerd({ ...h, name }); await load(); }} />
+                <AnimalPhotos photos={h.photos ?? []} name={herdLabel(h, a)} compact onChange={async (photos) => { await saveHerd({ ...h, photos }); await load(); }} />
                 {a && h.count < group && <Text style={{ color: t.warn }}>{a.commonName} do best in groups of {group} or more.</Text>}
                 <View style={styles.row}>
                   <Chip label="−" active={false} disabled={h.count <= 1} onPress={async () => { await saveHerd({ ...h, count: h.count - 1 }); await load(); }} />

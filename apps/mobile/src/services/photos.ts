@@ -1,5 +1,5 @@
 /**
- * Animal photos (prompt §6, Photos): picked with the system photo picker, re-encoded once on the
+ * Animal photos (prompt §6, Photos): taken with the camera or picked with the system photo picker, re-encoded once on the
  * phone (long edge 1280 px, WebP ~0.6, retried at ~0.45 if over 150 KB; a 320 px thumbnail), the
  * original never kept, and anything still carrying EXIF (GPS location) refused. The full-size file
  * stays in the app's documents; only the thumbnail travels, inside the synced record.
@@ -28,9 +28,19 @@ async function encode(uri: string, w: number, h: number, edge: number, quality: 
   return { file, bytes: await file.bytes() };
 }
 
-/** Pick one photo and store it compressed. Null when cancelled. Throws with a plain message on failure. */
-export async function pickAnimalPhoto(): Promise<Photo | null> {
-  const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, exif: false, allowsEditing: false });
+export type PhotoSource = 'camera' | 'library';
+
+/**
+ * Take or pick one photo and store it compressed. Null when cancelled. Throws with a plain message on
+ * failure. The camera asks for permission the first time; the photo picker needs none.
+ */
+export async function pickAnimalPhoto(source: PhotoSource = 'library'): Promise<Photo | null> {
+  if (source === 'camera') {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) throw new Error('Camera access is off for Plotwright. You can allow it in your phone’s settings, or choose a photo from your library instead.');
+  }
+  const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1, exif: false, allowsEditing: false };
+  const r = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
   if (r.canceled || !r.assets[0]) return null;
   const a = r.assets[0];
   const original = new File(a.uri);
@@ -65,6 +75,11 @@ export function photoUri(p: Photo): string {
     if (f.exists) return f.uri;
   }
   return p.thumb;
+}
+
+/** Remove the full-size files of a group's or animal's photos (when it's deleted). */
+export function deletePhotoFiles(list: Photo[] | undefined): void {
+  for (const p of list ?? []) deletePhotoFile(p);
 }
 
 export function deletePhotoFile(p: Photo): void {

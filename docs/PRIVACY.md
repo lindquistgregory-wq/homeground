@@ -29,7 +29,7 @@ The planner's household details (ages, sex and activity level, used to estimate 
 
 Animal records (individual animals and pets, production logs, breeding and health records) follow the same rule. Health reminders are scheduled on your phone by its own notification system from the dates you enter; nothing is sent to a server. A vet history or CSV leaves the phone only when you share it yourself.
 
-**Animal photos** are re-encoded on your phone when you add them, which removes location (GPS) and other camera data; a photo that still carries it isn't saved. The original isn't kept. Full-size photos stay on the phone; only small thumbnails travel to your own cloud account with the record.
+**Animal photos** (taken with the camera or chosen from your library, for an animal or a group on your homestead) are re-encoded on your phone when you add them, which removes location (GPS) and other camera data; a photo that still carries it isn't saved. The original isn't kept. Full-size photos stay on the phone; only small thumbnails travel to your own cloud account with the record. The camera is used only when you choose "Take a photo", and nothing is uploaded anywhere else.
 
 **Shopping links**, where shown, are labelled "Paid link" and open in your phone's browser. They carry only a product search term such as "chicken feeder": never your property, location, animals or records. Turn them off in More.
 

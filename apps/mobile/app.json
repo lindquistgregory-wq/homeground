@@ -34,7 +34,6 @@
         "ACCESS_COARSE_LOCATION"
       ],
       "blockedPermissions": [
-        "android.permission.CAMERA",
         "android.permission.SYSTEM_ALERT_WINDOW"
       ],
       "adaptiveIcon": {
@@ -44,6 +43,13 @@
       }
     },
     "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Plotwright uses your photos so you can add pictures of your animals.",
+          "cameraPermission": "Plotwright uses the camera so you can take pictures of your animals."
+        }
+      ],
       "expo-router",
       "expo-sqlite",
       [

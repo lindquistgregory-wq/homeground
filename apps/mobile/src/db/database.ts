@@ -280,6 +280,10 @@ const MIGRATIONS: string[] = [
   `
   ALTER TABLE herds ADD COLUMN name TEXT;
   `,
+  // 15 — photos of a herd or animal on the map (JSON list; thumbnails sync, full-size files stay on the phone).
+  `
+  ALTER TABLE herds ADD COLUMN photos TEXT;
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;

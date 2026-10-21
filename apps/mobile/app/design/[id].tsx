@@ -17,7 +17,7 @@ import { OPENFREEMAP_STYLE_URL, STATE_IMAGERY, USGS_HILLSHADE, USGS_IMAGERY, USG
 import { http } from '../../src/services/http';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Body, Button, Card, tapFeedback, useTheme } from '../../src/components/ui';
@@ -44,6 +44,8 @@ import { AnimalArt } from '../../src/components/AnimalArt';
 import { Chip } from '../../src/components/plants';
 import { herdCount, herdLabel, isCurrent } from '../../src/services/animals';
 import { HerdNameField } from '../../src/components/HerdName';
+import { AnimalPhotos } from '../../src/components/AnimalPhotos';
+import { deletePhotoFiles } from '../../src/services/photos';
 import { listSensors } from '../../src/db/sensors';
 import { newId } from '../../src/services/identity';
 import { useSettings } from '../../src/services/settings';
@@ -439,7 +441,9 @@ export default function DesignScreen() {
             const sel = f.properties.selected === 1;
             const size = sel ? 40 : 32;
             // Housing with animals living in it shows their drawing instead of the generic icon.
-            const housedId = animalsOn ? herds.find((h) => h.designId === design.id && h.objectId === f.properties.id)?.speciesId : undefined;
+            const housed = animalsOn ? herds.find((h) => h.designId === design.id && h.objectId === f.properties.id) : undefined;
+            const housedId = housed?.speciesId;
+            const housedPhoto = housed?.photos?.[0]?.thumb;
             return (
               <Marker key={f.properties.id} id={`pin-${f.properties.id}`} lngLat={f.geometry.coordinates as [number, number]}
                 onPress={() => { if (!placing && !moving) { badgeTapAt.current = Date.now(); tapFeedback(); selectObject(f.properties.id); } }}>
@@ -453,7 +457,9 @@ export default function DesignScreen() {
                   }}
                 >
                   {housedId
-                    ? <Svg width={size * 0.78} height={size * 0.78} viewBox="0 0 48 48">{drawAnimal(artForAnimal(housedId))}</Svg>
+                    ? housedPhoto
+                      ? <Image source={{ uri: housedPhoto }} style={{ width: size - 4, height: size - 4, borderRadius: (size - 4) / 2 }} />
+                      : <Svg width={size * 0.78} height={size * 0.78} viewBox="0 0 48 48">{drawAnimal(artForAnimal(housedId))}</Svg>
                     : <Icon name={objectIcon(f.properties.kind, f.properties.category)} size={sel ? 22 : 18} color="#ffffff" />}
                 </View>
               </Marker>
@@ -467,7 +473,9 @@ export default function DesignScreen() {
                 onPress={() => { if (!placing && !moving && !placingAnimal) { badgeTapAt.current = Date.now(); tapFeedback(); setSelectedId(null); setSelectedHerdId(h.id); setTab('selected'); } }}>
                 <View accessibilityRole="button" accessibilityLabel={`${herdLabel(h)}, on the property${sel ? ', selected' : ''}`}
                   style={{ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff6e8', borderWidth: sel ? 3 : 2, borderColor: sel ? '#4ea8f2' : '#ffffff', elevation: 4 }}>
-                  <Svg width={size * 0.78} height={size * 0.78} viewBox="0 0 48 48">{drawAnimal(artForAnimal(h.speciesId))}</Svg>
+                  {h.photos?.[0]
+                    ? <Image source={{ uri: h.photos[0].thumb }} style={{ width: size - 4, height: size - 4, borderRadius: (size - 4) / 2 }} />
+                    : <Svg width={size * 0.78} height={size * 0.78} viewBox="0 0 48 48">{drawAnimal(artForAnimal(h.speciesId))}</Svg>}
                 </View>
               </Marker>
             );
@@ -567,6 +575,7 @@ export default function DesignScreen() {
                 }
                 // Herds housed in it go too, so they don't keep raising alerts.
                 if (housed.length) {
+                  housed.forEach((h) => deletePhotoFiles(h.photos));
                   await deleteHerdsForObject(design.id, selected.id);
                   setHerds((hs) => hs.filter((h) => h.objectId !== selected.id));
                 }
@@ -585,7 +594,7 @@ export default function DesignScreen() {
             onMove={() => setMovingHerd(selectedHerd.id)}
             onRecords={() => router.push({ pathname: '/records/[id]', params: { id: selectedHerd.id, type: 'herd', parcelId: parcel.id } })}
             onCare={() => router.push({ pathname: '/animals/[animalId]', params: { animalId: selectedHerd.speciesId, parcelId: parcel.id } })}
-            onRemove={() => Alert.alert('Remove animals?', `Remove ${herdLabel(selectedHerd)} from the map? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { await deleteHerd(selectedHerd.id); setHerds((hs) => hs.filter((x) => x.id !== selectedHerd.id)); setSelectedHerdId(null); } }])} />
+            onRemove={() => Alert.alert('Remove animals?', `Remove ${herdLabel(selectedHerd)} from the map? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(selectedHerd.photos); await deleteHerd(selectedHerd.id); setHerds((hs) => hs.filter((x) => x.id !== selectedHerd.id)); setSelectedHerdId(null); } }])} />
         ) : <Body muted>Tap an object or animals on the map to edit them.</Body>)}
 
         {tab === 'sun' && (
@@ -766,6 +775,7 @@ function HerdPanel({ h, onChange, onMove, onRecords, onCare, onRemove }: {
         <Body muted>{h.name ? `${herdCount(h, a)} · ` : ''}{h.status === 'active' ? 'On the land' : 'Planned'} · roaming the property (no housing)</Body>
       </View>
       <HerdNameField herd={h} onSave={(name) => onChange({ ...h, name })} />
+      <AnimalPhotos photos={h.photos ?? []} name={herdLabel(h, a)} compact onChange={(photos) => onChange({ ...h, photos })} />
       <View style={styles.row}>
         <Chip label="−" active={false} disabled={h.count <= 1} onPress={() => void onChange({ ...h, count: h.count - 1 })} />
         <Chip label="+" active={false} onPress={() => void onChange({ ...h, count: h.count + 1 })} />
