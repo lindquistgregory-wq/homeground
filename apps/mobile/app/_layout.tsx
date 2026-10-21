@@ -16,6 +16,7 @@ import { FONTS } from '../src/components/Text';
 // Registers the background alert task at startup (the OS may launch the app headless to run it).
 import { checkAlerts } from '../src/services/alerts';
 import { refreshHealthReminders } from '../src/services/healthReminders';
+import { refreshEventReminders } from '../src/services/eventReminders';
 import { collectOnOpen } from '../src/services/ble';
 import { localOffsetMin } from '../src/services/sensorInsights';
 import { refreshAllStations } from '../src/services/stations';
@@ -64,6 +65,7 @@ export default function RootLayout() {
         .catch(() => undefined);
       // Health reminders follow the records, including ones synced from another device.
       refreshHealthReminders().catch(() => undefined);
+      refreshEventReminders().catch(() => undefined);
     })();
   }, []);
 

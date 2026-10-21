@@ -19,7 +19,7 @@ const KIND_ICON: Record<string, IconName> = {
   'rain-barrel': 'barrel-outline', 'ibc-tote': 'water-outline', cistern: 'water-well-outline', pond: 'waves', swale: 'wave', 'drip-line': 'water-pump',
   'hose-bib': 'water-pump', well: 'water-well-outline', 'compost-bays': 'recycle', 'worm-bin': 'bug-outline',
   'solar-array': 'solar-panel', 'wood-storage': 'axe', 'fence-deer': 'fence', 'fence-garden': 'fence', 'fence-electric': 'fence-electric', gate: 'gate',
-  path: 'walk', driveway: 'car-outline',
+  path: 'walk', driveway: 'car-outline', 'custom-line': 'draw', 'custom-area': 'vector-polygon',
 };
 
 const CATEGORY_ICON: Record<string, IconName> = {

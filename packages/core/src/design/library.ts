@@ -102,6 +102,8 @@ export const OBJECT_LIBRARY: ObjectType[] = [
   T({ kind: 'fence-garden', name: 'Garden fence (solid)', category: 'energy-utility', shape: 'line', width: 0.1, length: 10, height: 1.2, material: Material.opaque, tier: 'free' }),
   T({ kind: 'fence-electric', name: 'Electric fence', category: 'energy-utility', shape: 'line', width: 0.05, length: 30, height: 1.2, material: Material.none, tier: 'grower' }),
   T({ kind: 'gate', name: 'Gate', category: 'energy-utility', shape: 'line', width: 0.1, length: 1.2, height: 1.2, material: Material.none, tier: 'free' }),
+  T({ kind: 'custom-line', name: 'Custom line (drawn)', category: 'energy-utility', shape: 'line', width: 0.3, length: 10, height: 0, material: Material.none, tier: 'free', notes: 'Drawn with your finger: fences, paths, hedges, drainage. Label it to say what it is.' }),
+  T({ kind: 'custom-area', name: 'Custom area (drawn)', category: 'energy-utility', shape: 'rect', width: 5, length: 5, height: 0, material: Material.none, tier: 'free', notes: 'Drawn with your finger: a garden, pen, woodlot or anything else. Label it to say what it is.' }),
   T({ kind: 'path', name: 'Path', category: 'energy-utility', shape: 'line', width: 0.9, length: 10, height: 0, material: Material.none, tier: 'free' }),
   T({ kind: 'driveway', name: 'Driveway', category: 'energy-utility', shape: 'line', width: 3.6, length: 20, height: 0, material: Material.none, tier: 'grower' }),
 ];

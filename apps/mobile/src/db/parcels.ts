@@ -7,6 +7,7 @@ import { deleteDesignsForParcel } from './designs';
 import { deletePlantingsForParcel } from './plantings';
 import { deleteHerdsForParcel } from './herds';
 import { deleteRecordsForParcel } from './records';
+import { deleteEventsForParcel } from './calendarEvents';
 import { deletePlannerForParcel } from './planner';
 import { deleteSensorsForParcel } from './sensors';
 import { deleteSecrets } from '../services/secrets';
@@ -110,6 +111,7 @@ export async function deleteParcel(id: string): Promise<void> {
   await deletePlantingsForParcel(id);
   await deleteHerdsForParcel(id);
   await deleteRecordsForParcel(id);
+  await deleteEventsForParcel(id);
   await deletePlannerForParcel(id);
   await deleteSecrets(await deleteSensorsForParcel(id));
 }

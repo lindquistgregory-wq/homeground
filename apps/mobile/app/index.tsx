@@ -22,6 +22,8 @@ import { Body, Button, Card, Skeleton, tapFeedback, useTheme } from '../src/comp
 import { useEntitlements } from '../src/billing/entitlements';
 import { getSiteProfile, listParcels, type ParcelRecord } from '../src/db/parcels';
 import { homeSummary, todayDoy, type HomeSummary, type HomeTask } from '../src/services/homeSummary';
+import { dailyBrief, type DailyBrief } from '../src/services/dailyBrief';
+import { EventRow } from '../src/components/calendar';
 import { useSettings } from '../src/services/settings';
 
 const TASK_ICON: Partial<Record<HomeTask['kind'], IconName>> = {
@@ -44,6 +46,7 @@ export default function Home() {
   const [parcels, setParcels] = useState<ParcelRecord[] | null>(null);
   const [profiles, setProfiles] = useState<Record<string, SiteProfile | undefined>>({});
   const [summaries, setSummaries] = useState<Record<string, HomeSummary>>({});
+  const [briefs, setBriefs] = useState<Record<string, DailyBrief | null>>({});
   const showProcessing = useSettings((s) => s.showProcessing);
   // Read inside the focus effect without re-running it on every settings change.
   const animalsRef = useRef(animals);
@@ -62,6 +65,8 @@ export default function Home() {
         setProfiles(profs);
         const sums = await Promise.all(ps.map(async (p) => [p.id, await homeSummary(p.id, profs[p.id], 28, { animals: animalsRef.current === 'yes', showProcessing: processingRef.current }).catch(() => undefined)] as const));
         if (!cancelled) setSummaries(Object.fromEntries(sums.filter((s): s is readonly [string, HomeSummary] => !!s[1])));
+        // The daily brief needs the forecast, so it fills in after the cards are up.
+        for (const p of ps) void dailyBrief(p.id).catch(() => null).then((b) => { if (!cancelled) setBriefs((x) => ({ ...x, [p.id]: b })); });
       });
       return () => { cancelled = true; };
     }, []),
@@ -171,17 +176,17 @@ export default function Home() {
                   <Tile icon="lightbulb-on-outline" label="Planner" caption="Plan the homestead" onPress={() => go('/planner/[id]', item.id)} />
                   <Tile icon="layers-outline" label="Site profile" caption="Soil, sun, water" onPress={() => go('/profile/[id]', item.id)} />
                 </TileRow>
-                {animals === 'yes' && (
-                  <>
-                    <View style={{ height: 10 }} />
-                    <TileRow>
-                      <Tile icon="clipboard-text-outline" label="My animals" caption="Health, logs, pets" onPress={() => router.push('/records')} />
-                      <Tile icon="paw" label="Animals" caption={sum?.animals ? `${sum.animals} animal${sum.animals === 1 ? '' : 's'}` : 'Fit, housing, care'} onPress={() => router.push({ pathname: '/animals', params: { parcelId: item.id } })} />
-                    </TileRow>
-                  </>
-                )}
+                <View style={{ height: 10 }} />
+                <TileRow>
+                  <Tile icon="sprout" label="Plants" caption="What grows here" onPress={() => router.push('/plants')} />
+                  {animals === 'yes' && (
+                    <Tile icon="paw" label="My animals" caption={sum?.animals ? `${sum.animals} animal${sum.animals === 1 ? '' : 's'}` : 'Library, health, logs'} onPress={() => router.push('/records')} />
+                  )}
+                </TileRow>
               </View>
             </View>
+
+            <BriefCard brief={briefs[item.id]} onOpen={() => go('/calendar/[id]', item.id)} />
 
             {sum && (
               <Card title="Coming up" icon="calendar-clock" right={tasks.length ? (
@@ -233,6 +238,30 @@ export default function Home() {
       {/* This screen has no header: keep scrolled content from running under the status bar. */}
       <View pointerEvents="none" style={[styles.statusBar, { height: insets.top, backgroundColor: t.bg }]} />
     </View>
+  );
+}
+
+/** Today on the homestead: the forecast in a line, today's alerts, and what's on the calendar. */
+function BriefCard({ brief, onOpen }: { brief: DailyBrief | null | undefined; onOpen: () => void }) {
+  const t = useTheme();
+  if (brief === null) return null;
+  return (
+    <Card title="Daily brief" icon="weather-partly-cloudy" right={
+      <Pressable accessibilityRole="link" onPress={onOpen} hitSlop={10}><Text style={{ color: t.accent, fontWeight: '600' }}>Calendar</Text></Pressable>
+    }>
+      {brief === undefined ? <Skeleton lines={2} label="Loading today's brief" /> : (
+        <>
+          {brief.weather ? <Text style={{ color: t.text, fontSize: 15, fontWeight: '600' }}>{brief.weather}</Text> : <Body muted>{brief.weatherNote ?? 'No forecast for today.'}</Body>}
+          {brief.alerts.map((a) => <Text key={a.title} style={{ color: a.urgent ? t.bad : t.warn, fontWeight: '700', marginTop: 4 }}>{a.title}</Text>)}
+          <View style={{ marginTop: 8 }}>
+            {brief.events.length ? brief.events.slice(0, 4).map((e) => <EventRow key={e.id} item={e} onPress={onOpen} />) : <Body muted>Nothing on the calendar today.</Body>}
+            {brief.events.length > 4 && <Body muted>…and {brief.events.length - 4} more.</Body>}
+            {brief.ongoing.length > 0 && <Text style={{ color: t.muted, fontSize: 13 }}>Ongoing: {brief.ongoing.slice(0, 3).map((e) => e.title).join('; ')}{brief.ongoing.length > 3 ? '…' : ''}</Text>}
+          </View>
+          <Text style={{ color: t.muted, fontSize: 12, marginTop: 4 }}>Forecast: National Weather Service. Not an official warning.</Text>
+        </>
+      )}
+    </Card>
   );
 }
 

@@ -23,6 +23,21 @@ export interface GardenState {
   soil: SoilSource;
 }
 
+/** Everything the planting screens share for one parcel, or null when the parcel is gone. */
+export async function gardenState(parcelId: string): Promise<GardenState | null> {
+  const parcel = await getParcel(parcelId);
+  if (!parcel) return null;
+  const [profile, design, plantings] = await Promise.all([getSiteProfile(parcelId), getOrCreateDesign(parcelId), plantingsForParcel(parcelId)]);
+  let rh: number | undefined, humiditySource: string | undefined;
+  if (profile) {
+    const h = await humidityClimatology(http, profile.centroid);
+    if (h.status === 'ok') (rh = h.value.summer), (humiditySource = h.attribution.source);
+  }
+  const site = siteConditions(profile, rh);
+  const soil = await soilSourceFor(parcelId, profile, site).catch((): SoilSource => ({ kind: 'none', label: 'soil temperature unavailable' }));
+  return { parcel, profile, design, plantings, site, humiditySource, profileStale: !profile || profile.version < SITE_PROFILE_VERSION, soil };
+}
+
 export function useGarden(parcelId: string | undefined): { state: GardenState | null; error: string | null; reload: () => Promise<void> } {
   const [state, setState] = useState<GardenState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,17 +45,9 @@ export function useGarden(parcelId: string | undefined): { state: GardenState | 
   const load = useCallback(async () => {
     if (!parcelId) return;
     try {
-      const parcel = await getParcel(parcelId);
-      if (!parcel) return setError('This property is no longer on this device.');
-      const [profile, design, plantings] = await Promise.all([getSiteProfile(parcelId), getOrCreateDesign(parcelId), plantingsForParcel(parcelId)]);
-      let rh: number | undefined, humiditySource: string | undefined;
-      if (profile) {
-        const h = await humidityClimatology(http, profile.centroid);
-        if (h.status === 'ok') (rh = h.value.summer), (humiditySource = h.attribution.source);
-      }
-      const site = siteConditions(profile, rh);
-      const soil = await soilSourceFor(parcelId, profile, site).catch((): SoilSource => ({ kind: 'none', label: 'soil temperature unavailable' }));
-      setState({ parcel, profile, design, plantings, site, humiditySource, profileStale: !profile || profile.version < SITE_PROFILE_VERSION, soil });
+      const st = await gardenState(parcelId);
+      if (!st) return setError('This property is no longer on this device.');
+      setState(st);
     } catch (e) {
       setError((e as Error).message);
     }

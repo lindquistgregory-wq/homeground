@@ -104,6 +104,7 @@ export default function MyAnimals() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <Button title="Animal library: fit, housing and care" kind="secondary" icon="paw" onPress={() => router.push({ pathname: '/animals', params: firstParcel ? { parcelId: firstParcel } : {} })} />
       {(data.due.length > 0 || !data.reminders) && (
         <Card title="Health dates" icon="calendar-alert">
           {data.due.map((d) => (
