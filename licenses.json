@@ -1,6 +1,11 @@
 {
   "$comment": "Every npm dependency must be listed here with a licence that allows free commercial use. `pnpm check:licenses` fails CI otherwise. Re-verify when adding or upgrading.",
   "packages": {
+    "@expo-google-fonts/bitter": {
+      "license": "MIT AND OFL-1.1",
+      "commercialUse": true,
+      "note": "Bitter display face for headings (SIL Open Font License, bundled)"
+    },
     "@expo-google-fonts/inter": {
       "license": "MIT AND OFL-1.1",
       "commercialUse": true,

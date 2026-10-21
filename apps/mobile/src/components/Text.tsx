@@ -1,5 +1,6 @@
 /**
- * Text and TextInput in the app's typeface (Inter). Android picks a custom font by family name, not
+ * Text and TextInput in the app's typefaces: Inter for reading, and Bitter (a slab serif, per the
+ * Plotwright Design Review) for headings, picked automatically for text with accessibilityRole="header". Android picks a custom font by family name, not
  * by weight, so a style's fontWeight / fontStyle is mapped to the matching Inter file here; screens
  * keep writing `fontWeight: '600'` as usual. A style that sets its own fontFamily is left alone, and
  * nested text with no weight of its own inherits its parent's font, as React Native text does.
@@ -12,12 +13,19 @@ export const FONTS = {
   medium: 'Inter_500Medium',
   semibold: 'Inter_600SemiBold',
   bold: 'Inter_700Bold',
+  /** Bitter: screen titles, card headers and the top bar. */
+  display: 'Bitter_600SemiBold',
+  displayBold: 'Bitter_700Bold',
 } as const;
 
 const Nested = createContext(false);
 
-function family(style: TextStyle | undefined, nested: boolean): TextStyle | undefined {
+function family(style: TextStyle | undefined, nested: boolean, header = false): TextStyle | undefined {
   if (style?.fontFamily) return undefined;
+  if (header) {
+    const w = String(style?.fontWeight ?? '600');
+    return { fontFamily: w === 'bold' || Number(w) >= 700 ? FONTS.displayBold : FONTS.display, fontWeight: 'normal', fontStyle: 'normal' };
+  }
   if (nested && style?.fontWeight === undefined && style?.fontStyle === undefined) return undefined;
   const w = String(style?.fontWeight ?? '400');
   const base = w === 'bold' || Number(w) >= 700 ? FONTS.bold : Number(w) >= 600 ? FONTS.semibold : Number(w) >= 500 ? FONTS.medium : FONTS.regular;
@@ -26,7 +34,7 @@ function family(style: TextStyle | undefined, nested: boolean): TextStyle | unde
 
 export function Text(props: TextProps) {
   const nested = useContext(Nested);
-  const f = family(StyleSheet.flatten(props.style) as TextStyle | undefined, nested);
+  const f = family(StyleSheet.flatten(props.style) as TextStyle | undefined, nested, props.accessibilityRole === 'header');
   return (
     <Nested.Provider value>
       <RNText {...props} style={f ? [props.style, f] : props.style} />
