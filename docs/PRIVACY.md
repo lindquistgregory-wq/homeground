@@ -10,6 +10,7 @@ Plotwright is a homestead and garden planner. It has **no server of its own** an
 - **Location** is used on the phone to find your property and to trace a boundary. It isn't sent to Plotwright.
 - **Weather-station keys and sensor keys** are kept in the phone's keychain.
 - The **AI planner** runs on the phone (Apple Foundation Models or Gemini Nano). Nothing you type is sent to a cloud AI.
+- **AI bed suggestions** use the same on-device AI. Only if you add **your own** Claude API key in Settings (optional, off by default) and the phone has no on-device AI, a bed's conditions (sun hours, soil, zone, month), its plants and the list of plants that fit are sent to Anthropic's Claude API under your own Anthropic account, which bills you. No location, names, photos or other data are sent. The key stays in the phone's secure storage and is removed by "Delete all my data".
 
 ## What the app sends, and to whom
 

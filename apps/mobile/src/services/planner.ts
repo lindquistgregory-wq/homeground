@@ -4,8 +4,8 @@
  * Nothing here touches the network except what the site profile already cached.
  */
 import {
-  OBJECT_LIBRARY, allPlants, footprintAreaM2, footprintUtm, formatDoy, frameForBoundary, newObject, objectType, pointInAreal, project, scorePlant, unproject,
-  type DesignDraft, type DesignObject, type HomesteadGoals, type PlannerContext, type SitePlanInput, type TaskDraft,
+  OBJECT_LIBRARY, allPlants, buildPlan, footprintAreaM2, footprintUtm, formatDoy, frameForBoundary, newObject, objectType, pointInAreal, project, scorePlant, unproject,
+  readyToPlan, type DesignDraft, type DesignObject, type HomesteadGoals, type PlannerContext, type SitePlanInput, type TaskDraft,
 } from '@plotwright/core';
 import { KNOWLEDGE_BASE } from '@plotwright/data';
 import { humidityClimatology, type SiteProfile } from '@plotwright/providers';
@@ -95,6 +95,17 @@ function siteFactLines(parcel: ParcelRecord, profile: SiteProfile | undefined): 
 }
 
 /** Build the context the planner's tools read, for one parcel. */
+/** Crops the homestead plan calls for (plant ids), or none when the plan's questions aren't answered yet. */
+export async function planCropIds(parcelId: string): Promise<string[]> {
+  const goals = await getGoals(parcelId);
+  if (!readyToPlan(goals)) return [];
+  const parcel = await getParcel(parcelId);
+  if (!parcel) return [];
+  const profile = await getSiteProfile(parcelId);
+  const plan = buildPlan(goals, sitePlanInputFrom(parcel, profile, await climateFit(profile)), KNOWLEDGE_BASE, { animalFeatures: false });
+  return [...new Set(plan.items.flatMap((i) => (i.crops ?? []).map((c) => c.plantId)))];
+}
+
 export async function plannerContext(parcelId: string, onGoals?: (g: HomesteadGoals) => void): Promise<PlannerContext> {
   const parcel = await getParcel(parcelId);
   if (!parcel) throw new Error('This property is no longer on this device.');

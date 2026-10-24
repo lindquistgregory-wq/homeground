@@ -1,6 +1,11 @@
 {
   "$comment": "Every npm dependency must be listed here with a licence that allows free commercial use. `pnpm check:licenses` fails CI otherwise. Re-verify when adding or upgrading.",
   "packages": {
+    "@anthropic-ai/sdk": {
+      "license": "Apache-2.0",
+      "commercialUse": true,
+      "note": "Official Claude API client; used only for the optional bring-your-own-key bed suggestions"
+    },
     "@expo-google-fonts/bitter": {
       "license": "MIT AND OFL-1.1",
       "commercialUse": true,
