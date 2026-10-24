@@ -50,6 +50,7 @@ export default function Planner() {
   const [tasks, setTasks] = useState<TaskRecord[]>([]);
   const [progress, setProgress] = useState<Record<string, ProjectProgress>>({});
   const [planView, setPlanView] = useState<'timeline' | 'details'>('timeline');
+  const [lastFrostDoy, setLastFrostDoy] = useState<number | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState<number | null>(null);
@@ -83,6 +84,7 @@ export default function Planner() {
     if (!ctx || !readyToPlan(goals)) { setPlan(null); return; }
     let cancelled = false;
     void ctx.sitePlanInput().then((site) => {
+      if (!cancelled) setLastFrostDoy(site.lastFrostDoy);
       if (!cancelled) setPlan(buildPlan(goals, site, KNOWLEDGE_BASE, { includeIncome: tier.income, showCosts: tier.multiYear, animalFeatures: animalsOn }));
     });
     return () => { cancelled = true; };
@@ -232,7 +234,7 @@ export default function Planner() {
               <Chip label="Food, budget and details" active={planView === 'details'} onPress={() => setPlanView('details')} />
             </View>
             {planView === 'timeline' ? (
-              <ProjectTimeline parcelId={id} projects={projectsFromPlan(plan)} progress={progress} phases={(tier.multiYear ? ['year0', 'year1', 'years2to5'] : ['year0', 'year1']) as PhaseId[]}
+              <ProjectTimeline parcelId={id} projects={projectsFromPlan(plan)} progress={progress} lastFrostDoy={lastFrostDoy} phases={(tier.multiYear ? ['year0', 'year1', 'years2to5'] : ['year0', 'year1']) as PhaseId[]}
                 onChange={async (p) => { await saveProjectProgress(p); setProgress(await listProjectProgress(id)); }}
                 onDraft={tier.full ? (p) => void draftFromProject(p) : undefined} />
             ) : <PlanView plan={plan} tier={tier} onDraft={tier.full ? (i) => void draftFromItem(i) : undefined} />}

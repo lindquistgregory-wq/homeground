@@ -7,7 +7,7 @@
  * Step lengths and chore frequencies are planning suggestions, labelled as such: the owner can change
  * the start date, and the calendar follows what they actually check off.
  */
-import { isoAdd, type Repeat } from '../calendar/agenda';
+import { doyToIso, isoAdd, type Repeat } from '../calendar/agenda';
 import { IN_GROUND_KINDS } from '../safety/notes';
 import type { DesignDraft, DraftObject } from './drafts';
 import type { HomesteadPlan, PhaseId, PlanItem } from './plan';
@@ -31,6 +31,11 @@ export interface ProjectStep {
   optional?: boolean;
   /** Routine chores that start once this step is done. */
   chores?: ChoreTemplate[];
+  /**
+   * Only in season: 'spring-planting' from three weeks before the median last frost (cool crops first),
+   * 'early-spring' from six weeks before it (bare-root trees, bee packages). Waits for the next spring otherwise.
+   */
+  season?: 'spring-planting' | 'early-spring';
 }
 
 export type ProjectIcon = 'garden' | 'hens' | 'poultry' | 'bees' | 'goats' | 'rabbits' | 'pigs' | 'orchard' | 'tunnel' | 'water';
@@ -142,7 +147,7 @@ function livestockProject(item: PlanItem): PlanProject {
     ...(fenced ? [{ id: 'fence', title: 'Fence the paddock', days: 14 }] : []),
     { id: 'housing', title: w.housing, detail: item.detail || undefined, days: 14 },
     ...(sp === 'honeybees' ? [] : [{ id: 'supplies', title: 'Line up feed, bedding and a vet', detail: 'Find a vet who sees this species before the animals arrive.', days: 7 }]),
-    { id: 'arrive', title: w.arrive, days: 1, chores: w.chores },
+    { id: 'arrive', title: w.arrive, days: 1, chores: w.chores, ...(sp === 'honeybees' ? { season: 'early-spring' as const } : {}) },
   ];
   return {
     id: item.id, title: w.title, icon: w.icon, phase: item.phase, summary: item.title, itemIds: [item.id], steps,
@@ -169,7 +174,7 @@ export function projectsFromPlan(plan: HomesteadPlan): PlanProject[] {
       ...(by.has('beds') ? [{ id: 'fill', title: 'Fill the beds with soil and compost', days: 7 }] : []),
       ...pick('deer').map((i) => ({ id: 'deer', title: 'Fence the garden (if deer visit)', detail: i.detail, days: 7, optional: true })),
       {
-        id: 'plant', title: 'Plant the garden', detail: `${garden.detail}. Each crop’s sowing window shows on the calendar once it’s planned in a bed.`, days: 30,
+        id: 'plant', title: 'Plant the garden', detail: `${garden.detail}. Each crop’s sowing window shows on the calendar once it’s planned in a bed.`, days: 30, season: 'spring-planting',
         chores: [{ id: 'garden-check', title: 'Garden check: water, weeds and pests', repeat: 'weekly', basis: ROUTINE }],
       },
       ...pick('storage').map((i) => ({ id: 'storage', title: i.title, detail: i.detail, days: 14 })),
@@ -191,7 +196,7 @@ export function projectsFromPlan(plan: HomesteadPlan): PlanProject[] {
         ...(digs(perennials) ? [call811] : []),
         { id: 'prepare', title: 'Prepare the planting spots', detail: 'Clear grass, loosen the soil and mark the spacing.', days: 7 },
         {
-          id: 'plant', title: 'Plant', detail: perennials.map((i) => i.title).join(', '), days: 7,
+          id: 'plant', title: 'Plant', detail: perennials.map((i) => i.title).join(', '), days: 7, season: 'early-spring',
           chores: [{ id: 'water-new', title: 'Water the new plantings (first year)', repeat: 'weekly', basis: ROUTINE }],
         },
         { id: 'protect', title: 'Mulch and protect the trunks', days: 3 },
@@ -204,7 +209,7 @@ export function projectsFromPlan(plan: HomesteadPlan): PlanProject[] {
   if (expand) {
     out.push({
       id: 'garden-y2', title: 'Garden expansion', icon: 'garden', phase: expand.phase, summary: expand.title, itemIds: [expand.id],
-      steps: [{ id: 'beds', title: 'Build the new beds', days: 14 }, { id: 'fill', title: 'Fill the beds with soil and compost', days: 7 }, { id: 'plant', title: 'Plant the new beds', detail: expand.detail, days: 30 }],
+      steps: [{ id: 'beds', title: 'Build the new beds', days: 14 }, { id: 'fill', title: 'Fill the beds with soil and compost', days: 7 }, { id: 'plant', title: 'Plant the new beds', detail: expand.detail, days: 30, season: 'spring-planting' }],
       why: expand.why, regulatory: [],
     });
   }
@@ -235,14 +240,14 @@ export function projectDraft(project: PlanProject, plan: HomesteadPlan, id: stri
  * A step checked off moves the next one to the following day; a step past its end and not done is
  * stretched to today, so the steps after it move too.
  */
-export function scheduleProject(project: ProjectSnapshot, progress: ProjectProgress | undefined, today: string): ScheduledStep[] {
+export function scheduleProject(project: ProjectSnapshot, progress: ProjectProgress | undefined, today: string, site: { lastFrostDoy?: number } = {}): ScheduledStep[] {
   if (!progress?.startDate) return [];
   const out: ScheduledStep[] = [];
   let cursor = progress.startDate;
   let firstOpen = true;
   project.steps.forEach((step, index) => {
     const doneOn = progress.done[step.id];
-    const start = cursor;
+    const start = inSeason(step, cursor, site.lastFrostDoy);
     if (doneOn) {
       const end = doneOn < start ? start : doneOn;
       out.push({ step, index, start: doneOn < start ? doneOn : start, end, doneOn });
@@ -259,6 +264,19 @@ export function scheduleProject(project: ProjectSnapshot, progress: ProjectProgr
     cursor = isoAdd(end, 1);
   });
   return out;
+}
+
+/** The first day from `from` that a seasonal step can start: inside its spring window, else the next one. */
+function inSeason(step: ProjectStep, from: string, lastFrostDoy: number | undefined): string {
+  if (!step.season || lastFrostDoy === undefined) return from;
+  const open = lastFrostDoy - (step.season === 'early-spring' ? 42 : 21);
+  const close = open + (step.season === 'early-spring' ? 75 : 120);
+  const year = Number(from.slice(0, 4));
+  for (const y of [year - 1, year, year + 1]) {
+    const a = doyToIso(y, open), b = doyToIso(y, close);
+    if (from <= b) return from >= a ? from : a;
+  }
+  return from;
 }
 
 /** Chores switched on by finished steps (and not switched off). */

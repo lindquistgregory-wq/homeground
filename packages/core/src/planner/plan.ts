@@ -46,6 +46,8 @@ export interface SitePlanInput {
   zone?: string;
   /** Median 32 °F freeze-free days. */
   freezeFreeDays?: number | null;
+  /** Median last spring 32 °F frost, day of year (for when planting steps can start). */
+  lastFrostDoy?: number;
   frostRare?: boolean;
   /** 0–100 climate fit per plant id (scorePlant against the parcel). Unscored plants are allowed. */
   suitability?: Record<string, number>;

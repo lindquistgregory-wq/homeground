@@ -23,13 +23,13 @@ const REPEAT_LABEL = { daily: 'every day', weekly: 'every week', monthly: 'every
 
 const fmt = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 const isIso = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`));
-/** The coming Saturday (or today if it is one). */
-const saturday = (today: string) => isoAdd(today, (6 - new Date(`${today}T12:00:00`).getDay() + 7) % 7);
+/** The coming Saturday (next week's when today is one, so it differs from "Today"). */
+const saturday = (today: string) => isoAdd(today, (6 - new Date(`${today}T12:00:00`).getDay() + 7) % 7 || 7);
 
 type Change = (p: Omit<ProjectProgress, 'updatedAt'>) => Promise<void>;
 
-export function ProjectTimeline({ parcelId, projects, progress, phases, onChange, onDraft }: {
-  parcelId: string; projects: PlanProject[]; progress: Record<string, ProjectProgress>; phases: PhaseId[];
+export function ProjectTimeline({ parcelId, projects, progress, phases, lastFrostDoy, onChange, onDraft }: {
+  parcelId: string; projects: PlanProject[]; progress: Record<string, ProjectProgress>; phases: PhaseId[]; lastFrostDoy?: number;
   onChange: Change; onDraft?: (p: PlanProject) => void;
 }) {
   const t = useTheme();
@@ -58,7 +58,7 @@ export function ProjectTimeline({ parcelId, projects, progress, phases, onChange
               <Text style={{ color: t.muted, fontWeight: '700', fontSize: 13, letterSpacing: 0.4 }}>{PHASE_SHORT[ph].toUpperCase()}</Text>
             </View>
             {inPhase.map((p, i) => (
-              <ProjectNode key={p.id} parcelId={parcelId} live={p} progress={progress[p.id]} open={open === p.id} last={i === inPhase.length - 1 && ph === phases[phases.length - 1]}
+              <ProjectNode key={p.id} parcelId={parcelId} live={p} lastFrostDoy={lastFrostDoy} progress={progress[p.id]} open={open === p.id} last={i === inPhase.length - 1 && ph === phases[phases.length - 1]}
                 onToggle={() => setOpen(open === p.id ? null : p.id)} onChange={onChange} onDraft={onDraft ? () => onDraft(p) : undefined} />
             ))}
           </View>
@@ -69,8 +69,8 @@ export function ProjectTimeline({ parcelId, projects, progress, phases, onChange
   );
 }
 
-function ProjectNode({ parcelId, live, progress, open, last, onToggle, onChange, onDraft }: {
-  parcelId: string; live: PlanProject; progress?: ProjectProgress; open: boolean; last: boolean;
+function ProjectNode({ parcelId, live, progress, open, last, lastFrostDoy, onToggle, onChange, onDraft }: {
+  parcelId: string; live: PlanProject; lastFrostDoy?: number; progress?: ProjectProgress; open: boolean; last: boolean;
   onToggle: () => void; onChange: Change; onDraft?: () => void;
 }) {
   const t = useTheme();
@@ -80,7 +80,7 @@ function ProjectNode({ parcelId, live, progress, open, last, onToggle, onChange,
   const next = nextStep(project, progress);
   const onCal = !!progress?.startDate;
   const today = localToday();
-  const schedule = scheduleProject(project, progress, today);
+  const schedule = scheduleProject(project, progress, today, { lastFrostDoy });
   const dot = complete ? t.growth : onCal || share.done ? t.accent : t.card;
 
   const save = (patch: Partial<ProjectProgress>) => onChange({
@@ -161,6 +161,7 @@ function ProjectDetail({ live, project, progress, schedule, today, onToggleStep,
               <Text style={{ color: sc?.late ? t.warn : t.muted, fontSize: 12 }}>
                 {done ? `Done ${fmt(done)}` : sc ? `${fmt(sc.start)}${sc.end !== sc.start ? ` – ${fmt(sc.end)}` : ''}${sc.late ? ' · running late, later steps moved' : ''}` : `About ${s.days} day${s.days === 1 ? '' : 's'}`}
               </Text>
+              {s.season && !done ? <Text style={{ color: t.muted, fontSize: 12 }}>{s.season === 'early-spring' ? 'Waits for early spring (about six weeks before your last frost).' : 'Waits for planting season (from about three weeks before your last frost).'}</Text> : null}
               {s.chores?.length && !done ? <Text style={{ color: t.muted, fontSize: 12 }}>Then: {s.chores.map((c) => `${c.title.toLowerCase()} ${REPEAT_LABEL[c.repeat]}`).join('; ')}</Text> : null}
             </View>
           </View>

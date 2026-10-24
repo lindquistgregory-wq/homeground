@@ -31,6 +31,8 @@ export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'b
   selectedId: string | null; onSelect: (objectId: string | null) => void; padding: HomeMapPadding; children?: ReactNode;
 }) {
   const mapRef = useRef<MapRef>(null);
+  // A tap on an object also reaches the map; the map's own tap (which closes the popup) skips it.
+  const objectTapAt = useRef(0);
   const b = bbox(boundary);
   const frame = useMemo(() => frameForBoundary(boundary), [boundary]);
   const imagery = imageryFor(imageryChoice, stateFips);
@@ -93,7 +95,7 @@ export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'b
       <Map ref={mapRef} style={StyleSheet.absoluteFill} mapStyle={OPENFREEMAP_STYLE_URL} attribution logoPosition={{ bottom: 8, left: 8 }} attributionPosition={{ bottom: 8, left: 92 }}
         dragPan={false} touchZoom={false} doubleTapZoom={false} doubleTapHoldZoom={false} touchRotate={false} touchPitch={false}
         onRegionDidChange={() => void measure()} onDidFinishLoadingMap={() => void measure()}
-        onPress={() => onSelect(null)}>
+        onPress={() => { if (Date.now() - objectTapAt.current > 400) onSelect(null); }}>
         <Camera initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding }} maxZoom={maxUsefulZoom(res, (b[1] + b[3]) / 2)} />
         <RasterSource id="home-img" tiles={imagery.tiles} tileSize={imagery.tileSize} maxzoom={imagery.maxzoom} attribution={imagery.attribution}>
           <Layer type="raster" id="home-img-l" />
@@ -102,7 +104,7 @@ export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'b
           <Layer type="line" id="home-parcel-l" paint={{ 'line-color': '#F3E1B0', 'line-width': 2, 'line-dasharray': [3, 2] }} />
         </GeoJSONSource>
         <GeoJSONSource id="home-objects" data={objects} hitbox={{ top: 14, right: 14, bottom: 14, left: 14 }}
-          onPress={(e) => { const id = e.nativeEvent.features?.[0]?.properties?.id; if (typeof id === 'string') onSelect(id); }}>
+          onPress={(e) => { const id = e.nativeEvent.features?.[0]?.properties?.id; if (typeof id === 'string') { e.stopPropagation(); objectTapAt.current = Date.now(); onSelect(id); } }}>
           <Layer type="fill" id="home-obj-fill" paint={{ 'fill-color': ['get', 'color'], 'fill-opacity': 0.55 }} />
           <Layer type="line" id="home-obj-line" paint={{ 'line-color': ['case', ['==', ['get', 'selected'], 1], '#F3E1B0', '#ffffff'], 'line-width': ['case', ['==', ['get', 'selected'], 1], 4, 1.5] }} />
           <Layer type="symbol" id="home-obj-label" layout={{ 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, 0.2], 'text-anchor': 'top', 'text-optional': true }}
@@ -139,9 +141,14 @@ function Walker({ speciesId, home, box, roam, still, seed }: {
   const bob = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Measured again (the map finished zooming): start over from the new spot.
+    // Roaming animals stay on the property, even if they were placed just over the line.
+    const from = roam ? { x: Math.min(box.x1, Math.max(box.x0, home.x)), y: Math.min(box.y1, Math.max(box.y0, home.y)) } : { x: home.x + (rand(r) - 0.5) * home.r, y: home.y + (rand(r) - 0.5) * home.r };
+    pos.stopAnimation();
+    pos.setValue(from);
     if (still) return;
     let alive = true;
-    let at = start;
+    let at = from;
     const step = () => {
       if (!alive) return;
       // Housed animals keep near home; roaming ones cross the property (a few body lengths at a time, sometimes further).
@@ -165,7 +172,7 @@ function Walker({ speciesId, home, box, roam, still, seed }: {
     hop.start();
     return () => { alive = false; clearTimeout(t); pos.stopAnimation(); hop.stop(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [home.x, home.y, home.r, roam, still]);
+  }, [home.x, home.y, home.r, box.x0, box.y0, box.x1, box.y1, roam, still]);
 
   return (
     <Animated.View style={{ position: 'absolute', left: -size / 2, top: -size / 2, transform: [{ translateX: pos.x }, { translateY: Animated.add(pos.y, bob) }, { scaleX: face }] }}>

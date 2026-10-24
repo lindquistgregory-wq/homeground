@@ -89,7 +89,7 @@ export async function agendaFor(state: GardenState, opts: AgendaOptions): Promis
   for (const p of Object.values(await listProjectProgress(parcelId))) {
     if (!p.project) continue;
     const name = p.project.title;
-    for (const s of scheduleProject(p.project, p, today))
+    for (const s of scheduleProject(p.project, p, today, { lastFrostDoy: state.site.frost?.lastSpring[32][50] ?? undefined }))
       if (!s.doneOn && s.end >= from && s.start <= to)
         items.push({ id: `project-${p.projectId}-${s.step.id}`, source: 'task', title: `${name}: ${s.step.title}`, short: s.step.title, start: s.start, end: s.end !== s.start ? s.end : undefined, urgent: s.late,
           details: [...(s.step.detail ? [s.step.detail] : []), `Step ${s.index + 1} of ${p.project.steps.length} in your ${name.toLowerCase()} project${s.step.optional ? ' (optional)' : ''}.`, 'Dates are a planning suggestion; check steps off in the Planner.'] });

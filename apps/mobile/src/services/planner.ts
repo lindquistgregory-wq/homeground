@@ -60,6 +60,7 @@ export function sitePlanInputFrom(parcel: ParcelRecord, profile: SiteProfile | u
     parcelAcres: parcel.areaM2 / ACRE_M2,
     zone: profile?.hardiness.status === 'ok' ? profile.hardiness.value.zone : undefined,
     freezeFreeDays: c?.frost.dates.freezeFreeDays ?? null,
+    lastFrostDoy: c?.frost.dates.lastSpring[32][50] ?? undefined,
     frostRare: c?.frost.dates.freezeRare,
     suitability,
     sources,

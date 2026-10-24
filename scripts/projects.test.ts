@@ -72,3 +72,17 @@ test('daily events repeat every day, even when they started long ago', () => {
   const e = { id: 'e', parcelId: 'p', title: 'Eggs', date: '2020-01-01', repeat: 'daily' as const, createdAt: '2020-01-01' };
   assert.equal(expandCustom(e, '2026-10-01', '2026-10-31').length, 31);
 });
+
+test('planting waits for spring: started in autumn, the garden is planted around the last frost', () => {
+  const garden = byId('garden');
+  const lastFrostDoy = 105; // about April 15
+  const s = scheduleProject(garden, prog(garden.id, { startDate: '2026-10-24' }), '2026-10-24', { lastFrostDoy });
+  const plant = s.find((x) => x.step.id === 'plant')!;
+  assert.ok(plant.start >= '2027-03-25' && plant.start <= '2027-04-15', plant.start);
+  // Without frost data the dates simply follow one another.
+  const plain = scheduleProject(garden, prog(garden.id, { startDate: '2026-10-24' }), '2026-10-24');
+  assert.ok(plain.find((x) => x.step.id === 'plant')!.start < '2027-01-31');
+  // In season already: no wait.
+  const spring = scheduleProject(garden, prog(garden.id, { startDate: '2027-03-01' }), '2027-03-01', { lastFrostDoy });
+  assert.ok(spring.find((x) => x.step.id === 'plant')!.start < '2027-05-15');
+});
