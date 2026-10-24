@@ -30,11 +30,14 @@ export async function gardenState(parcelId: string): Promise<GardenState | null>
   const [profile, design, plantings] = await Promise.all([getSiteProfile(parcelId), getOrCreateDesign(parcelId), plantingsForParcel(parcelId)]);
   let rh: number | undefined, humiditySource: string | undefined;
   if (profile) {
-    const h = await humidityClimatology(http, profile.centroid);
-    if (h.status === 'ok') (rh = h.value.summer), (humiditySource = h.attribution.source);
+    // Humidity only refines disease scoring: never let a slow first download hold the screen up.
+    const h = await Promise.race([humidityClimatology(http, profile.centroid), new Promise<null>((r) => setTimeout(() => r(null), 8000))]).catch(() => null);
+    if (h?.status === 'ok') (rh = h.value.summer), (humiditySource = h.attribution.source);
   }
   const site = siteConditions(profile, rh);
-  const soil = await soilSourceFor(parcelId, profile, site).catch((): SoilSource => ({ kind: 'none', label: 'soil temperature unavailable' }));
+  // The regional soil station is a network lookup too: give up after a few seconds rather than hold the screen.
+  const none: SoilSource = { kind: 'none', label: 'soil temperature unavailable' };
+  const soil = await Promise.race([soilSourceFor(parcelId, profile, site), new Promise<SoilSource>((r) => setTimeout(() => r(none), 8000))]).catch(() => none);
   return { parcel, profile, design, plantings, site, humiditySource, profileStale: !profile || profile.version < SITE_PROFILE_VERSION, soil };
 }
 

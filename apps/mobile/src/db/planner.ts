@@ -2,11 +2,11 @@
  * Planner storage. The goals profile and approved tasks sync through the user's own cloud; the chat,
  * cached plans and pending drafts stay on this device (the conversation is never uploaded anywhere).
  */
-import type { DesignDraft, HomesteadGoals, TaskDraft } from '@plotwright/core';
+import type { DesignDraft, HomesteadGoals, ProjectProgress, TaskDraft } from '@plotwright/core';
 import { getDb } from './database';
 import { clock, newId } from '../services/identity';
 
-async function markPending(collection: 'plannerGoals' | 'tasks', id: string, hlc: string) {
+async function markPending(collection: 'plannerGoals' | 'tasks' | 'projects', id: string, hlc: string) {
   const db = await getDb();
   await db.runAsync('INSERT OR REPLACE INTO sync_pending (collection, id, hlc) VALUES (?, ?, ?)', collection, id, hlc);
 }
@@ -132,6 +132,35 @@ export async function deleteTask(id: string): Promise<void> {
   await markPending('tasks', id, hlc);
 }
 
+// ---------------- Project progress (synced) ----------------
+
+export async function listProjectProgress(parcelId: string): Promise<Record<string, ProjectProgress>> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{ data: string }>('SELECT data FROM project_progress WHERE parcel_id = ? AND deleted = 0', parcelId);
+  const out: Record<string, ProjectProgress> = {};
+  for (const r of rows) {
+    try {
+      const p = JSON.parse(r.data) as ProjectProgress;
+      out[p.projectId] = p;
+    } catch { /* skip a damaged row */ }
+  }
+  return out;
+}
+
+export async function saveProjectProgress(p: Omit<ProjectProgress, 'updatedAt'>): Promise<ProjectProgress> {
+  const db = await getDb();
+  const rec: ProjectProgress = { ...p, updatedAt: new Date().toISOString() };
+  const id = `${p.parcelId}:${p.projectId}`;
+  const hlc = clock().tick();
+  await db.runAsync(
+    `INSERT INTO project_progress (id, parcel_id, data, updated_hlc, deleted) VALUES (?, ?, ?, ?, 0)
+     ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_hlc = excluded.updated_hlc, deleted = 0`,
+    id, p.parcelId, JSON.stringify(rec), hlc,
+  );
+  await markPending('projects', id, hlc);
+  return rec;
+}
+
 /** Remove planner data for a deleted parcel (goals and tasks tombstoned for other devices). */
 export async function deletePlannerForParcel(parcelId: string): Promise<void> {
   const db = await getDb();
@@ -139,6 +168,11 @@ export async function deletePlannerForParcel(parcelId: string): Promise<void> {
   await db.runAsync('UPDATE planner_goals SET deleted = 1, updated_hlc = ? WHERE parcel_id = ?', hlc, parcelId);
   await markPending('plannerGoals', parcelId, hlc);
   for (const t of await listTasks(parcelId)) await deleteTask(t.id);
+  for (const r of await db.getAllAsync<{ id: string }>('SELECT id FROM project_progress WHERE parcel_id = ? AND deleted = 0', parcelId)) {
+    const h = clock().tick();
+    await db.runAsync('UPDATE project_progress SET deleted = 1, updated_hlc = ? WHERE id = ?', h, r.id);
+    await markPending('projects', r.id, h);
+  }
   await db.runAsync('DELETE FROM planner_messages WHERE parcel_id = ?', parcelId);
   await db.runAsync('DELETE FROM planner_drafts WHERE parcel_id = ?', parcelId);
 }

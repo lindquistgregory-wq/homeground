@@ -44,6 +44,12 @@ The machine-readable version of this file, used by the app and by CI, is [`packa
 
 Bluetooth sensors (Govee, SwitchBot, Xiaomi/Qingping, Inkbird, RuuviTag, BTHome) are read from their broadcasts on the phone. No service is involved.
 
+## Optional AI with your own key (bed suggestions)
+
+| Service | Used for | Key | Cost to you | Policy the code enforces | Terms status |
+|---|---|---|---|---|---|
+| Claude API (Anthropic), `api.anthropic.com` | "Suggest with AI" on a bed, only when you add your own key in Settings | Your own Claude API key | Billed to you by Anthropic, per request (small) | Key in the phone keychain; sends only the bed's conditions, its plants and the candidate list (no location, names or photos); the answer is checked against the candidate list | ✅ Your own account under Anthropic's terms. Off by default; the built-in suggestions and the phone's own AI are free |
+
 ## Platform services (no developer cost)
 
 | Service | Cost | Note |

@@ -25,6 +25,9 @@ import { homeSummary, todayDoy, type HomeSummary, type HomeTask } from '../src/s
 import { dailyBrief, type DailyBrief } from '../src/services/dailyBrief';
 import { EventRow } from '../src/components/calendar';
 import { useSettings } from '../src/services/settings';
+import { HomeHomestead, homesteadDesign } from '../src/components/HomeHomestead';
+import { kvGet, kvSet } from '../src/db/database';
+import { Alert } from 'react-native';
 
 const TASK_ICON: Partial<Record<HomeTask['kind'], IconName>> = {
   'start-indoors': 'sprout-outline', 'harden-off': 'weather-sunny', transplant: 'shovel', 'direct-sow': 'seed-outline', plant: 'shovel',
@@ -47,6 +50,9 @@ export default function Home() {
   const [profiles, setProfiles] = useState<Record<string, SiteProfile | undefined>>({});
   const [summaries, setSummaries] = useState<Record<string, HomeSummary>>({});
   const [briefs, setBriefs] = useState<Record<string, DailyBrief | null>>({});
+  // The property Home shows as a full-screen map: the last one picked, once it has a layout.
+  const [mapParcel, setMapParcel] = useState<string | null>(null);
+  const [pageH, setPageH] = useState(0);
   const showProcessing = useSettings((s) => s.showProcessing);
   // Read inside the focus effect without re-running it on every settings change.
   const animalsRef = useRef(animals);
@@ -60,6 +66,10 @@ export default function Home() {
       listParcels().then(async (ps) => {
         if (cancelled) return;
         setParcels(ps);
+        const laidOut: string[] = [];
+        for (const p of ps) if (await homesteadDesign(p.id)) laidOut.push(p.id);
+        const last = await kvGet('home.parcel');
+        if (!cancelled) setMapParcel(last && laidOut.includes(last) ? last : laidOut[0] ?? null);
         const profs = Object.fromEntries(await Promise.all(ps.map(async (p) => [p.id, await getSiteProfile(p.id)] as const)));
         if (cancelled) return;
         setProfiles(profs);
@@ -73,8 +83,61 @@ export default function Home() {
   );
 
   const atLimit = (parcels?.length ?? 0) >= limits.parcels;
-  const go = (pathname: '/profile/[id]' | '/design/[id]' | '/calendar/[id]' | '/planner/[id]', id: string) => router.push({ pathname, params: { id } });
+  const go = (pathname: '/profile/[id]' | '/design/[id]' | '/calendar/[id]' | '/planner/[id]', id: string) => { void kvSet('home.parcel', id); router.push({ pathname, params: { id } }); };
   const today = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const home = mapParcel ? parcels?.find((p) => p.id === mapParcel) : undefined;
+  if (home) {
+    const sum = summaries[home.id];
+    const others = parcels!.filter((p) => p.id !== home.id);
+    const switchTo = () => Alert.alert('Show which property?', undefined, [
+      ...parcels!.map((p) => ({ text: p.name, onPress: async () => { await kvSet('home.parcel', p.id); setMapParcel((await homesteadDesign(p.id)) ? p.id : null); } })),
+      { text: 'Cancel', style: 'cancel' as const },
+    ]);
+    return (
+      <View style={{ flex: 1, backgroundColor: t.bg }} onLayout={(e) => setPageH(e.nativeEvent.layout.height)}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+          {/* The map fills the screen; a strip of the page below hints that there's more. */}
+          {pageH > 0 && <HomeHomestead parcel={home} profile={profiles[home.id]} brief={briefs[home.id]} height={Math.max(360, pageH - 64)} topInset={insets.top} />}
+          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+            <View style={styles.homeRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: t.text, fontSize: 20, fontWeight: '700' }} accessibilityRole="header" numberOfLines={1}>{home.name}</Text>
+                <Text style={{ color: t.muted, fontSize: 13 }} numberOfLines={1}>{formatArea(home.areaM2, units)}{profiles[home.id]?.place.countyName ? ` · ${profiles[home.id]!.place.countyName}` : ''} · {today}</Text>
+              </View>
+              {parcels!.length > 1 && <Button title="Switch" kind="secondary" icon="swap-horizontal" onPress={switchTo} />}
+            </View>
+            {animals === null && (
+              <Card title="Do you keep, or plan to keep, animals?" icon="paw-outline">
+                <Body muted>Plotwright can plan for poultry, goats, bees and more: where they live, care dates and heat alerts. You can change this any time in More.</Body>
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                  <View style={{ flex: 1 }}><Button title="Yes, show animals" onPress={() => setAnimals('yes')} /></View>
+                  <View style={{ flex: 1 }}><Button title="No thanks" kind="secondary" onPress={() => setAnimals('no')} /></View>
+                </View>
+              </Card>
+            )}
+            {sum ? <ComingUp sum={sum} animals={animals} onSeeAll={() => go('/calendar/[id]', home.id)} /> : <Skeleton lines={3} label="Loading what's coming up" />}
+            {others.length > 0 && (
+              <Card title="Your other properties" icon="map-marker-multiple-outline">
+                {others.map((p) => (
+                  <Pressable key={p.id} accessibilityRole="button" onPress={() => go('/profile/[id]', p.id)} style={styles.otherRow}>
+                    <Text style={{ color: t.text, fontWeight: '600', flex: 1 }}>{p.name}</Text>
+                    <Text style={{ color: t.muted }}>{formatArea(p.areaM2, units)}</Text>
+                  </Pressable>
+                ))}
+              </Card>
+            )}
+            {atLimit ? (
+              <Text style={[styles.limit, { color: t.muted }]}>
+                Your plan includes {limits.parcels} propert{limits.parcels === 1 ? 'y' : 'ies'} ·{' '}
+                <Text accessibilityRole="link" style={{ color: t.accent, fontWeight: '600' }} onPress={() => router.push({ pathname: '/paywall', params: { source: 'home' } })}>See plans</Text>
+              </Text>
+            ) : <Button icon="map-marker-plus-outline" kind="secondary" title="Add another property" onPress={() => router.push('/locate')} />}
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -139,7 +202,6 @@ export default function Home() {
         const profile = profiles[item.id];
         const sum = summaries[item.id];
         const tasks = sum?.tasks ?? [];
-        const d = todayDoy();
         return (
           <View key={item.id}>
             <View style={[styles.property, { backgroundColor: t.card }, t.dark ? { borderColor: t.border, borderWidth: 1 } : styles.shadow]}>
@@ -188,35 +250,7 @@ export default function Home() {
 
             <BriefCard brief={briefs[item.id]} onOpen={() => go('/calendar/[id]', item.id)} />
 
-            {sum && (
-              <Card title="Coming up" icon="calendar-clock" right={tasks.length ? (
-                <Pressable accessibilityRole="link" onPress={() => go('/calendar/[id]', item.id)} hitSlop={10}>
-                  <Text style={{ color: t.accent, fontWeight: '600' }}>See all</Text>
-                </Pressable>
-              ) : undefined}>
-                {tasks.length === 0 ? (
-                  <Body muted>
-                    {sum.crops || sum.animals
-                      ? (sum.next ? `Nothing in the next four weeks. Next: ${sum.next.plantName}, ${sum.next.label.toLowerCase()}, ${formatDoy(sum.next.start)}.` : 'Nothing in the next four weeks.')
-                      : (animals === 'yes' ? 'Add crops to a bed or animals to their housing, and their dates show up here.' : 'Add crops to a bed and their sowing, planting and harvest dates show up here.')}
-                  </Body>
-                ) : tasks.slice(0, 4).map((e, i) => (
-                  <View key={i} style={[styles.task, i > 0 && { borderTopColor: t.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
-                    {e.animalId ? <AnimalArt animalId={e.animalId} size={42} /> : plantById(e.plantId) ? <PlantArt plant={plantById(e.plantId)!} size={42} /> : <View style={[styles.taskIcon, { backgroundColor: t.accentSoft }]}><Icon name={TASK_ICON[e.kind] ?? 'paw'} size={20} color={t.accent} /></View>}
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: t.text, fontWeight: '600', fontSize: 15 }}>{e.plantName}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Icon name={TASK_ICON[e.kind] ?? 'paw'} size={14} color={t.muted} />
-                        <Text style={{ color: t.muted, fontSize: 13 }}>{e.label}</Text>
-                      </View>
-                    </View>
-                    <Text style={{ color: windowOverlaps(e, d, d) ? t.accent : t.muted, fontSize: 13, fontWeight: '600' }}>
-                      {windowOverlaps(e, d, d) ? `Now – ${formatDoy(e.end)}` : formatDoy(e.start)}
-                    </Text>
-                  </View>
-                ))}
-              </Card>
-            )}
+            {sum && <ComingUp sum={sum} animals={animals} onSeeAll={() => go('/calendar/[id]', item.id)} />}
           </View>
         );
       })}
@@ -238,6 +272,42 @@ export default function Home() {
       {/* This screen has no header: keep scrolled content from running under the status bar. */}
       <View pointerEvents="none" style={[styles.statusBar, { height: insets.top, backgroundColor: t.bg }]} />
     </View>
+  );
+}
+
+/** What's coming up in the next four weeks (garden, animals, projects). */
+function ComingUp({ sum, animals, onSeeAll }: { sum: HomeSummary; animals: 'yes' | 'no' | null; onSeeAll: () => void }) {
+  const t = useTheme();
+  const tasks = sum.tasks;
+  const d = todayDoy();
+  return (
+    <Card title="Coming up" icon="calendar-clock" right={tasks.length ? (
+      <Pressable accessibilityRole="link" onPress={() => onSeeAll()} hitSlop={10}>
+        <Text style={{ color: t.accent, fontWeight: '600' }}>See all</Text>
+      </Pressable>
+    ) : undefined}>
+      {tasks.length === 0 ? (
+        <Body muted>
+          {sum.crops || sum.animals
+            ? (sum.next ? `Nothing in the next four weeks. Next: ${sum.next.plantName}, ${sum.next.label.toLowerCase()}, ${formatDoy(sum.next.start)}.` : 'Nothing in the next four weeks.')
+            : (animals === 'yes' ? 'Add crops to a bed or animals to their housing, and their dates show up here.' : 'Add crops to a bed and their sowing, planting and harvest dates show up here.')}
+        </Body>
+      ) : tasks.slice(0, 4).map((e, i) => (
+        <View key={i} style={[styles.task, i > 0 && { borderTopColor: t.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+          {e.animalId ? <AnimalArt animalId={e.animalId} size={42} /> : plantById(e.plantId) ? <PlantArt plant={plantById(e.plantId)!} size={42} /> : <View style={[styles.taskIcon, { backgroundColor: t.accentSoft }]}><Icon name={TASK_ICON[e.kind] ?? 'paw'} size={20} color={t.accent} /></View>}
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: t.text, fontWeight: '600', fontSize: 15 }}>{e.plantName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Icon name={TASK_ICON[e.kind] ?? 'paw'} size={14} color={t.muted} />
+              <Text style={{ color: t.muted, fontSize: 13 }}>{e.label}</Text>
+            </View>
+          </View>
+          <Text style={{ color: windowOverlaps(e, d, d) ? t.accent : t.muted, fontSize: 13, fontWeight: '600' }}>
+            {windowOverlaps(e, d, d) ? `Now – ${formatDoy(e.end)}` : formatDoy(e.start)}
+          </Text>
+        </View>
+      ))}
+    </Card>
   );
 }
 
@@ -283,4 +353,6 @@ const styles = StyleSheet.create({
   task: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   taskIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   limit: { fontSize: 15, textAlign: 'center', marginTop: 4 },
+  homeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  otherRow: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
 });

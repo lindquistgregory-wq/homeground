@@ -31,3 +31,4 @@ export function searchPlants(query: string, list: PlantSpec[] = allPlants()): Pl
   if (!q) return list;
   return list.filter((p) => p.commonName.toLowerCase().includes(q) || p.scientificName.toLowerCase().includes(q) || p.family.toLowerCase().includes(q) || (p.aliases ?? []).some((a) => a.toLowerCase().includes(q)));
 }
+export * from './setup';

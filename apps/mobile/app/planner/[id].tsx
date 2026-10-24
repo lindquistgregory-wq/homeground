@@ -5,8 +5,8 @@
  * Everything runs on the phone. The conversation isn't uploaded anywhere.
  */
 import {
-  animalById, buildPlan, countOf, plannerTurn, readyToPlan, validateDesignDraft,
-  type DesignDraft, type HomesteadGoals, type HomesteadPlan, type PlanItem, type PlannerContext, type PlannerModel,
+  animalById, buildPlan, countOf, plannerTurn, projectDraft, projectsFromPlan, readyToPlan, validateDesignDraft,
+  type DesignDraft, type HomesteadGoals, type HomesteadPlan, type PhaseId, type PlanItem, type PlanProject, type PlannerContext, type PlannerModel, type ProjectProgress,
 } from '@plotwright/core';
 import { KNOWLEDGE_BASE } from '@plotwright/data';
 import { downloadModel, modelAvailability, onDeviceModel, unavailableReason, type ModelAvailability } from '@plotwright/ondevice-llm';
@@ -16,10 +16,12 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, Sc
 import { Text, TextInput } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { ChatList, DraftCard, Interview, PlanView, TaskList } from '../../src/components/planner';
+import { ProjectTimeline } from '../../src/components/projects';
+import { Chip } from '../../src/components/plants';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { getOrCreateDesign } from '../../src/db/designs';
 import {
-  addMessage, clearMessages, deleteTask, listDrafts, listMessages, listTasks, saveDraft, saveGoals, saveTask, setDraftStatus,
+  addMessage, clearMessages, deleteTask, listDrafts, listMessages, listProjectProgress, listTasks, saveDraft, saveGoals, saveProjectProgress, saveTask, setDraftStatus,
   type DraftRow, type StoredMessage, type TaskRecord,
 } from '../../src/db/planner';
 import { newId } from '../../src/services/identity';
@@ -46,6 +48,9 @@ export default function Planner() {
   const animalsOn = useSettings((s) => s.animals) === 'yes';
   const [drafts, setDrafts] = useState<DraftRow[]>([]);
   const [tasks, setTasks] = useState<TaskRecord[]>([]);
+  const [progress, setProgress] = useState<Record<string, ProjectProgress>>({});
+  const [planView, setPlanView] = useState<'timeline' | 'details'>('timeline');
+  const [lastFrostDoy, setLastFrostDoy] = useState<number | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState<number | null>(null);
@@ -54,6 +59,7 @@ export default function Planner() {
   const refreshLists = useCallback(async () => {
     setDrafts(await listDrafts(id));
     setTasks(await listTasks(id));
+    setProgress(await listProjectProgress(id));
   }, [id]);
 
   useEffect(() => {
@@ -78,6 +84,7 @@ export default function Planner() {
     if (!ctx || !readyToPlan(goals)) { setPlan(null); return; }
     let cancelled = false;
     void ctx.sitePlanInput().then((site) => {
+      if (!cancelled) setLastFrostDoy(site.lastFrostDoy);
       if (!cancelled) setPlan(buildPlan(goals, site, KNOWLEDGE_BASE, { includeIncome: tier.income, showCosts: tier.multiYear, animalFeatures: animalsOn }));
     });
     return () => { cancelled = true; };
@@ -123,6 +130,18 @@ export default function Planner() {
   const draftFromItem = async (item: PlanItem) => {
     const design = await getOrCreateDesign(id);
     const d: DesignDraft = { id: newId(), summary: item.title, changes: item.draft ?? [], why: item.why, createdBy: 'rules', ...(item.livestock ? { herd: item.livestock } : {}) };
+    const v = validateDesignDraft(d, design.objects);
+    if (!v.ok) return Alert.alert('Can’t add that', v.problems.join('\n'));
+    await saveDraft(id, 'design', v.cleaned);
+    await refreshLists();
+    setTab('drafts');
+  };
+
+  const draftFromProject = async (p: PlanProject) => {
+    if (!plan) return;
+    const design = await getOrCreateDesign(id);
+    const d = projectDraft(p, plan, newId());
+    if (!d) return Alert.alert('Nothing to place', 'This project doesn’t add anything to the map.');
     const v = validateDesignDraft(d, design.objects);
     if (!v.ok) return Alert.alert('Can’t add that', v.problems.join('\n'));
     await saveDraft(id, 'design', v.cleaned);
@@ -204,12 +223,23 @@ export default function Planner() {
               <Button title={downloading !== null ? `Downloading… ${Math.round(downloading / 1e6)} MB` : 'Download the on-device AI (free)'} kind="secondary" disabled={downloading !== null} onPress={() => void getModel()}
                 accessibilityHint="Google's Gemini Nano runs on this phone; nothing is sent anywhere" />
             )}
-            <Interview goals={goals} onSave={onSaveGoals} />
+            <Interview goals={goals} onSave={onSaveGoals} onFinish={() => setTab('plan')} />
           </View>
         ))}
 
         {tab === 'plan' && (plan ? (
-          <PlanView plan={plan} tier={tier} onDraft={tier.full ? (i) => void draftFromItem(i) : undefined} />
+          <View>
+            <View style={{ flexDirection: 'row', marginBottom: 8 }} accessibilityRole="tablist">
+              <Chip label="Timeline" active={planView === 'timeline'} onPress={() => setPlanView('timeline')} />
+              <Chip label="Food, budget and details" active={planView === 'details'} onPress={() => setPlanView('details')} />
+            </View>
+            {planView === 'timeline' ? (
+              <ProjectTimeline parcelId={id} projects={projectsFromPlan(plan)} progress={progress} lastFrostDoy={lastFrostDoy} phases={(tier.multiYear ? ['year0', 'year1', 'years2to5'] : ['year0', 'year1']) as PhaseId[]}
+                onChange={async (p) => { await saveProjectProgress(p); setProgress(await listProjectProgress(id)); }}
+                onDraft={tier.full ? (p) => void draftFromProject(p) : undefined} />
+            ) : <PlanView plan={plan} tier={tier} onDraft={tier.full ? (i) => void draftFromItem(i) : undefined} />}
+            {planView === 'timeline' && !tier.multiYear && <Body muted>Years 2–5 (orchard, perennials, more animals) are part of Homestead Pro.</Body>}
+          </View>
         ) : (
           <Card title="Not enough to plan yet">
             <Body>The plan needs your household, food goal, weekly hours, budget and garden space. Answer those first.</Body>

@@ -14,6 +14,8 @@ import { ListRow, MoreInfo } from '../src/components/kit';
 import { deleteAllLocalData } from '../src/db/database';
 import { listSensors } from '../src/db/sensors';
 import { deleteSecrets } from '../src/services/secrets';
+import { deleteClaudeKey } from '../src/services/bedAi';
+import { AiKeyCard } from '../src/components/AiKeyCard';
 import { listParcels, saveUserEndpoint } from '../src/db/parcels';
 import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
@@ -123,6 +125,8 @@ export default function Settings() {
         <Button title={units === 'imperial' ? '✓ Imperial (ft, acres, °F)' : 'Imperial (ft, acres, °F)'} kind={units === 'imperial' ? 'primary' : 'secondary'} onPress={() => setUnits('imperial')} />
         <Button title={units === 'metric' ? '✓ Metric (m, ha, °C)' : 'Metric (m, ha, °C)'} kind={units === 'metric' ? 'primary' : 'secondary'} onPress={() => setUnits('metric')} />
       </Card>
+
+      <AiKeyCard />
 
       <Card title="Frost & weather alerts" icon="bell-ring-outline">
         <Body>Frost, heat and wind warnings for crops you’ve marked as planted.</Body>
@@ -261,6 +265,7 @@ export default function Settings() {
                 onPress: async () => {
                   // Station keys and bindkeys live in the keychain, not the database: remove them first.
                   await deleteSecrets((await listSensors()).map((x) => x.id));
+                  await deleteClaudeKey().catch(() => undefined);
                   await setAlertsEnabled(false).catch(() => undefined);
                   deleteAllPacks();
                   deleteAllPhotos();

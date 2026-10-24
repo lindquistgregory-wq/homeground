@@ -4,10 +4,10 @@
  * the DEM. Plants are ranked with reasons, and each can be laid out to scale with a yield estimate.
  */
 import {
-  MAX_GRID_CELLS, allPlants, bedGrid, estimateYieldLb, searchPlants, footprintAreaM2, formatArea, layoutBed, plantById, rankPlants, rotationAdvice, type PlantSpec, type Suitability,
+  MAX_GRID_CELLS, allPlants, bedGrid, estimateYieldLb, suggestBedSetup, type BedSetupInput, type BedSetupPick, searchPlants, footprintAreaM2, formatArea, layoutBed, plantById, rankPlants, rotationAdvice, type PlantSpec, type Suitability,
 } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
@@ -25,13 +25,15 @@ import { listSensors } from '../../src/db/sensors';
 import { getCalibration, type StoredCalibration } from '../../src/services/sunCalibration';
 import { useSettings } from '../../src/services/settings';
 import { useCustomPlants } from '../../src/services/customPlants';
+import { aiBedSetup, aiSource, type AiSource } from '../../src/services/bedAi';
+import { planCropIds } from '../../src/services/planner';
 
 const SHARES: Array<[number, string]> = [[1, 'Whole bed'], [0.5, 'Half'], [0.25, 'Quarter']];
 const STATUS_NEXT: Record<PlantingStatus, PlantingStatus | null> = { planned: 'planted', planted: 'harvested', harvested: null, removed: null };
 const STATUS_ACTION: Record<PlantingStatus, string> = { planned: 'Mark planted', planted: 'Mark harvested', harvested: '', removed: '' };
 
 export default function BedPlanner() {
-  const { id, bedId } = useLocalSearchParams<{ id: string; bedId: string }>();
+  const { id, bedId, setup: wantSetup } = useLocalSearchParams<{ id: string; bedId: string; setup?: string }>();
   const t = useTheme();
   const units = useSettings((s) => s.units);
   const ent = useEntitlements((s) => s.entitlements);
@@ -46,6 +48,13 @@ export default function BedPlanner() {
   const [showAll, setShowAll] = useState(false);
   const [q, setQ] = useState('');
   const year = new Date().getFullYear();
+  // Suggested setup: built-in (instant) or AI (the phone's own model, else the owner's Claude key).
+  const [setup, setSetup] = useState<{ picks: BedSetupPick[]; notes: string[]; by: 'built-in' | AiSource } | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [ai, setAi] = useState<AiSource | null | undefined>(undefined);
+  const [planCrops, setPlanCrops] = useState<string[]>([]);
+  const autoRan = useRef(false);
+  useEffect(() => { void aiSource().then(setAi).catch(() => setAi(null)); void planCropIds(id).then(setPlanCrops).catch(() => setPlanCrops([])); }, [id]);
 
   const bedIndex = state?.design.objects.findIndex((o) => o.id === bedId) ?? -1;
   const bed = bedIndex >= 0 ? state!.design.objects[bedIndex]! : null;
@@ -102,6 +111,51 @@ export default function BedPlanner() {
     if (!state || !bed || !cond) return [];
     return rankPlants(plantsForSpot(bed, allPlants()), state.site, cond, name);
   }, [state, bed, cond, name, customVersion]);
+
+  const setupInput = (): BedSetupInput | null => !bed || !ranked.length ? null : {
+    ranked, plant: plantById, existing: gridPlantings.map((p) => ({ plantId: p.plantId, share: p.share })), history: bedHistory(bedPlantings), year, planCrops,
+    areaSqFt: (analysis?.frame ? footprintAreaM2(bed, analysis.frame) : bed.width * bed.length) * 10.7639,
+  };
+  const builtIn = () => {
+    const input = setupInput();
+    if (!input) return;
+    const s = suggestBedSetup(input);
+    setSetup({ picks: s.picks, notes: s.notes, by: 'built-in' });
+  };
+  // Opened from Design's "Suggest a setup": show the built-in suggestion as soon as the ranking is ready.
+  useEffect(() => {
+    if (wantSetup === '1' && !autoRan.current && ranked.length) { autoRan.current = true; builtIn(); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantSetup, ranked]);
+  const askAi = async () => {
+    const input = setupInput();
+    if (!input || !cond) return;
+    setAiBusy(true);
+    try {
+      const soil = cond.soil ? [cond.soil.texture, cond.soil.drainageClass, cond.soil.pH !== undefined ? `pH ${cond.soil.pH}` : null].filter(Boolean).join(', ') : '';
+      const conditions = [
+        cond.sunHours !== undefined ? `Sun in the growing season: ${cond.sunHours.toFixed(1)} hours a day.` : 'Sun not modelled yet.',
+        cond.soil ? `Soil${cond.raised ? ' under the bed' : ''}: ${soil || 'mapped'}.` : 'Soil not mapped.',
+        ...(cond.raised ? ['Raised or filled bed.'] : []),
+        ...(cond.covered ? ['Covered growing space (tunnel or greenhouse).'] : []),
+        ...(state?.site.zone ? [`Hardiness zone ${state.site.zone}.`] : []),
+        `Month now: ${new Date().toLocaleString('en-US', { month: 'long' })}.`,
+      ];
+      const r = await aiBedSetup(input, conditions);
+      setSetup({ picks: r.picks, notes: r.note ? [r.note] : [], by: r.source });
+    } catch (e) {
+      Alert.alert('AI suggestion', (e as Error).message);
+      builtIn();
+    } finally {
+      setAiBusy(false);
+    }
+  };
+  const addSetup = async () => {
+    if (!setup || !state || !bed) return;
+    for (const p of setup.picks) await savePlanting({ parcelId: state.parcel.id, designId: state.design.id, bedObjectId: bed.id, plantId: p.plantId, year, share: p.share, status: 'planned' });
+    setSetup(null);
+    await reload();
+  };
 
   if (error) return <Body>{error}</Body>;
   if (!state) return <ActivityIndicator style={{ marginTop: 40 }} accessibilityLabel="Loading bed" />;
@@ -180,6 +234,50 @@ export default function BedPlanner() {
               {cond.raised && <Body muted>Raised or filled bed: drainage and texture come from what you fill it with.</Body>}
               {cond.covered && <Body muted>Covered beds extend the season by a few weeks at each end; the calendar still uses outdoor frost dates.</Body>}
             </MoreInfo>
+          </View>
+        )}
+      </Card>
+
+      <Card title="Suggested setup" icon="auto-fix">
+        {!cond || !ranked.length ? <ActivityIndicator accessibilityLabel="Ranking plants for this bed" /> : (
+          <View>
+            <Body muted>A few plants that suit this bed and each other{planCrops.length ? ', favouring your homestead plan' : ''}, around what’s already here.</Body>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              <View style={{ flex: 1, minWidth: 140 }}><Button title="Suggest a setup" kind={setup ? 'secondary' : 'primary'} onPress={builtIn} /></View>
+              <View style={{ flex: 1, minWidth: 140 }}>
+                <Button title={aiBusy ? 'Asking AI…' : 'Ask AI'} icon="auto-fix" kind="secondary" disabled={aiBusy || !ai} onPress={() => void askAi()}
+                  accessibilityHint={ai === 'device' ? 'Uses the AI model on this phone; nothing is sent anywhere' : ai === 'claude' ? 'Sends this bed’s conditions and plant list to Claude with your own API key' : undefined} />
+              </View>
+            </View>
+            <Text style={{ color: t.muted, fontSize: 12 }}>
+              {ai === 'device' ? 'AI runs on this phone; nothing is sent anywhere.'
+                : ai === 'claude' ? 'AI uses your own Claude API key (billed to your Anthropic account). Only this bed’s conditions and plant list are sent.'
+                : ai === null ? 'For AI suggestions, add your own Claude API key in Settings (this phone has no on-device AI). The built-in suggestion is free and works offline.' : ''}
+            </Text>
+            {aiBusy && <ActivityIndicator accessibilityLabel="Waiting for the AI" />}
+            {setup && (
+              <View style={{ marginTop: 8 }}>
+                {setup.picks.map((p) => {
+                  const plant = plantById(p.plantId);
+                  return (
+                    <View key={p.plantId} style={[styles.rank, { borderColor: t.border }]}>
+                      <View style={styles.rankHead}>
+                        {plant && <PlantArt plant={plant} size={36} />}
+                        <Text style={{ color: t.text, fontSize: 16, fontWeight: '600', flex: 1 }}>{plant?.commonName ?? p.plantId}</Text>
+                        <Text style={{ color: t.muted }}>{Math.round(p.share * 100)}% of the bed</Text>
+                      </View>
+                      {p.reasons.map((r, i) => <Text key={i} style={{ color: t.muted, fontSize: 13 }}>• {r}</Text>)}
+                    </View>
+                  );
+                })}
+                {setup.notes.map((n, i) => <Body key={i}>{n}</Body>)}
+                {setup.picks.length > 0 && <Button title={`Add ${setup.picks.length === 1 ? 'it' : `these ${setup.picks.length}`} to ${name}`} icon="plus" onPress={() => void addSetup()} />}
+                <Text style={{ color: t.muted, fontSize: 12 }}>
+                  {setup.by === 'built-in' ? 'Built-in suggestion. Companion pairings are traditional tips; feeder groups follow plant families, as garden rotation guides do.'
+                    : `Suggested by ${setup.by === 'device' ? 'the AI on this phone' : 'Claude'}, checked against this bed’s plant list. AI can be wrong.`}
+                </Text>
+              </View>
+            )}
           </View>
         )}
       </Card>

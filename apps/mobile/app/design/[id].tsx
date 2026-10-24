@@ -16,7 +16,7 @@ import {
 import { OPENFREEMAP_STYLE_URL, STATE_IMAGERY, USGS_HILLSHADE, USGS_IMAGERY, USGS_NAIP_PLUS, imageryFor, maxUsefulZoom, solarClimatology, type ImageryChoice } from '@plotwright/providers';
 import { http } from '../../src/services/http';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
@@ -44,6 +44,7 @@ import { AnimalArt } from '../../src/components/AnimalArt';
 import { Chip } from '../../src/components/plants';
 import { herdCount, herdLabel, isCurrent } from '../../src/services/animals';
 import { HerdNameField } from '../../src/components/HerdName';
+import { BedContents } from '../../src/components/bedContents';
 import { AnimalPhotos } from '../../src/components/AnimalPhotos';
 import { deletePhotoFiles } from '../../src/services/photos';
 import { listSensors } from '../../src/db/sensors';
@@ -72,7 +73,7 @@ const OBJECT_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = { 'text-field': 
 const SENSOR_LABEL_PAINT: SymbolLayerSpecification['paint'] ={ 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 };
 
 export default function DesignScreen() {
-  const { id, placeAnimal } = useLocalSearchParams<{ id: string; placeAnimal?: string }>();
+  const { id, placeAnimal, select } = useLocalSearchParams<{ id: string; placeAnimal?: string; select?: string }>();
   const t = useTheme();
   const units = useSettings((s) => s.units);
   const ent = useEntitlements((s) => s.entitlements);
@@ -328,6 +329,15 @@ export default function DesignScreen() {
       }
     }
   };
+
+  // Opened from Home's "Go to design": select that object once the map has it.
+  const selectedFromHome = useRef(false);
+  useEffect(() => {
+    if (!select || selectedFromHome.current || !objectsGeo?.features.some((f) => f.properties.id === select)) return;
+    selectedFromHome.current = true;
+    setTimeout(() => selectObject(select), 400);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [select, objectsGeo]);
 
   const heatGeo = useMemo(() => (analysis && sun && ent.has('sun.heatmaps') ? heatmapGeoJSON(analysis, sun.hours) : null), [analysis, sun, ent]);
   const [contourGeo, setContourGeo] = useState<ReturnType<typeof contourGeoJSON> | null>(null);
@@ -586,6 +596,12 @@ export default function DesignScreen() {
             }}
             onPlan={isPlantable(selected) && !design.scenario ? () => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } }) : undefined}
             planted={plantings.filter((p) => p.bedObjectId === selected.id).length}
+            bedContents={isPlantable(selected) && !design.scenario ? (
+              <BedContents bed={selected} parcelId={parcel.id} designId={design.id} plantings={plantings.filter((p) => p.bedObjectId === selected.id)}
+                onChanged={async () => setPlantings(activePlantings(await plantingsForParcel(parcel.id), new Date().getFullYear()))}
+                onPlan={() => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } })}
+                onSuggest={() => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id, setup: '1' } })} />
+            ) : undefined}
             onHouse={animalsOn && HOUSING_KINDS.has(selected.kind) && !design.scenario ? () => router.push({ pathname: '/housing/[id]', params: { id: parcel.id, objectId: selected.id } }) : undefined}
             housed={herds.filter((h) => h.designId === design.id && h.objectId === selected.id)}
           />
@@ -850,9 +866,11 @@ function Stepper({ label, value, step, min, units, onChange }: { label: string; 
   );
 }
 
-function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted, onHouse, housed }: {
+function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted, onHouse, housed, bedContents }: {
   o: DesignObject; units: 'imperial' | 'metric'; areaM2: number; notes: SafetyNote[]; safety: SafetyWarning[]; onPatch: (p: Partial<DesignObject>) => void;
   onMove: () => void; onSnapAngle: () => void; onSnapContour?: () => void; onDelete: () => void; onPlan?: () => void; planted: number; onHouse?: () => void; housed: Herd[];
+  /** A bed's plants, layout and add/suggest buttons (plantable spots only). */
+  bedContents?: ReactNode;
 }) {
   const t = useTheme();
   const type = objectType(o.kind);
@@ -864,7 +882,7 @@ function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSna
       {/* Point of use, but quiet: only notes still waiting for 'Got it' and distance problems sit up top. */}
       {notes.filter((n) => n.acknowledge && !acks[ackKey(n)]).map((n) => <SafetyNoteRow key={n.id} note={n} />)}
       {safety.map((w) => <SafetyLine key={w.kind} text={w.message} caution={w.level === 'caution'} />)}
-      {onPlan && <Button title={o.kind === 'vineyard-row' ? 'Plan this row: grapes and vines' : o.kind === 'orchard' ? 'Plan this orchard: fruit and nut trees' : 'Plan this bed: what grows best here'} onPress={onPlan} />}
+      {bedContents ?? (onPlan && <Button title={o.kind === 'vineyard-row' ? 'Plan this row: grapes and vines' : o.kind === 'orchard' ? 'Plan this orchard: fruit and nut trees' : 'Plan this bed: what grows best here'} onPress={onPlan} />)}
       {onHouse && <Button title={housed.length ? 'Animals here: capacity and care' : 'Plan animals here: who fits and how many'} icon="paw" onPress={onHouse} />}
       {!o.polygon && o.shape === 'rect' && <Stepper label="Length" value={o.length} step={step} min={0.3} units={units} onChange={(v) => onPatch({ length: v })} />}
       {!o.polygon && <Stepper label={o.shape === 'circle' ? 'Diameter' : 'Width'} value={o.width} step={step} min={0.1} units={units} onChange={(v) => onPatch(o.shape === 'circle' ? { width: v, length: v } : { width: v })} />}

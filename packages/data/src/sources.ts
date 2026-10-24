@@ -182,6 +182,14 @@ export const DATA_SOURCES: DataSource[] = [
     caveat: 'History needs the user\'s paid WeatherLink Pro plan (the user\'s cost, never ours). WeatherLink.com API terms not found; re-check before release.',
   },
   {
+    id: 'anthropic-byok', name: 'Claude API (optional, your own key)', provider: 'Anthropic',
+    use: 'Optional AI bed suggestions when you paste your own Claude API key in Settings. Off by default; the built-in suggestions and the on-device AI need no key',
+    hosts: ['api.anthropic.com'], license: 'Your own account, billed to you by Anthropic', commercialUse: true, attribution: 'Claude (Anthropic)',
+    policy: 'Key stored in the phone keychain, sent only to api.anthropic.com; only the bed’s conditions, its plants and the candidate list are sent (no location, names or photos); answers checked against the candidate list; never cached',
+    url: 'https://www.anthropic.com/legal/commercial-terms', reviewed: '2026-10-24',
+    caveat: 'Each request costs the key owner a small API fee (their cost, never ours).',
+  },
+  {
     id: 'local-network', name: 'Stations on your home network', provider: 'Your own Ecowitt gateway, WeatherLink Live or Tempest hub',
     use: 'Advanced: read your station directly over Wi-Fi (Ecowitt gateway HTTP, WeatherLink Live HTTP, Tempest UDP broadcast). No internet service involved',
     hosts: [], license: 'Your own device', commercialUse: true, attribution: '',
@@ -258,6 +266,8 @@ export const NON_SERVICE_HOSTS = [
   'apps.apple.com', 'play.google.com', 'www.apple.com', 'support.google.com',
   // CWOP instructions (link only; the app never relays station data)
   'madis.ncep.noaa.gov', 'www.wxqa.com',
+  // Claude API terms and key page (links only)
+  'www.anthropic.com', 'console.anthropic.com',
   // Safety notes and toxicity citations (links opened in the browser; the text is bundled)
   'ia-training.phmsa.dot.gov', 'www.epa.gov', 'www.cdc.gov', 'www.energy.gov', 'dwr.colorado.gov', 'www.leginfo.ca.gov', 'www.aspca.org', 'nchfp.uga.edu',
   // "Find a vet" (AAHA's public hospital locator, opened in the browser)
