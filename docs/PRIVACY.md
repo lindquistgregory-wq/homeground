@@ -6,7 +6,7 @@ Plotwright is a homestead and garden planner. It has **no server of its own** an
 
 ## What stays with you
 
-- **Properties, boundaries, Site Profiles, designs, plantings, sensor readings, planner goals, tasks and conversations** are stored on your phone. If you turn on sync, they go to **your own** iCloud (CloudKit private database). Plotwright's developer can't see them.
+- **Properties, boundaries, Site Profiles, designs, plantings, sensor readings, planner goals, tasks, project progress and conversations** are stored on your phone. If you turn on sync, they go to **your own** iCloud (CloudKit private database). Plotwright's developer can't see them.
 - **Location** is used on the phone to find your property and to trace a boundary. It isn't sent to Plotwright.
 - **Weather-station keys and sensor keys** are kept in the phone's keychain.
 - The **AI planner** runs on the phone (Apple Foundation Models or Gemini Nano). Nothing you type is sent to a cloud AI.

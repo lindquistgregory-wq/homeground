@@ -118,7 +118,7 @@ export function EventSheet({ item, onClose, onEdit, onDelete }: { item: AgendaIt
   );
 }
 
-const REPEATS: Array<[Repeat, string]> = [['none', 'Once'], ['weekly', 'Weekly'], ['monthly', 'Monthly'], ['yearly', 'Yearly']];
+const REPEATS: Array<[Repeat, string]> = [['none', 'Once'], ['daily', 'Daily'], ['weekly', 'Weekly'], ['monthly', 'Monthly'], ['yearly', 'Yearly']];
 const REMINDERS: Array<[number | null, string]> = [[null, 'No reminder'], [0, 'At the time'], [60, '1 hour before'], [1440, '1 day before']];
 
 /** Add or edit one of the user's own events. */

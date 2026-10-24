@@ -60,8 +60,8 @@ export class HybridClock {
   }
 }
 
-export type SyncCollection = 'parcels' | 'siteProfiles' | 'designs' | 'plantings' | 'sensors' | 'sensorReadings' | 'plannerGoals' | 'tasks' | 'settings' | 'customPlants' | 'herds' | 'animals' | 'animalLogs' | 'breedingRecords' | 'healthRecords' | 'customAnimals' | 'calendarEvents';
-const COLLECTION_ORDER: SyncCollection[] = ['settings', 'customPlants', 'parcels', 'siteProfiles', 'designs', 'plantings', 'customAnimals', 'herds', 'animals', 'animalLogs', 'breedingRecords', 'healthRecords', 'sensors', 'sensorReadings', 'plannerGoals', 'tasks', 'calendarEvents'];
+export type SyncCollection = 'parcels' | 'siteProfiles' | 'designs' | 'plantings' | 'sensors' | 'sensorReadings' | 'plannerGoals' | 'tasks' | 'settings' | 'customPlants' | 'herds' | 'animals' | 'animalLogs' | 'breedingRecords' | 'healthRecords' | 'customAnimals' | 'calendarEvents' | 'projects';
+const COLLECTION_ORDER: SyncCollection[] = ['settings', 'customPlants', 'parcels', 'siteProfiles', 'designs', 'plantings', 'customAnimals', 'herds', 'animals', 'animalLogs', 'breedingRecords', 'healthRecords', 'sensors', 'sensorReadings', 'plannerGoals', 'tasks', 'calendarEvents', 'projects'];
 
 export interface SyncRecord<T = unknown> {
   collection: SyncCollection;

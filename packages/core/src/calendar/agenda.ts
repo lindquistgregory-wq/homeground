@@ -52,7 +52,7 @@ export function windowToIso(year: number, start: number, end: number): { start: 
   return { start: s, end: end >= start ? doyToIso(year, end) : doyToIso(year + 1, end) };
 }
 
-export type Repeat = 'none' | 'weekly' | 'monthly' | 'yearly';
+export type Repeat = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface CustomEvent {
   id: string;
@@ -79,9 +79,12 @@ export function expandCustom(e: CustomEvent, from: string, to: string): AgendaIt
   if (e.repeat === 'none') return e.date <= to && (span ? isoAdd(e.date, span) : e.date) >= from ? [make(e.date)] : [];
   const out: AgendaItem[] = [];
   const [y0, m0, d0] = e.date.split('-').map(Number) as [number, number, number];
-  for (let i = 0; i < 1000; i++) {
+  // Daily and weekly events skip ahead to the range instead of walking from a start years back.
+  const step = e.repeat === 'daily' ? 1 : e.repeat === 'weekly' ? 7 : 0;
+  const skip = step ? Math.max(0, Math.floor((isoDiff(e.date, from) - span) / step) - 1) : 0;
+  for (let i = skip; i < skip + 1000; i++) {
     let start: string;
-    if (e.repeat === 'weekly') start = isoAdd(e.date, 7 * i);
+    if (step) start = isoAdd(e.date, step * i);
     else {
       const y = e.repeat === 'yearly' ? y0 + i : y0 + Math.floor((m0 - 1 + i) / 12);
       const m = e.repeat === 'yearly' ? m0 : ((m0 - 1 + i) % 12) + 1;

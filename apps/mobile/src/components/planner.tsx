@@ -61,13 +61,14 @@ function QuestionInput({ q, value, onChange }: { q: Question; value: unknown; on
 }
 
 /** Three questions at a time; answers merge into the goals profile. Ends with a summary to confirm. */
-export function Interview({ goals, onSave }: { goals: HomesteadGoals; onSave: (g: HomesteadGoals) => Promise<void> }) {
+export function Interview({ goals, onSave, onFinish }: { goals: HomesteadGoals; onSave: (g: HomesteadGoals) => Promise<void>; onFinish?: () => void }) {
   const t = useTheme();
   const qs = nextQuestions(goals);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [more, setMore] = useState(false);
   const prog = interviewProgress(goals);
-  const submit = async () => {
+  /** The goals with the answers on screen merged in. */
+  const withAnswers = () => {
     let g = goals;
     for (const q of qs) {
       const a = answers[q.id];
@@ -75,15 +76,29 @@ export function Interview({ goals, onSave }: { goals: HomesteadGoals; onSave: (g
       if (a === undefined && q.kind !== 'multi') continue;
       g = mergeGoals(g, q.apply(a ?? []));
     }
+    return g;
+  };
+  const submit = async () => {
+    const g = withAnswers();
     setAnswers({});
     await onSave(g);
+  };
+  // The essentials are answered (counting what's on screen): finish now and go to the plan.
+  const canFinish = readyToPlan(withAnswers());
+  const finish = async () => {
+    const g = withAnswers();
+    setAnswers({});
+    setMore(false);
+    await onSave({ ...g, confirmedAt: g.confirmedAt ?? new Date().toISOString() });
+    onFinish?.();
   };
   // Once the essentials are in, show the summary to confirm; optional questions only when asked for.
   if (!qs.length || (readyToPlan(goals) && !more)) {
     return (
       <Card title={goals.confirmedAt ? 'Your homestead goals' : 'Does this sound right?'}>
         <Body>{summarizeGoals(goals)}</Body>
-        {!goals.confirmedAt && <Button title="Yes, make my plan" onPress={() => void onSave({ ...goals, confirmedAt: new Date().toISOString() })} />}
+        {!goals.confirmedAt && <Button title="Yes, make my plan" onPress={() => void onSave({ ...goals, confirmedAt: new Date().toISOString() }).then(() => onFinish?.())} />}
+        {goals.confirmedAt && onFinish && <Button title="See my plan" icon="timeline-outline" onPress={onFinish} />}
         {qs.length > 0 && <Body muted>{qs.length} more optional question{qs.length === 1 ? '' : 's'} below sharpen the plan.</Body>}
         {qs.length > 0 && <Button title="Answer a few more" kind="secondary" onPress={() => setMore(true)} />}
         <Button title="Start over" kind="secondary" onPress={() => Alert.alert('Start over?', 'This clears your answers for this property.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Clear', style: 'destructive', onPress: () => void onSave({}) }])} />
@@ -107,8 +122,9 @@ export function Interview({ goals, onSave }: { goals: HomesteadGoals; onSave: (g
           <QuestionInput q={q} value={answers[q.id] ?? (q.id === 'household' ? goals.household ?? [] : undefined)} onChange={(v) => setAnswers((a) => ({ ...a, [q.id]: v }))} />
         </Card>
       ))}
-      <Button title="Next" onPress={() => void submit()} />
-      {readyToPlan(goals) && <Button title="Done for now" kind="secondary" onPress={() => setMore(false)} />}
+      {canFinish && <Button title="Finish" icon="check" accessibilityHint="Saves your answers and opens your plan" onPress={() => void finish()} />}
+      <Button title={canFinish ? 'Answer more questions' : 'Next'} kind={canFinish ? 'secondary' : 'primary'} onPress={() => void submit()} />
+      {canFinish && <Text style={{ color: t.muted, fontSize: 13 }}>You’ve answered enough to make a plan. More answers sharpen it, and you can come back any time.</Text>}
       {prog.answered > 0 && <Text style={{ color: t.muted, fontSize: 13 }}>So far: {summarizeGoals(goals)}</Text>}
     </View>
   );

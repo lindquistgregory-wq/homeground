@@ -4,12 +4,12 @@
  * The calendar screen lays them out by month; Home's daily brief takes today's.
  */
 import {
-  HEALTH_TYPES, expandCustom, healthDue, isoAdd, plantById, windowToIso,
+  HEALTH_TYPES, activeChores, expandCustom, healthDue, isoAdd, plantById, scheduleProject, windowToIso,
   type AgendaItem, type AnimalAlert, type WeatherAlert,
 } from '@plotwright/core';
 import { eventsForParcel } from '../db/calendarEvents';
 import { herdsForParcel } from '../db/herds';
-import { listTasks } from '../db/planner';
+import { listProjectProgress, listTasks } from '../db/planner';
 import { allRecords, listAnimals } from '../db/records';
 import { herdCalendars, herdLabel, localToday } from './animals';
 import { activePlantings, bedName, calendarFor } from './garden';
@@ -41,7 +41,8 @@ export async function agendaFor(state: GardenState, opts: AgendaOptions): Promis
   const parcelId = state.parcel.id;
   const items: AgendaItem[] = [];
   const settings = useSettings.getState();
-  const year = Number(localToday().slice(0, 4));
+  const today = localToday();
+  const year = Number(today.slice(0, 4));
 
   // Planting tasks for what's planned or planted, with the beds they're in.
   const byPlant = new Map<string, string[]>();
@@ -70,7 +71,6 @@ export async function agendaFor(state: GardenState, opts: AgendaOptions): Promis
       if (b.dueTo! >= from && b.dueFrom! <= to)
         items.push({ id: `breed-${b.id}`, source: 'record', title: `${b.damId ? names.get(b.damId)?.name ?? 'Dam' : 'Eggs set'}: ${b.method === 'eggs-set' ? 'hatch' : 'due'}`, start: b.dueFrom!, end: b.dueTo !== b.dueFrom ? b.dueTo : undefined, animalId: b.speciesId, details: [`${b.method === 'eggs-set' ? 'Set' : 'Bred'} ${b.bredOn}`, 'The window covers the full cited range.'] });
     const who = await healthSubjects();
-    const today = localToday();
     for (const d of healthDue((await allRecords('healthRecords')).filter((r) => r.parcelId === parcelId || !r.parcelId), today, 400)) {
       const due = d.record.nextDue!;
       if (due < from || due > to) continue;
@@ -83,6 +83,27 @@ export async function agendaFor(state: GardenState, opts: AgendaOptions): Promis
   // Planner tasks with a date.
   for (const tk of (await listTasks(parcelId)).filter((x) => !x.done && x.due && /^\d{4}-\d{2}-\d{2}$/.test(x.due) && x.due >= from && x.due <= to))
     items.push({ id: `task-${tk.id}`, source: 'task', title: tk.title, start: tk.due!, details: [...(tk.notes ? [tk.notes] : []), `Planner task (${tk.category})`] });
+
+  // Projects from the plan: each step on its date (until checked off), and the chores finished steps bring.
+  // A daily chore is one long window (shown once, then as "ongoing"), so the month doesn't fill up with it.
+  for (const p of Object.values(await listProjectProgress(parcelId))) {
+    if (!p.project) continue;
+    const name = p.project.title;
+    for (const s of scheduleProject(p.project, p, today))
+      if (!s.doneOn && s.end >= from && s.start <= to)
+        items.push({ id: `project-${p.projectId}-${s.step.id}`, source: 'task', title: `${name}: ${s.step.title}`, short: s.step.title, start: s.start, end: s.end !== s.start ? s.end : undefined, urgent: s.late,
+          details: [...(s.step.detail ? [s.step.detail] : []), `Step ${s.index + 1} of ${p.project.steps.length} in your ${name.toLowerCase()} project${s.step.optional ? ' (optional)' : ''}.`, 'Dates are a planning suggestion; check steps off in the Planner.'] });
+    for (const c of activeChores(p.project, p)) {
+      const details = [c.chore.basis, `From your ${name.toLowerCase()} project. Switch it off in the Planner.`];
+      const title = `${name}: ${c.chore.title}`;
+      if (c.chore.repeat === 'daily') {
+        if (c.from <= to) items.push({ id: `chore-${p.projectId}-${c.chore.id}`, source: 'task', title: `Daily: ${c.chore.title}`, short: c.chore.title, start: c.from, end: isoAdd(to, 1), details });
+      } else {
+        for (const occ of expandCustom({ id: `${p.projectId}-${c.chore.id}`, parcelId, title, date: c.from, repeat: c.chore.repeat, createdAt: c.from }, from, to))
+          items.push({ ...occ, id: `chore-${occ.id}`, source: 'task', customId: undefined, short: c.chore.title, details });
+      }
+    }
+  }
 
   // The user's own events.
   for (const e of await eventsForParcel(parcelId)) items.push(...expandCustom(e, from, to));

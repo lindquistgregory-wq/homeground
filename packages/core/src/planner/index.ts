@@ -10,3 +10,4 @@ export * from './plan';
 export * from './safety';
 export * from './tools';
 export * from './agent';
+export * from './projects';
