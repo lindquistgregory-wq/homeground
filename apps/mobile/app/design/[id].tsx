@@ -73,7 +73,7 @@ const OBJECT_LABEL_LAYOUT: SymbolLayerSpecification['layout'] = { 'text-field': 
 const SENSOR_LABEL_PAINT: SymbolLayerSpecification['paint'] ={ 'text-color': '#ffffff', 'text-halo-color': '#000000', 'text-halo-width': 1.5 };
 
 export default function DesignScreen() {
-  const { id, placeAnimal } = useLocalSearchParams<{ id: string; placeAnimal?: string }>();
+  const { id, placeAnimal, select } = useLocalSearchParams<{ id: string; placeAnimal?: string; select?: string }>();
   const t = useTheme();
   const units = useSettings((s) => s.units);
   const ent = useEntitlements((s) => s.entitlements);
@@ -329,6 +329,15 @@ export default function DesignScreen() {
       }
     }
   };
+
+  // Opened from Home's "Go to design": select that object once the map has it.
+  const selectedFromHome = useRef(false);
+  useEffect(() => {
+    if (!select || selectedFromHome.current || !objectsGeo?.features.some((f) => f.properties.id === select)) return;
+    selectedFromHome.current = true;
+    setTimeout(() => selectObject(select), 400);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [select, objectsGeo]);
 
   const heatGeo = useMemo(() => (analysis && sun && ent.has('sun.heatmaps') ? heatmapGeoJSON(analysis, sun.hours) : null), [analysis, sun, ent]);
   const [contourGeo, setContourGeo] = useState<ReturnType<typeof contourGeoJSON> | null>(null);
