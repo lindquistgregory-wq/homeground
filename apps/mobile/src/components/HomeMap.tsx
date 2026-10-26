@@ -1,7 +1,7 @@
 /**
  * Home's homestead map: the property on aerial imagery with every design object drawn on it, small
  * animals walking around the housing they live in, and free-roaming animals (a guardian dog, barn
- * cats) wandering the property. The map holds still (no pan or zoom) so it reads like a picture and
+ * cats) wandering the property. Objects carry no labels, so the map stays clean; tap one for its name. The map holds still (no pan or zoom) so it reads like a picture and
  * the page scrolls; tap an object to see what's in it.
  *
  * The animals walk on a layer above the map: their homes are projected to screen points once the map
@@ -45,7 +45,7 @@ export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'b
       return {
         type: 'Feature' as const,
         geometry: { type: 'Polygon' as const, coordinates: [footprintLonLat(o, frame)] },
-        properties: { id: o.id, label: o.label ?? t?.name ?? o.kind, color: o.existing ? '#9e9e9e' : CATEGORY_COLOR[t?.category ?? ''] ?? '#4F6E3A', selected: o.id === selectedId ? 1 : 0 },
+        properties: { id: o.id, color: o.existing ? '#9e9e9e' : CATEGORY_COLOR[t?.category ?? ''] ?? '#4F6E3A', selected: o.id === selectedId ? 1 : 0 },
       };
     }),
   }), [design, frame, selectedId]);
@@ -107,8 +107,6 @@ export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'b
           onPress={(e) => { const id = e.nativeEvent.features?.[0]?.properties?.id; if (typeof id === 'string') { e.stopPropagation(); objectTapAt.current = Date.now(); onSelect(id); } }}>
           <Layer type="fill" id="home-obj-fill" paint={{ 'fill-color': ['get', 'color'], 'fill-opacity': 0.55 }} />
           <Layer type="line" id="home-obj-line" paint={{ 'line-color': ['case', ['==', ['get', 'selected'], 1], '#F3E1B0', '#ffffff'], 'line-width': ['case', ['==', ['get', 'selected'], 1], 4, 1.5] }} />
-          <Layer type="symbol" id="home-obj-label" layout={{ 'text-field': ['get', 'label'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, 0.2], 'text-anchor': 'top', 'text-optional': true }}
-            paint={{ 'text-color': '#ffffff', 'text-halo-color': '#1b2a1e', 'text-halo-width': 1.4 }} />
         </GeoJSONSource>
       </Map>
 
