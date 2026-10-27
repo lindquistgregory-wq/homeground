@@ -16,6 +16,7 @@ import { listSensors } from '../src/db/sensors';
 import { deleteSecrets } from '../src/services/secrets';
 import { deleteClaudeKey } from '../src/services/bedAi';
 import { AiKeyCard } from '../src/components/AiKeyCard';
+import { AccessCodeField } from '../src/components/AccessCodeField';
 import { listParcels, saveUserEndpoint } from '../src/db/parcels';
 import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
@@ -74,7 +75,9 @@ function benchNative(): { ms: number; moveMs: number; maxDiffH: number } {
 export default function Settings() {
   const t = useTheme();
   const { units, setUnits, animals, setAnimals, showProcessing, setShowProcessing, showShopping, setShowShopping } = useSettings();
-  const { entitlements, refresh, restore, storeError } = useEntitlements();
+  const { entitlements, refresh, restore, storeError, cache } = useEntitlements();
+  // A store purchase to manage (an access code unlocks without one).
+  const hasPurchase = (cache?.transactions.length ?? 0) > 0;
   const { privacyOptionsRequired, showPrivacyOptions, personalised, setPersonalised } = useAds();
   const [metricsOn, setMetricsOn] = useState(metricsConsent());
   const [cloud, setCloud] = useState<boolean | null>(null);
@@ -196,7 +199,8 @@ export default function Settings() {
           const r = await restore();
           Alert.alert(r.ok ? (r.found ? 'Purchases restored' : 'Nothing to restore') : 'Couldn’t reach the store', r.ok ? (r.found ? `You're on ${TIER_NAMES[useEntitlements.getState().entitlements.tier]}.` : 'No active purchases were found for this store account.') : 'Check your connection and try again.');
         }} />
-        {entitlements.tier !== 'free' && BUSINESS_MODEL === 'tiers' && <Button title="Manage subscription" kind="secondary" onPress={() => billing.manageSubscriptions()} />}
+        <AccessCodeField />
+        {entitlements.tier !== 'free' && hasPurchase && BUSINESS_MODEL === 'tiers' && <Button title="Manage subscription" kind="secondary" onPress={() => billing.manageSubscriptions()} />}
         {__DEV__ && billing instanceof StubBillingAdapter && (
           <>
             <Body muted>Development build: switch tiers to test feature gates.</Body>

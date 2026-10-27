@@ -6,6 +6,7 @@ export * from './geo/measure';
 export * from './climate/normals';
 export * from './climate/frost';
 export * from './entitlements';
+export * from './accessCode';
 export * from './sync';
 export * from './boundary/import';
 export * from './boundary/walk';

@@ -11,6 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check:licenses": "tsx scripts/check-licenses.ts",
     "check": "pnpm typecheck && pnpm test && pnpm check:licenses",
+    "access-code-hash": "tsx scripts/access-code-hash.ts",
     "build:zones": "tsx scripts/build-zone-table.ts",
     "bench:shade": "tsx scripts/bench-shade.ts"
   },
