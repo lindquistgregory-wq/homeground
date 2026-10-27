@@ -27,7 +27,7 @@ export const ADMOB_UNITS: Record<'ios' | 'android', Partial<Record<'browse-banne
  * every paid feature on a phone for 90 days. Make one with `pnpm access-code-hash`; never put the code
  * itself here (this repository is public). Empty = the access-code field isn't shown.
  */
-export const ACCESS_CODE_HASHES: string[] = [];
+export const ACCESS_CODE_HASHES: string[] = ['67c3ba2ecc37f9ad0a20941347acea0b54595181302c7e6b1322bd3c5f7de366'];
 
 /** Shown on the paywall (App Review 3.1.2 needs both in the app and the store listing). */
 export const PRIVACY_POLICY_URL = `${PROJECT_URL}/blob/main/docs/PRIVACY.md`;
