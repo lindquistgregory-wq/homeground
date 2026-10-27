@@ -3,7 +3,7 @@
     "name": "Plotwright",
     "slug": "plotwright",
     "scheme": "plotwright",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "app.plotwright.planner",
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION"
