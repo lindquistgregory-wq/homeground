@@ -4,21 +4,25 @@
  * Rewarded-ad unlocks (24 h, one feature each) are kept on the device only.
  */
 import { create } from 'zustand';
+import * as Crypto from 'expo-crypto';
 import {
-  grantReward, mergeStoreCheck, resolveEntitlements,
-  type EntitlementCache, type Entitlements, type Feature, type PaywallPlan, type RewardedUnlock,
+  accessCodeInput, accessGrantTransactions, grantReward, mergeStoreCheck, newAccessGrant, resolveEntitlements,
+  type AccessGrant, type EntitlementCache, type Entitlements, type Feature, type PaywallPlan, type RewardedUnlock,
 } from '@plotwright/core';
 import { billing, type PurchaseOutcome } from './adapter';
-import { BUSINESS_MODEL } from '../config';
+import { ACCESS_CODE_HASHES, BUSINESS_MODEL } from '../config';
 import { kvGet, kvSet } from '../db/database';
 import { track } from '../services/metrics';
 
 const CACHE_KEY = 'billing.cache';
 const REWARD_KEY = 'ads.rewarded';
+const ACCESS_KEY = 'access.grant';
 
 interface EntitlementState {
   cache: EntitlementCache | undefined;
   rewarded: RewardedUnlock[];
+  /** An access code's 90-day unlock on this phone, if one was entered. */
+  access?: AccessGrant;
   entitlements: Entitlements;
   /** Last store error (shown in Settings), if the most recent check failed. */
   storeError?: string;
@@ -30,6 +34,9 @@ interface EntitlementState {
   purchase(plan: Pick<PaywallPlan, 'productId' | 'offerTokenAndroid'>): Promise<PurchaseOutcome>;
   restore(): Promise<{ ok: boolean; found: number }>;
   addReward(feature: Feature): Promise<void>;
+  /** Check a typed access code; on a match, unlock everything on this phone for 90 days. */
+  redeemCode(code: string): Promise<boolean>;
+  clearAccess(): Promise<void>;
 }
 
 let last: { key: string; ent: Entitlements } | undefined;
@@ -37,9 +44,10 @@ let last: { key: string; ent: Entitlements } | undefined;
  * Resolve, but hand back the previous object when nothing changed, so screens that depend on
  * `entitlements` don't reload after every background store check.
  */
-function resolve(cache: EntitlementCache | undefined, rewarded: RewardedUnlock[]): Entitlements {
+function resolve(cache: EntitlementCache | undefined, rewarded: RewardedUnlock[], access?: AccessGrant): Entitlements {
   const now = Date.now();
-  const ent = resolveEntitlements(cache?.transactions ?? [], { model: BUSINESS_MODEL, rewarded, now: new Date(now) });
+  const transactions = [...(cache?.transactions ?? []), ...accessGrantTransactions(access, new Date(now))];
+  const ent = resolveEntitlements(transactions, { model: BUSINESS_MODEL, rewarded, now: new Date(now) });
   const live = rewarded.filter((r) => Date.parse(r.expiresAt) > now).map((r) => r.feature).sort().join(',');
   const key = `${ent.model}|${ent.tier}|${ent.showAds}|${live}`;
   if (last?.key === key) return last.ent;
@@ -78,19 +86,20 @@ export const useEntitlements = create<EntitlementState>((set, get) => ({
   async loadCached() {
     const cache = await readJson<EntitlementCache>(CACHE_KEY);
     const rewarded = (await readJson<RewardedUnlock[]>(REWARD_KEY)) ?? [];
-    set({ cache, rewarded, entitlements: resolve(cache, rewarded) });
+    const access = await readJson<AccessGrant>(ACCESS_KEY);
+    set({ cache, rewarded, access, entitlements: resolve(cache, rewarded, access) });
   },
 
   async refresh() {
     const cache = get().cache ?? (await readJson<EntitlementCache>(CACHE_KEY));
     const rewarded = (await readJson<RewardedUnlock[]>(REWARD_KEY)) ?? get().rewarded;
-    set({ cache, rewarded, entitlements: resolve(cache, rewarded) });
+    set({ cache, rewarded, entitlements: resolve(cache, rewarded, get().access) });
     starting ??= billing.start(() => void get().refresh()).catch(() => { starting = undefined; });
     await starting;
     const result = await billing.check();
     const next = mergeStoreCheck(cache, result);
     if (result.ok) await kvSet(CACHE_KEY, JSON.stringify(next));
-    set({ cache: next, entitlements: resolve(next, get().rewarded), storeError: result.ok ? undefined : result.error });
+    set({ cache: next, entitlements: resolve(next, get().rewarded, get().access), storeError: result.ok ? undefined : result.error });
   },
 
   async purchase(plan) {
@@ -106,7 +115,7 @@ export const useEntitlements = create<EntitlementState>((set, get) => ({
     const result = await billing.restore();
     const next = mergeStoreCheck(get().cache, result);
     if (result.ok) await kvSet(CACHE_KEY, JSON.stringify(next));
-    set({ cache: next, entitlements: resolve(next, get().rewarded), storeError: result.ok ? undefined : result.error });
+    set({ cache: next, entitlements: resolve(next, get().rewarded, get().access), storeError: result.ok ? undefined : result.error });
     track('restore', { result: result.ok ? (next.transactions.length ? 'found' : 'none') : 'error' });
     return { ok: result.ok, found: next.transactions.length };
   },
@@ -114,7 +123,21 @@ export const useEntitlements = create<EntitlementState>((set, get) => ({
   async addReward(feature) {
     const rewarded = grantReward(get().rewarded, feature, Date.now());
     await kvSet(REWARD_KEY, JSON.stringify(rewarded));
-    set({ rewarded, entitlements: resolve(get().cache, rewarded) });
+    set({ rewarded, entitlements: resolve(get().cache, rewarded, get().access) });
     track('rewarded_unlock', { feature });
+  },
+
+  async redeemCode(code) {
+    const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, accessCodeInput(code));
+    if (!ACCESS_CODE_HASHES.includes(hash.toLowerCase())) return false;
+    const access = newAccessGrant(new Date());
+    await kvSet(ACCESS_KEY, JSON.stringify(access));
+    set({ access, entitlements: resolve(get().cache, get().rewarded, access) });
+    return true;
+  },
+
+  async clearAccess() {
+    await kvSet(ACCESS_KEY, '');
+    set({ access: undefined, entitlements: resolve(get().cache, get().rewarded) });
   },
 }));

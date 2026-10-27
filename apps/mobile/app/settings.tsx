@@ -16,6 +16,7 @@ import { listSensors } from '../src/db/sensors';
 import { deleteSecrets } from '../src/services/secrets';
 import { deleteClaudeKey } from '../src/services/bedAi';
 import { AiKeyCard } from '../src/components/AiKeyCard';
+import { AccessCodeField } from '../src/components/AccessCodeField';
 import { listParcels, saveUserEndpoint } from '../src/db/parcels';
 import { http } from '../src/services/http';
 import { useSettings } from '../src/services/settings';
@@ -196,6 +197,7 @@ export default function Settings() {
           const r = await restore();
           Alert.alert(r.ok ? (r.found ? 'Purchases restored' : 'Nothing to restore') : 'Couldn’t reach the store', r.ok ? (r.found ? `You're on ${TIER_NAMES[useEntitlements.getState().entitlements.tier]}.` : 'No active purchases were found for this store account.') : 'Check your connection and try again.');
         }} />
+        <AccessCodeField />
         {entitlements.tier !== 'free' && BUSINESS_MODEL === 'tiers' && <Button title="Manage subscription" kind="secondary" onPress={() => billing.manageSubscriptions()} />}
         {__DEV__ && billing instanceof StubBillingAdapter && (
           <>

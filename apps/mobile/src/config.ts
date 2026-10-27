@@ -22,6 +22,13 @@ export const ADMOB_UNITS: Record<'ios' | 'android', Partial<Record<'browse-banne
   android: { 'browse-banner': null, interstitial: null, rewarded: null },
 };
 
+/**
+ * Fingerprints of the owner's access codes (for app reviewers and the owner's own phones): each unlocks
+ * every paid feature on a phone for 90 days. Make one with `pnpm access-code-hash`; never put the code
+ * itself here (this repository is public). Empty = the access-code field isn't shown.
+ */
+export const ACCESS_CODE_HASHES: string[] = [];
+
 /** Shown on the paywall (App Review 3.1.2 needs both in the app and the store listing). */
 export const PRIVACY_POLICY_URL = `${PROJECT_URL}/blob/main/docs/PRIVACY.md`;
 /** iOS: Apple's standard licence agreement (App Store Connect default). */
