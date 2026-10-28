@@ -233,11 +233,12 @@ const store: LocalStore = {
     } else if (rec.collection === 'designs') {
       const d = (rec.data ?? {}) as Record<string, unknown>;
       await db.runAsync(
-        `INSERT INTO designs (id, parcel_id, name, objects, created_at, updated_at, updated_hlc, deleted, scenario) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO designs (id, parcel_id, name, objects, created_at, updated_at, updated_hlc, deleted, scenario, removed_objects) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET name = excluded.name, objects = excluded.objects, updated_at = excluded.updated_at,
-           updated_hlc = excluded.updated_hlc, deleted = excluded.deleted, scenario = excluded.scenario`,
+           updated_hlc = excluded.updated_hlc, deleted = excluded.deleted, scenario = excluded.scenario, removed_objects = excluded.removed_objects`,
         rec.id, String(d.parcel_id ?? ''), String(d.name ?? ''), String(d.objects ?? '[]'), String(d.created_at ?? new Date().toISOString()),
         String(d.updated_at ?? new Date().toISOString()), rec.hlc, rec.deleted ? 1 : 0, typeof d.scenario === 'string' ? d.scenario : null,
+        typeof d.removed_objects === 'string' ? d.removed_objects : null,
       );
     } else if (rec.collection === 'siteProfiles' && rec.data) {
       const parent = await db.getFirstAsync<{ deleted: number }>('SELECT deleted FROM parcels WHERE id = ?', rec.id);
@@ -260,6 +261,11 @@ const store: LocalStore = {
       if (r) out.push(r);
     }
     return out;
+  },
+
+  async markPending(r: SyncRecord): Promise<void> {
+    const db = await getDb();
+    await db.runAsync('INSERT OR REPLACE INTO sync_pending (collection, id, hlc) VALUES (?, ?, ?)', r.collection, r.id, r.hlc);
   },
 
   async markUploaded(records: SyncRecord[]): Promise<void> {

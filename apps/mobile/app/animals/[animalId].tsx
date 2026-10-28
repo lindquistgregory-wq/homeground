@@ -4,7 +4,7 @@
  * awareness (never treatment), the rules to check, and where the figures come from.
  */
 import {
-  SAFETY_NOTES, animalById, isCustomAnimalId, animalCalendar, formatDoy, minimumGroup, objectType, scoreAnimal, spacePerHeadSqFt, waterGallons, type SafetyNote,
+  SAFETY_NOTES, animalById, isCustomAnimalId, animalCalendar, fallbackHeatOnset, formatAcres, formatDoy, formatGallons, formatPounds, formatRangeIn, formatSqFt, formatTempF, minimumGroup, objectType, scoreAnimal, spacePerHeadSqFt, waterGallons, type SafetyNote,
 } from '@plotwright/core';
 import { livestockGuide } from '@plotwright/data';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -31,6 +31,7 @@ export default function AnimalDetail() {
   const { animalId, parcelId } = useLocalSearchParams<{ animalId: string; parcelId?: string }>();
   const t = useTheme();
   const showProcessing = useSettings((s) => s.showProcessing);
+  const units = useSettings((s) => s.units);
   const { state } = useGarden(parcelId);
   useCustomAnimals((s) => s.version); // re-render after an edit
   const a = animalById(animalId);
@@ -47,11 +48,12 @@ export default function AnimalDetail() {
   const poultryNote = a.kind === 'poultry' || a.kind === 'waterfowl' ? (SAFETY_NOTES.poultry as SafetyNote) : null;
   const beeNote = a.kind === 'pollinator' ? (SAFETY_NOTES.bees as SafetyNote) : null;
   const p = a.production;
+  const lb = (r: [number, number] | null | undefined) => (r ? formatRangeIn(r, (n) => formatPounds(n, units)) : null);
   const produce = [
     range(p.eggsPerYear) && `${range(p.eggsPerYear)} eggs a year`,
-    range(p.milkLbPerLactation) && `${range(p.milkLbPerLactation)} lb of milk per lactation`,
-    range(p.fiberLbPerYear) && `${range(p.fiberLbPerYear)} lb of fiber a year`,
-    range(p.honeyLbPerYear) && `${range(p.honeyLbPerYear)} lb of honey a year`,
+    lb(p.milkLbPerLactation) && `${lb(p.milkLbPerLactation)} of milk per lactation`,
+    lb(p.fiberLbPerYear) && `${lb(p.fiberLbPerYear)} of fiber a year`,
+    lb(p.honeyLbPerYear) && `${lb(p.honeyLbPerYear)} of honey a year`,
     range(p.growOutDays) && `${range(p.growOutDays)} days to grow out`,
     range(p.layStartWeeks) && `starts laying at ${range(p.layStartWeeks)} weeks`,
   ].filter(Boolean) as string[];
@@ -78,11 +80,11 @@ export default function AnimalDetail() {
 
       <Card title="Needs" icon="paw-outline">
         <FactGrid items={[
-          { icon: 'home-outline', label: 'Shelter', value: indoor ? `${indoor} sq ft each` : '—' },
-          { icon: 'fence', label: a.pastureAcresPerHead ? 'Pasture' : 'Outdoors', value: a.pastureAcresPerHead ? `${Math.max(...a.pastureAcresPerHead)} acre${Math.max(...a.pastureAcresPerHead) === 1 ? '' : 's'} each` : outdoor ? `${outdoor} sq ft each` : '—' },
-          { icon: 'water-outline', label: 'Water', value: water ? `up to ${water} gal/day` : 'always fresh' },
+          { icon: 'home-outline', label: 'Shelter', value: indoor ? `${formatSqFt(indoor, units)} each` : '—' },
+          { icon: 'fence', label: a.pastureAcresPerHead ? 'Pasture' : 'Outdoors', value: a.pastureAcresPerHead ? `${formatAcres(Math.max(...a.pastureAcresPerHead), units)} each` : outdoor ? `${formatSqFt(outdoor, units)} each` : '—' },
+          { icon: 'water-outline', label: 'Water', value: water ? `up to ${formatGallons(water, units)}/day` : 'always fresh' },
           { icon: 'account-group-outline', label: 'Group', value: group > 1 ? `${group} or more` : 'fine alone' },
-          { icon: 'thermometer-high', label: 'Heat stress', value: a.heat.airOnsetF ? `from ${a.heat.airOnsetF} °F` : a.heat.thiOnset ? `THI ${a.heat.thiOnset}` : a.heat.tPlusRhOnset ? `°F + humidity ${a.heat.tPlusRhOnset}` : a.heat.tolerance ?? '—' },
+          { icon: 'thermometer-high', label: 'Heat stress', value: a.heat.airOnsetF ? `from ${formatTempF(a.heat.airOnsetF, units)}` : a.heat.thiOnset ? `THI ${a.heat.thiOnset}` : a.heat.tPlusRhOnset ? `°F + humidity ${a.heat.tPlusRhOnset}` : fallbackHeatOnset(a) !== undefined ? `°F + humidity ${fallbackHeatOnset(a)} (general)` : a.heat.tolerance ?? '—' },
           { icon: 'snowflake', label: 'Cold', value: a.cold.tolerance ? `${a.cold.tolerance} tolerance` : '—' },
           { icon: 'volume-high', label: 'Noise', value: a.noise ?? '—' },
           { icon: 'heart-pulse', label: 'Lifespan', value: range(a.lifespanYears, ' yrs') ?? '—' },
@@ -133,7 +135,7 @@ export default function AnimalDetail() {
           {showProcessing && a.processing && (
             <View style={{ marginTop: 6 }}>
               {range(a.processing.ageDays) && <Body>• Processing age: {range(a.processing.ageDays)} days</Body>}
-              {range(a.processing.dressedWeightLb) && <Body>• Dressed weight: {range(a.processing.dressedWeightLb)} lb</Body>}
+              {lb(a.processing.dressedWeightLb) && <Body>• Dressed weight: {lb(a.processing.dressedWeightLb)}</Body>}
               {a.processing.note && <Body muted>{a.processing.note}</Body>}
             </View>
           )}

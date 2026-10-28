@@ -12,6 +12,7 @@ import { parseStationSearch, parcelClimate } from './climate';
 import { buildSoilUnits, parcelSoils, parseSdaTable, toWkt } from './soils';
 import { parcelFlood, parcelWater, summarizeFlood } from './hazards';
 import { fixture, testClient } from './testing';
+import { MemoryCache } from './http';
 
 const LOT: Polygon = {
   type: 'Polygon',
@@ -83,6 +84,17 @@ test('parcel lookup requests only id/acres fields and strips anything else', asy
   assert.ok(!JSON.stringify(c).includes('Jane'), 'owner name must never be stored');
   const outFields = decodeURIComponent(/outFields=([^&]+)/.exec(calls[0]!.url)![1]!);
   assert.equal(outFields, 'PRINT_KEY,ACRES');
+});
+
+test('a server that ignores outFields never gets owner data into the device cache', async () => {
+  const cache = new MemoryCache();
+  const { http } = testClient([
+    { match: /NYS_Tax_Parcels_Public\/MapServer\/1\/query/, body: esriParcel({ PRINT_KEY: '123.-4-5', ACRES: 11.2, PRIMARY_OWNER: 'Jane Doe', MAIL_ADDR: '1 Main' }) },
+  ], { cache });
+  await findParcel(http, bundledParcelRegistry, '36039', { lat: 42.253, lon: -73.9865 });
+  const stored = [...(cache as unknown as { map: Map<string, { value: string }> }).map.values()].map((e) => e.value).join('\n');
+  assert.ok(stored.includes('123.-4-5'), 'the parcel itself is cached');
+  assert.ok(!stored.includes('Jane') && !stored.includes('1 Main'), 'owner name and mailing address are not');
 });
 
 test('sanitizeAttributes drops PII-looking fields even when allow-listed', () => {

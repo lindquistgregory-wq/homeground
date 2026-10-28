@@ -129,7 +129,7 @@ export default function Planner() {
 
   const draftFromItem = async (item: PlanItem) => {
     const design = await getOrCreateDesign(id);
-    const d: DesignDraft = { id: newId(), summary: item.title, changes: item.draft ?? [], why: item.why, createdBy: 'rules', ...(item.livestock ? { herd: item.livestock } : {}) };
+    const d: DesignDraft = { id: newId(), summary: item.title, changes: item.draft ?? [], why: item.why, createdBy: 'rules', phase: item.phase, ...(item.livestock ? { herd: item.livestock } : {}) };
     const v = validateDesignDraft(d, design.objects);
     if (!v.ok) return Alert.alert('Can’t add that', v.problems.join('\n'));
     await saveDraft(id, 'design', v.cleaned);

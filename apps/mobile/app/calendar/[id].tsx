@@ -4,7 +4,7 @@
  * cards on each day. Tapping a day lists it; tapping an event shows its details. Frost, heat and
  * wind alerts from the NWS forecast sit on top.
  */
-import { formatDoy, isoAdd, itemsOn, plantById, type AgendaItem, type CustomEvent } from '@plotwright/core';
+import { formatDoy, formatGdd, formatTempDeltaF, isoAdd, itemsOn, plantById, type AgendaItem, type CustomEvent } from '@plotwright/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, View } from 'react-native';
@@ -14,7 +14,7 @@ import { Chip, StaleProfileNotice } from '../../src/components/plants';
 import { MoreInfo, Pill } from '../../src/components/kit';
 import { EventEditor, EventRow, EventSheet, MonthCalendar } from '../../src/components/calendar';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
-import { alertsEnabled, alertsForParcel, type ParcelAlerts } from '../../src/services/alerts';
+import { alertsEnabled, alertsForParcel, setAlertsEnabled, type ParcelAlerts } from '../../src/services/alerts';
 import { agendaFor, monthRange } from '../../src/services/agenda';
 import { localToday } from '../../src/services/animals';
 import { activePlantings, bedName, calendarFor } from '../../src/services/garden';
@@ -105,7 +105,11 @@ export default function CalendarScreen() {
           ))}
           {alerts?.forecastNote && <Text style={{ color: t.muted, fontSize: 12 }}>{alerts.forecastNote}</Text>}
           <Text style={{ color: t.muted, fontSize: 12 }}>Not an official warning. For watches and warnings, see weather.gov. Forecast: National Weather Service (public domain).</Text>
-          {notifyOn === false && <Button title="Turn on alert notifications" kind="secondary" onPress={() => router.push('/settings')} />}
+          {notifyOn === false && <Button title="Turn on alert notifications (free)" kind="secondary" onPress={async () => {
+            const r = await setAlertsEnabled(true).catch(() => ({ on: false, denied: false }));
+            if ('denied' in r && r.denied) Alert.alert('Notifications are off', 'Allow notifications for Plotwright in your phone’s settings, then try again.');
+            setNotifyOn(r.on);
+          }} />}
         </Card>
       )}
 
@@ -199,7 +203,8 @@ function PlantedCard({ state, year, risk }: { state: NonNullable<ReturnType<type
 function SensorCard({ parcelId, profile, year }: { parcelId: string; profile?: SiteProfile; year: number }) {
   const t = useTheme();
   const ent = useEntitlements((st) => st.entitlements);
-  const imperial = useSettings((st) => st.units) === 'imperial';
+  const units = useSettings((st) => st.units);
+  const imperial = units === 'imperial';
   const [info, setInfo] = useState<{ any: boolean; gdd: Awaited<ReturnType<typeof measuredGdd>>; water: WaterAdvice | null; low: FrostOffset | null } | null>(null);
   useEffect(() => {
     void (async () => {
@@ -238,13 +243,13 @@ function SensorCard({ parcelId, profile, year }: { parcelId: string; profile?: S
             </View>
           ) : <Body muted>Watering suggestions need a few days of outdoor temperature readings.</Body>}
           {info.gdd && (ent.has('planting.dynamicScheduling')
-            ? <Body>Heat units since Jan 1: {Math.round(info.gdd.gdd)} GDD (base 50 °F), measured by “{info.gdd.sensor}” over {info.gdd.days} days.</Body>
+            ? <Body>Heat units since Jan 1: {formatGdd(info.gdd.gdd, units)}, measured by “{info.gdd.sensor}” over {info.gdd.days} days.</Body>
             : <Body muted>Homestead Pro tracks measured heat units against each crop’s needs.</Body>)}
           {info.low && (
             <Body>
               {info.low.offsetF <= -1
-                ? `Low spot: “${info.low.sensor}” runs about ${Math.round(-info.low.offsetF)} °F colder than the forecast (${info.low.nights} nights). Frost alerts allow for it.`
-                : `“${info.low.sensor}” tracks the forecast lows within about ${Math.max(1, Math.round(Math.abs(info.low.offsetF)))} °F (${info.low.nights} nights).`}
+                ? `Low spot: “${info.low.sensor}” runs about ${formatTempDeltaF(-info.low.offsetF, units)} colder than the forecast (${info.low.nights} nights). Frost alerts allow for it.`
+                : `“${info.low.sensor}” tracks the forecast lows within about ${formatTempDeltaF(Math.max(1, Math.abs(info.low.offsetF)), units)} (${info.low.nights} nights).`}
             </Body>
           )}
           <Button title="Sensors" kind="secondary" onPress={() => router.push({ pathname: '/sensors', params: { parcelId } })} />

@@ -4,7 +4,7 @@
  * Nothing here touches the network except what the site profile already cached.
  */
 import {
-  OBJECT_LIBRARY, allPlants, buildPlan, footprintAreaM2, footprintUtm, formatDoy, frameForBoundary, newObject, objectType, pointInAreal, project, scorePlant, unproject,
+  OBJECT_LIBRARY, allPlants, buildPlan, footprintAreaM2, footprintLonLat, footprintUtm, formatDoy, frameForBoundary, newObject, objectType, plantingYear, pointInAreal, project, scorePlant, unproject,
   readyToPlan, type DesignDraft, type DesignObject, type HomesteadGoals, type PlannerContext, type SitePlanInput, type TaskDraft,
 } from '@plotwright/core';
 import { KNOWLEDGE_BASE } from '@plotwright/data';
@@ -13,7 +13,8 @@ import { useEntitlements } from '../billing/entitlements';
 import { getOrCreateDesign, saveDesign } from '../db/designs';
 import { getParcel, getSiteProfile, type ParcelRecord } from '../db/parcels';
 import { draftStatus, getGoals, saveDraft, saveGoals, saveTask, setDraftStatus } from '../db/planner';
-import { savePlanting } from '../db/plantings';
+import { deletePlantingsForBed, savePlanting } from '../db/plantings';
+import { deleteHerdsForObject } from '../db/herds';
 import { listSensors } from '../db/sensors';
 import { dominantSoil, siteConditions } from './garden';
 import { http } from './http';
@@ -209,6 +210,8 @@ function placeObjects(parcel: ParcelRecord, existing: DesignObject[], kind: stri
         const [x, y] = project(frame, o.center);
         o.path = [unproject(frame, [x - o.length / 2, y]) as [number, number], unproject(frame, [x + o.length / 2, y]) as [number, number]];
       }
+      // The whole footprint stays on the property, not just its centre (fences and paddocks over the line).
+      if (!footprintLonLat(o, frame).every(([lon, lat]) => pointInAreal({ lon: lon!, lat: lat! }, parcel.geometry))) continue;
       const b = boxOf(footprintUtm(o, frame));
       if (boxes.some((x) => overlaps(b, x, 0.6))) continue;
       boxes.push(b);
@@ -228,27 +231,49 @@ export interface ApplyResult {
   unplaced: string[];
 }
 
-/** Apply an approved design draft: add/remove objects, and plan the draft's crops into the new beds. */
+const applying = new Set<string>();
+
+/**
+ * Apply an approved design draft: add/remove objects, and plan the draft's crops into the new beds.
+ * The draft is marked approved only once the design and plantings are saved, so a failure part-way
+ * leaves it pending to try again. Objects stay within the plan's object limit.
+ */
 export async function applyDesignDraft(parcelId: string, draft: DesignDraft): Promise<ApplyResult> {
-  // Approve once: a second tap (or another screen) finds the draft no longer pending.
-  if ((await draftStatus(draft.id)) !== 'pending') throw new Error('This draft was already handled.');
-  await setDraftStatus(draft.id, 'approved');
+  // Approve once: a second tap (or another screen) finds the draft no longer pending, or still being applied.
+  if (applying.has(draft.id) || (await draftStatus(draft.id)) !== 'pending') throw new Error('This draft was already handled.');
+  applying.add(draft.id);
+  try {
+    return await applyPending(parcelId, draft);
+  } finally {
+    applying.delete(draft.id);
+  }
+}
+
+async function applyPending(parcelId: string, draft: DesignDraft): Promise<ApplyResult> {
   const parcel = await getParcel(parcelId);
   if (!parcel) throw new Error('Property not found.');
   const design = await getOrCreateDesign(parcelId);
   let objects = [...design.objects];
   const res: ApplyResult = { added: 0, removed: 0, plantings: 0, unplaced: [], placed: [], designId: design.id };
-  const year = new Date().getFullYear();
+  const year = plantingYear(draft.phase);
+  const plantings: Array<Parameters<typeof savePlanting>[0]> = [];
+  const removedIds: string[] = [];
+  const limit = useEntitlements.getState().entitlements.limits.designObjects;
+  const drawn = () => objects.filter((o) => !o.existing).length;
   for (const c of draft.changes) {
     if (c.op === 'remove') {
       const before = objects.length;
       objects = objects.filter((o) => o.id !== c.objectId);
+      if (objects.length < before) removedIds.push(c.objectId);
       res.removed += before - objects.length;
       continue;
     }
     if (!OBJECT_LIBRARY.some((t) => t.kind === c.kind)) { res.unplaced.push(c.kind); continue; }
-    const n = c.count ?? 1;
-    const placed = placeObjects(parcel, objects, c.kind, n, c.near, { width: c.width, length: c.length });
+    const want = c.count ?? 1;
+    const room = Math.max(0, limit - drawn());
+    const n = Math.min(want, room);
+    const placed = n > 0 ? placeObjects(parcel, objects, c.kind, n, c.near, { width: c.width, length: c.length }) : [];
+    if (n < want) res.unplaced.push(`${want - n} × ${objectType(c.kind)?.name ?? c.kind} (your plan allows ${limit} objects)`);
     if (placed.length < n) res.unplaced.push(`${n - placed.length} × ${objectType(c.kind)?.name ?? c.kind} (no free space found)`);
     objects.push(...placed);
     res.placed.push(...placed);
@@ -266,8 +291,7 @@ export async function applyDesignDraft(parcelId: string, draft: DesignDraft): Pr
           let need = (areas[plantId] ?? bedSqFt) / bedSqFt;
           while (need > 1e-3 && bed < placed.length) {
             const share = Math.min(need, room);
-            await savePlanting({ parcelId, designId: design.id, bedObjectId: placed[bed]!.id, plantId, year, share: Math.round(share * 100) / 100, status: 'planned' });
-            res.plantings++;
+            plantings.push({ parcelId, designId: design.id, bedObjectId: placed[bed]!.id, plantId, year, share: Math.round(share * 100) / 100, status: 'planned' });
             need -= share;
             room -= share;
             if (room <= 1e-3) (bed++, (room = 1));
@@ -275,20 +299,31 @@ export async function applyDesignDraft(parcelId: string, draft: DesignDraft): Pr
           if (need > 1e-3) res.unplaced.push(`${plantId} (no bed left for it)`);
         }
       } else {
-        for (let i = 0; i < Math.min(placed.length, plants.length); i++) {
-          await savePlanting({ parcelId, designId: design.id, bedObjectId: placed[i]!.id, plantId: plants[i]!, year, share: 1, status: 'planned' });
-          res.plantings++;
-        }
+        for (let i = 0; i < Math.min(placed.length, plants.length); i++)
+          plantings.push({ parcelId, designId: design.id, bedObjectId: placed[i]!.id, plantId: plants[i]!, year, share: 1, status: 'planned' });
       }
     }
   }
+  // Design first, then what depends on it; the draft counts as handled only once all of it is saved.
   await saveDesign({ ...design, objects, updatedAt: new Date().toISOString() });
+  for (const p of plantings) { await savePlanting(p); res.plantings++; }
+  for (const objectId of removedIds) {
+    // Removed beds and housing take their plantings and animals with them.
+    await deletePlantingsForBed(design.id, objectId);
+    await deleteHerdsForObject(design.id, objectId);
+  }
+  await setDraftStatus(draft.id, 'approved');
   return res;
 }
 
 export async function applyTaskDrafts(parcelId: string, draftId: string, tasks: TaskDraft[]): Promise<number> {
-  if ((await draftStatus(draftId)) !== 'pending') throw new Error('These tasks were already handled.');
-  await setDraftStatus(draftId, 'approved');
-  for (const t of tasks) await saveTask({ ...t, parcelId, done: false });
-  return tasks.length;
+  if (applying.has(draftId) || (await draftStatus(draftId)) !== 'pending') throw new Error('These tasks were already handled.');
+  applying.add(draftId);
+  try {
+    for (const t of tasks) await saveTask({ ...t, parcelId, done: false });
+    await setDraftStatus(draftId, 'approved');
+    return tasks.length;
+  } finally {
+    applying.delete(draftId);
+  }
 }

@@ -76,6 +76,7 @@
           "neverForLocation": true
         }
       ],
+      "./plugins/withBackupRules",
       "expo-secure-store",
       "expo-iap",
       [

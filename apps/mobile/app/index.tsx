@@ -26,6 +26,7 @@ import { dailyBrief, type DailyBrief } from '../src/services/dailyBrief';
 import { EventRow } from '../src/components/calendar';
 import { useSettings } from '../src/services/settings';
 import { HomeHomestead, homesteadDesign } from '../src/components/HomeHomestead';
+import { AlertsNudge } from '../src/components/AlertsNudge';
 import { kvGet, kvSet } from '../src/db/database';
 import { Alert } from 'react-native';
 
@@ -118,6 +119,7 @@ export default function Home() {
                 </View>
               </Card>
             )}
+            <AlertsNudge parcelId={home.id} />
             {sum ? <ComingUp sum={sum} animals={animals} onSeeAll={() => go('/calendar/[id]', home.id)} /> : <Skeleton lines={3} label="Loading what's coming up" />}
             {others.length > 0 && (
               <Card title="Your other properties" icon="map-marker-multiple-outline">

@@ -195,3 +195,38 @@ test('a restarted clock seeded from stored stamps orders new edits after old one
   restarted.receive(stored);
   assert.ok(compareHlc(restarted.tick(), stored) > 0);
 });
+
+test('design edits on two devices merge object by object instead of one replacing the other', async () => {
+  const cloud = new MemCloud();
+  let t = 1000;
+  const clockA = new HybridClock('A', () => t), clockB = new HybridClock('B', () => t);
+  const a = new MemStore(), b = new MemStore();
+  class PendingStore extends MemStore { async markPending(r: SyncRecord) { this.pending.set(this.key(r.collection, r.id), r.hlc); } }
+  const pa = Object.assign(new PendingStore(), a), pb = Object.assign(new PendingStore(), b);
+  let n = 0;
+  const id = () => `batch-${n++}`;
+  const row = (objects: Array<{ id: string; hlc: string; w?: number }>, removed: Record<string, string> = {}) => ({ name: 'Main', objects: JSON.stringify(objects), removed_objects: JSON.stringify(removed) });
+  const ids = (s: MemStore) => (JSON.parse(String((s.records.get('designs/d1')!.data as { objects: string }).objects)) as Array<{ id: string; w?: number }>);
+
+  // Both devices start with a bed and a coop.
+  const h0 = clockA.tick();
+  pa.localWrite({ collection: 'designs', id: 'd1', hlc: h0, deleted: false, data: row([{ id: 'bed', hlc: h0 }, { id: 'coop', hlc: h0 }]) });
+  await syncOnce('A', clockA, pa, cloud, id);
+  t += 10; await syncOnce('B', clockB, pb, cloud, id);
+
+  // Offline, A resizes the bed and removes the coop; B adds a pond.
+  t += 10; const ha = clockA.tick();
+  pa.localWrite({ collection: 'designs', id: 'd1', hlc: ha, deleted: false, data: row([{ id: 'bed', hlc: ha, w: 3 }], { coop: ha }) });
+  t += 10; const hb = clockB.tick();
+  pb.localWrite({ collection: 'designs', id: 'd1', hlc: hb, deleted: false, data: row([{ id: 'bed', hlc: h0 }, { id: 'coop', hlc: h0 }, { id: 'pond', hlc: hb }]) });
+
+  t += 10; await syncOnce('A', clockA, pa, cloud, id);
+  t += 10; await syncOnce('B', clockB, pb, cloud, id);
+  t += 10; await syncOnce('A', clockA, pa, cloud, id);
+
+  for (const s of [pa, pb]) {
+    const objs = ids(s);
+    assert.deepEqual(objs.map((o) => o.id).sort(), ['bed', 'pond'], 'the coop stays removed and the pond is kept');
+    assert.equal(objs.find((o) => o.id === 'bed')!.w, 3, 'A’s resize wins (newer object stamp)');
+  }
+});

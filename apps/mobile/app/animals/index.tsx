@@ -2,7 +2,7 @@
  * Animals library (prompt §5): its own screen, never part of the plant library (owner decision 2).
  * Search with aliases, kind filters, a drawing per species, and a fit badge for the property.
  */
-import { scoreAnimal, searchAnimals, spacePerHeadSqFt, type AnimalKind, type AnimalSpec, type AnimalSuitability } from '@plotwright/core';
+import { formatAcres, formatSqFt, scoreAnimal, searchAnimals, spacePerHeadSqFt, type AnimalKind, type AnimalSpec, type AnimalSuitability } from '@plotwright/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { BrowseBanner } from '../../src/ads/useAds';
@@ -28,7 +28,7 @@ const KINDS: Array<{ key: AnimalKind | 'all' | 'stock' | 'other'; label: string 
 export default function AnimalLibrary() {
   const { parcelId } = useLocalSearchParams<{ parcelId?: string }>();
   const t = useTheme();
-  const { animals, setAnimals, showProcessing } = useSettings();
+  const { animals, setAnimals, showProcessing, units } = useSettings();
   // Re-read the list when the user's own animals change.
   const customVersion = useCustomAnimals((s) => s.version);
   const { state } = useGarden(parcelId);
@@ -66,7 +66,7 @@ export default function AnimalLibrary() {
         ListEmptyComponent={<Body muted>No animals match “{q}”.</Body>}
         renderItem={({ item: { a, s } }) => {
           const space = spacePerHeadSqFt(a, 'indoor');
-          const meta = [space ? `${space} sq ft each` : a.pastureAcresPerHead ? `${Math.max(...a.pastureAcresPerHead)} acre${Math.max(...a.pastureAcresPerHead) === 1 ? '' : 's'} each` : null, a.purposes.map((x) => (showProcessing || x !== 'meat' ? x : 'raised for meat')).slice(0, 2).join(', '), a.minGroupSize && a.minGroupSize > 1 ? `keep ${a.minGroupSize}+` : null].filter(Boolean).join(' · ');
+          const meta = [space ? `${formatSqFt(space, units)} each` : a.pastureAcresPerHead ? `${formatAcres(Math.max(...a.pastureAcresPerHead), units)} each` : null, a.purposes.map((x) => (showProcessing || x !== 'meat' ? x : 'raised for meat')).slice(0, 2).join(', '), a.minGroupSize && a.minGroupSize > 1 ? `keep ${a.minGroupSize}+` : null].filter(Boolean).join(' · ');
           return (
             <Pressable
               accessibilityRole="button"

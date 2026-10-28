@@ -6,6 +6,7 @@
 import { objectType } from '../design/library';
 import type { DesignObject } from '../design/design';
 import { plantById } from '../plants/index';
+import type { PhaseId } from './plan';
 
 export interface DraftObject {
   op: 'add';
@@ -37,6 +38,19 @@ export interface DesignDraft {
   createdBy: 'rules' | 'model';
   /** From a livestock plan item: once the housing is placed, the app offers to plan this herd in it. */
   herd?: { species: string; count: number };
+  /** The plan phase it comes from, so its crops are planned for the right season (see plantingYear). */
+  phase?: PhaseId;
+}
+
+/**
+ * The year a draft's crops go in: set-up (Year 0) crops this year; first-season (Year 1) crops this
+ * year if it's still the first half of the year, otherwise next year; Years 2–5 two years out.
+ */
+export function plantingYear(phase: PhaseId | undefined, today: Date = new Date()): number {
+  const y = today.getFullYear();
+  if (phase === 'years2to5') return y + 2;
+  if (phase === 'year1') return today.getMonth() < 6 ? y : y + 1;
+  return y;
 }
 
 export interface TaskDraft {

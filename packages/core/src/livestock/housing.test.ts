@@ -64,7 +64,9 @@ test('live heat check uses the sensor’s own humidity for THI species', () => {
 
 test('care tasks: windows that wrap past New Year, and soonest first', () => {
   assert.equal(doyOfIso('2026-02-01'), 32);
-  assert.equal(doyOfIso('2024-12-31'), 366);
+  // The 365-day calendar the care windows use: a leap year's Dec 31 is still day 365.
+  assert.equal(doyOfIso('2024-12-31'), 365);
+  assert.equal(doyOfIso('2024-02-29'), 59);
   assert.equal(doyOfIso('nope'), undefined);
   const winter = { start: 311, end: 87 };
   assert.ok(windowOverlaps(winter, 20, 40), 'January is inside Nov–Mar');

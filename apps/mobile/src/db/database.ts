@@ -292,6 +292,10 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX IF NOT EXISTS project_progress_parcel ON project_progress(parcel_id);
   `,
+  // 17 — objects removed from a design, with when (JSON {id: hlc}), so sync can merge two devices' edits per object.
+  `
+  ALTER TABLE designs ADD COLUMN removed_objects TEXT;
+  `,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;

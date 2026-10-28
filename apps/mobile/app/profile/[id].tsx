@@ -21,6 +21,8 @@ import { Body, Button, Card, LayerCard, LEGAL_DISCLAIMER, useTheme } from '../..
 import { deleteParcel, getParcel, getSiteProfile, saveSiteProfile, type ParcelRecord } from '../../src/db/parcels';
 import { http } from '../../src/services/http';
 import { useSettings } from '../../src/services/settings';
+import { refreshHealthReminders } from '../../src/services/healthReminders';
+import { refreshEventReminders } from '../../src/services/eventReminders';
 
 export default function Profile() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -224,7 +226,13 @@ export default function Profile() {
             ? `This removes the boundary and profile from this device and marks them deleted on your other devices. Older synced copies stay in your ${OWN_CLOUD} until you use “Delete all my data”.`
             : 'This removes the boundary and profile from this device.', [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Delete', style: 'destructive', onPress: async () => { await deletePack(parcel.id).catch(() => undefined); await deleteParcel(parcel.id); router.replace('/'); } },
+            { text: 'Delete', style: 'destructive', onPress: async () => {
+              await deletePack(parcel.id).catch(() => undefined);
+              await deleteParcel(parcel.id);
+              // Its animals' health reminders and its calendar reminders go with it.
+              await Promise.all([refreshHealthReminders().catch(() => 0), refreshEventReminders().catch(() => 0)]);
+              router.replace('/');
+            } },
           ])
         }
       />

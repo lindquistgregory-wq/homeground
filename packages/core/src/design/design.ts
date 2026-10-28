@@ -13,6 +13,8 @@ import { objectType, type Shape } from './library';
 
 export interface DesignObject {
   id: string;
+  /** Sync stamp of this object's last change (set when the design is saved), for per-object merges. */
+  hlc?: string;
   kind: string;
   label?: string;
   shape: Shape;

@@ -5,7 +5,8 @@
  * give medical advice. Safety alerts are free on every plan.
  */
 import type { ForecastPeriod } from '../plants/garden';
-import { FREEZE_F, heatStress } from './safetyDefaults';
+import { FREEZE_F, coldMinF, heatStress } from './safetyDefaults';
+import { formatTempF, formatWind, type UnitSystem } from '../units';
 import type { AnimalSpec } from './types';
 
 export interface ActiveHerd {
@@ -33,8 +34,9 @@ const names = (hs: ActiveHerd[]) => {
   return `${n.slice(0, 3).join(', ')}${n.length > 3 ? ` and ${n.length - 3} more` : ''}`;
 };
 
-export function livestockAlerts(periods: ForecastPeriod[], allHerds: ActiveHerd[], opts: { summerRhPct?: number } = {}): AnimalAlert[] {
+export function livestockAlerts(periods: ForecastPeriod[], allHerds: ActiveHerd[], opts: { summerRhPct?: number; units?: UnitSystem } = {}): AnimalAlert[] {
   const out: AnimalAlert[] = [];
+  const temp = (f: number) => formatTempF(f, opts.units ?? 'imperial');
   // Pond fish and worm bins aren't helped by this advice (shade, troughs, closing up); their care notes cover the weather.
   const herds = allHerds.filter((h) => h.animal.kind !== 'aquatic' && h.animal.kind !== 'invertebrate');
   if (!herds.length) return out;
@@ -45,24 +47,24 @@ export function livestockAlerts(periods: ForecastPeriod[], allHerds: ActiveHerd[
       if (hot.length)
         out.push({
           kind: 'heat', at: p.start, herdIds: hot.map((h) => h.herdId),
-          title: `Heat stress risk ${day}: high ${Math.round(p.temperatureF)} °F${p.relativeHumidityPct !== undefined ? `, ${Math.round(p.relativeHumidityPct)}% humidity` : ''}`,
+          title: `Heat stress risk ${day}: high ${temp(p.temperatureF)}${p.relativeHumidityPct !== undefined ? `, ${Math.round(p.relativeHumidityPct)}% humidity` : ''}`,
           body: `Check ${names(hot)}: shade, plenty of cool fresh water, and air flow. Do chores early, avoid moving or handling animals in the heat, and check on them through the afternoon.`,
         });
     } else {
       if (p.temperatureF <= FREEZE_F)
         out.push({
           kind: 'freeze-water', at: p.start, herdIds: herds.filter((h) => h.animal.kind !== 'pollinator').map((h) => h.herdId),
-          title: `Freezing ${day} night: low ${Math.round(p.temperatureF)} °F`,
+          title: `Freezing ${day} night: low ${temp(p.temperatureF)}`,
           body: 'Water troughs, bowls and lines may freeze: check them first thing and keep water available. Close up poultry and give dry bedding.',
         });
-      const cold = herds.filter((h) => h.animal.cold.safeMinF !== undefined && p.temperatureF <= h.animal.cold.safeMinF);
+      const cold = herds.filter((h) => { const min = coldMinF(h.animal); return min !== undefined && p.temperatureF <= min; });
       if (cold.length)
-        out.push({ kind: 'cold', at: p.start, herdIds: cold.map((h) => h.herdId), title: `Hard cold ${day} night: low ${Math.round(p.temperatureF)} °F`, body: `Bring ${names(cold)} into shelter out of the wind, with dry bedding and unfrozen water.` });
+        out.push({ kind: 'cold', at: p.start, herdIds: cold.map((h) => h.herdId), title: `Hard cold ${day} night: low ${temp(p.temperatureF)}`, body: `Bring ${names(cold)} into shelter out of the wind, with dry bedding and unfrozen water.` });
     }
     if ((p.windMph ?? 0) >= 30) {
       const exposed = herds.filter((h) => h.animal.kind === 'pollinator' || h.animal.housingObjects.some((k) => k !== 'barn'));
       if (exposed.length)
-        out.push({ kind: 'wind', at: p.start, herdIds: exposed.map((h) => h.herdId), title: `Wind to ${Math.round(p.windMph!)} mph ${day}`, body: 'Strap or weight hive lids, secure shelters and runs, and check fences after the wind drops.' });
+        out.push({ kind: 'wind', at: p.start, herdIds: exposed.map((h) => h.herdId), title: `Wind to ${formatWind(p.windMph!, opts.units ?? 'imperial')} ${day}`, body: 'Strap or weight hive lids, secure shelters and runs, and check fences after the wind drops.' });
     }
   }
   return out;

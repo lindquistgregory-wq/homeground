@@ -6,10 +6,10 @@
  */
 import type { DesignObject } from '../design/design';
 import type { LocalFrame } from '../geo/measure';
-import { formatDoy } from '../climate/normals';
+import { formatDoy, mmddToDoy } from '../climate/normals';
 import type { AnimalEvent } from './calendar';
 import { housingCapacity, type Capacity } from './capacity';
-import { FREEZE_F, heatStress } from './safetyDefaults';
+import { FREEZE_F, fallbackHeatOnset, heatStress } from './safetyDefaults';
 import type { AnimalSpec } from './types';
 
 export interface HousedHerd { herdId: string; animal: AnimalSpec; count: number }
@@ -61,6 +61,9 @@ export function housingSensorLimits(animals: AnimalSpec[]): SensorLimits {
   }
   if (animals.some((a) => a.heat.airOnsetF === undefined && a.heat.thiOnset !== undefined))
     basis.push('For animals rated by heat index (THI), the sensor’s own humidity is used too.');
+  const fallback = animals.filter((a) => fallbackHeatOnset(a) !== undefined);
+  if (fallback.length)
+    basis.push(`No heat figure is sourced for ${fallback.map((a) => a.commonName.toLowerCase()).join(', ')}: a cautious °F + humidity limit is used, with the sensor’s humidity.`);
   const mins = animals.filter((a) => a.cold.safeMinF !== undefined && a.cold.safeMinF > FREEZE_F);
   let minF = FREEZE_F;
   if (mins.length) {
@@ -87,7 +90,8 @@ export function housingHeatCheck(animals: AnimalSpec[], tempF: number | undefine
 export function doyOfIso(iso: string | undefined): number | undefined {
   const m = iso && /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   if (!m) return undefined;
-  return Math.round((Date.UTC(+m[1]!, +m[2]! - 1, +m[3]!) - Date.UTC(+m[1]!, 0, 0)) / 86_400_000);
+  // On the 365-day calendar the care windows use (Feb 29 counts as Feb 28), like mmddToDoy.
+  return mmddToDoy(`${+m[2]!}/${Math.min(+m[3]!, +m[2]! === 2 ? 28 : 31)}`);
 }
 
 export interface HerdTask extends AnimalEvent { herdId: string; animalId: string }

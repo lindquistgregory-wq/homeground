@@ -32,8 +32,45 @@ export function thi(tempF: number, rhPct: number): number {
  */
 export const fallbackHumidity = (summerRhPct?: number) => Math.max(70, summerRhPct ?? 70);
 
+/**
+ * When no species-specific onset is sourced, heat stress is still flagged with the air temperature
+ * (°F) plus humidity (%) index that extension services use for horses and camelids: under 120 the
+ * animal copes, 130 is the usual limit and 150 is dangerous (NMSU, UGA, Ohio State). The cutoff
+ * follows the species' heat tolerance, cautious end first: low or unknown 120, medium 130, high 150.
+ */
+export const FALLBACK_T_PLUS_RH: Record<'low' | 'medium' | 'high', number> = { low: 120, medium: 130, high: 150 };
+/** Kinds the fallback doesn't apply to: bees regulate the hive, fish and worms aren't helped by this advice. */
+const NO_FALLBACK = new Set(['pollinator', 'aquatic', 'invertebrate']);
+
+export function fallbackHeatOnset(a: AnimalSpec): number | undefined {
+  const h = a.heat;
+  if (h.airOnsetF !== undefined || h.tPlusRhOnset !== undefined || h.thiOnset !== undefined || NO_FALLBACK.has(a.kind)) return undefined;
+  return FALLBACK_T_PLUS_RH[h.tolerance ?? 'low'];
+}
+
+/**
+ * Hard-cold night low for species with no sourced safe minimum, by cold tolerance (cautious end for
+ * unknown): low 20 °F, medium 10 °F, high 0 °F. It prompts shelter from wind and wet, not heat.
+ */
+export const FALLBACK_COLD_MIN_F: Record<'low' | 'medium' | 'high', number> = { low: 20, medium: 10, high: 0 };
+
+/** The night low below which to warn about hard cold: the sourced minimum, else the tolerance fallback. */
+export function coldMinF(a: AnimalSpec): number | undefined {
+  if (a.cold.safeMinF !== undefined) return a.cold.safeMinF;
+  if (NO_FALLBACK.has(a.kind)) return undefined;
+  return FALLBACK_COLD_MIN_F[a.cold.tolerance ?? 'low'];
+}
+
 /** Is this hour hot enough to stress the species? Uses whichever sourced threshold trips first. */
 export function heatStress(a: AnimalSpec, tempF: number, rhPct?: number, summerRhPct?: number): { stressed: boolean; basis?: string } {
+  const fallback = fallbackHeatOnset(a);
+  if (fallback !== undefined) {
+    const rh = rhPct ?? fallbackHumidity(summerRhPct);
+    const v = tempF + rh;
+    return v >= fallback
+      ? { stressed: true, basis: `°F + humidity ${Math.round(v)} ≥ ${fallback}, a cautious general limit (no ${a.commonName.toLowerCase()}-specific figure is sourced)${rhPct === undefined ? ', assuming humid air' : ''}` }
+      : { stressed: false };
+  }
   const h = a.heat;
   if (h.airOnsetF !== undefined && tempF >= h.airOnsetF) return { stressed: true, basis: `${Math.round(tempF)} °F ≥ ${h.airOnsetF} °F` };
   if (h.tPlusRhOnset !== undefined) {

@@ -9,11 +9,31 @@ import { toPolygons, type Areal } from '../geo/types';
 import { footprintUtm, type DesignObject } from '../design/design';
 import { objectType } from '../design/library';
 import type { SafetyLevel } from './notes';
+import { toxicityFor, type Eater } from './toxicity';
+import type { AnimalSpec } from '../livestock/types';
 
 export const WELL_BUFFER_M = 200 * 0.3048;
 export const BOUNDARY_SURVEY_M = 10 * 0.3048;
 
-export type ProximityKind = 'near-well' | 'boundary-survey' | 'tree-reach' | 'pond-flood';
+export type ProximityKind = 'near-well' | 'boundary-survey' | 'tree-reach' | 'pond-flood' | 'toxic-near-animals';
+
+/** Plants within this distance of housing or a paddock count as within reach (browsing over fences, dropped leaves and fruit). */
+export const TOXIC_REACH_M = 10;
+
+/** Which toxicity groups (safety/toxicity.ts) an animal belongs to; camelids are treated as grazers, the cautious reading. */
+export function eatersFor(a: Pick<AnimalSpec, 'id' | 'kind'>): Eater[] {
+  if (a.id === 'guardian_dog') return ['dogs'];
+  if (a.id === 'barn_cats') return ['cats'];
+  if (a.id === 'guardian_donkey') return ['horses'];
+  if (a.id === 'guardian_llama' || a.id === 'alpacas') return ['ruminants'];
+  switch (a.kind) {
+    case 'poultry': case 'waterfowl': return ['poultry'];
+    case 'ruminant': case 'cattle': return ['ruminants'];
+    case 'equine': return ['horses'];
+    case 'small-stock': return ['rabbits'];
+    default: return [];
+  }
+}
 
 export interface SafetyWarning {
   objectId: string;
@@ -27,6 +47,12 @@ export interface ProximityContext {
   units?: 'imperial' | 'metric';
   /** The parcel intersects a FEMA Special Flood Hazard Area. */
   parcelInFloodZone?: boolean;
+  /** Plant ids growing in each bed, row or tree object this year (by object id). */
+  plantsByObject?: Record<string, string[]>;
+  /** Animals living in each housing object (by object id). */
+  animalsByObject?: Record<string, Array<Pick<AnimalSpec, 'id' | 'kind' | 'commonName'>>>;
+  /** Plant names for messages. */
+  plantName?: (plantId: string) => string;
 }
 
 type Pt = [number, number];
@@ -111,6 +137,41 @@ export function safetyProximity(objects: DesignObject[], frame: LocalFrame, ctx:
     for (const x of items)
       if (x.o.kind === 'pond')
         out.push({ objectId: x.o.id, kind: 'pond-flood', level: 'note', message: 'This parcel is in a mapped flood zone: digging a pond here can need a floodplain permit from your county.' });
+
+  // Toxic plantings within reach of the animals housed nearby (Safety & Liability Review: point of use).
+  if (ctx.plantsByObject && ctx.animalsByObject) {
+    const plantName = ctx.plantName ?? ((id: string) => id);
+    const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+    const housing = items.filter((x) => ctx.animalsByObject![x.o.id]?.length);
+    const growing = items.filter((x) => ctx.plantsByObject![x.o.id]?.length);
+    const pairs = new Map<string, Array<{ plant: string; animal: string; bed: string }>>();
+    const add = (objectId: string, v: { plant: string; animal: string; bed: string }) => {
+      const list = pairs.get(objectId) ?? [];
+      if (!list.some((p) => p.plant === v.plant && p.animal === v.animal)) list.push(v);
+      pairs.set(objectId, list);
+    };
+    for (const h of housing) {
+      for (const g of growing) {
+        if (g.o.id !== h.o.id && footprintDistanceM(h.ring, g.ring) > TOXIC_REACH_M) continue;
+        for (const animal of ctx.animalsByObject[h.o.id]!) {
+          const eaters = eatersFor(animal);
+          for (const plantId of ctx.plantsByObject[g.o.id]!) {
+            if (!toxicityFor(plantId).some((l) => eaters.includes(l.to))) continue;
+            const v = { plant: plantName(plantId), animal: lower(animal.commonName), bed: name(g) };
+            add(h.o.id, v);
+            add(g.o.id, v);
+          }
+        }
+      }
+    }
+    for (const [objectId, list] of pairs) {
+      const text = list.slice(0, 3).map((p) => `${p.plant} (${p.bed}) for ${p.animal}`).join('; ');
+      out.push({
+        objectId, kind: 'toxic-near-animals', level: 'caution',
+        message: `Within reach of animals and listed as toxic to them: ${text}${list.length > 3 ? ` and ${list.length - 3} more` : ''}. Fence it off or plant it farther away; see the plant’s page for which parts and sources.`,
+      });
+    }
+  }
 
   return out;
 }

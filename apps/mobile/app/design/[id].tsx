@@ -10,7 +10,7 @@ import {
   OBJECT_LIBRARY, bbox, estimatePv, footprintAreaM2, footprintLonLat, formatArea, formatLength, materialList, newObject, objectType,
   project, siteSuitability, snapRotationToBoundary, snapToContour, snapToGridM, unproject, validateDesign,
   SCENARIO_SEASONS, compareScenarios, scenarioLabel, sunPeriodForSeason,
-  HOUSING_KINDS, animalById, ackKey, safetyNotesFor, safetyProximity, type SafetyNote, type SafetyWarning,
+  HOUSING_KINDS, animalById, ackKey, plantById, safetyNotesFor, safetyProximity, type AnimalKind, type SafetyNote, type SafetyWarning,
   type Design, type DesignObject, type DesignWarning, type LocalFrame, type ObjectCategory, type ScenarioSeason, type SitingTarget,
 } from '@plotwright/core';
 import { OPENFREEMAP_STYLE_URL, STATE_IMAGERY, USGS_HILLSHADE, USGS_IMAGERY, USGS_NAIP_PLUS, imageryFor, mapMaxZoom, solarClimatology, type ImageryChoice } from '@plotwright/providers';
@@ -52,6 +52,7 @@ import { newId } from '../../src/services/identity';
 import { useSettings } from '../../src/services/settings';
 import { SafetyLine, SafetyNoteRow } from '../../src/components/SafetyNote';
 import { useSafetyAcks } from '../../src/services/safetyAcks';
+import { refreshHealthReminders } from '../../src/services/healthReminders';
 
 type Tab = 'add' | 'selected' | 'sun' | 'layers' | 'plan';
 
@@ -356,10 +357,22 @@ export default function DesignScreen() {
     () => (design && frame && parcel ? validateDesign(design.objects.filter((o) => !o.existing), { boundary: parcel.geometry, setbackM, slope: analysis?.slope, maxStructureSlopeDeg: 10, units }, frame) : []),
     [design, frame, parcel, setbackM, analysis, units],
   );
-  const safetyWarnings: SafetyWarning[] = useMemo(
-    () => (design && frame && parcel ? safetyProximity(design.objects, frame, { boundary: parcel.geometry, units, parcelInFloodZone: siteCtx.flood }) : []),
-    [design, frame, parcel, units, siteCtx.flood],
-  );
+  const safetyWarnings: SafetyWarning[] = useMemo(() => {
+    if (!design || !frame || !parcel) return [];
+    // What grows where this year, and who lives where, for the toxic-plants-near-animals check.
+    const year = new Date().getFullYear();
+    const plantsByObject: Record<string, string[]> = {};
+    for (const p of activePlantings(plantings, year)) (plantsByObject[p.bedObjectId] ??= []).push(p.plantId);
+    const animalsByObject: Record<string, Array<{ id: string; kind: AnimalKind; commonName: string }>> = {};
+    for (const h of herds) {
+      const a = h.designId === design.id && h.objectId && (h.status === 'active' || h.status === 'planned') ? animalById(h.speciesId) : undefined;
+      if (a) (animalsByObject[h.objectId!] ??= []).push(a);
+    }
+    return safetyProximity(design.objects, frame, {
+      boundary: parcel.geometry, units, parcelInFloodZone: siteCtx.flood, plantsByObject, animalsByObject,
+      plantName: (id) => plantById(id)?.commonName ?? id,
+    });
+  }, [design, frame, parcel, units, siteCtx.flood, plantings, herds]);
   const summary = analysis && sun ? sunSummary(analysis, sun.hours) : null;
 
   const runSiting = (target: SitingTarget) => {
@@ -593,6 +606,7 @@ export default function DesignScreen() {
                 if (housed.length) {
                   housed.forEach((h) => deletePhotoFiles(h.photos));
                   await deleteHerdsForObject(design.id, selected.id);
+                  void refreshHealthReminders().catch(() => 0);
                   setHerds((hs) => hs.filter((h) => h.objectId !== selected.id));
                 }
               };
@@ -616,7 +630,7 @@ export default function DesignScreen() {
             onMove={() => setMovingHerd(selectedHerd.id)}
             onRecords={() => router.push({ pathname: '/records/[id]', params: { id: selectedHerd.id, type: 'herd', parcelId: parcel.id } })}
             onCare={() => router.push({ pathname: '/animals/[animalId]', params: { animalId: selectedHerd.speciesId, parcelId: parcel.id } })}
-            onRemove={() => Alert.alert('Remove animals?', `Remove ${herdLabel(selectedHerd)} from the map? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(selectedHerd.photos); await deleteHerd(selectedHerd.id); setHerds((hs) => hs.filter((x) => x.id !== selectedHerd.id)); setSelectedHerdId(null); } }])} />
+            onRemove={() => Alert.alert('Remove animals?', `Remove ${herdLabel(selectedHerd)} from the map? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(selectedHerd.photos); await deleteHerd(selectedHerd.id); void refreshHealthReminders().catch(() => 0); setHerds((hs) => hs.filter((x) => x.id !== selectedHerd.id)); setSelectedHerdId(null); } }])} />
         ) : <Body muted>Tap an object or animals on the map to edit them.</Body>)}
 
         {tab === 'sun' && (
@@ -703,7 +717,8 @@ export default function DesignScreen() {
             {layers.contours && (
               <View style={styles.row}>
                 {(units === 'imperial' ? [[0.3048, '1 ft'], [0.6096, '2 ft'], [1.524, '5 ft']] : [[0.25, '0.25 m'], [0.5, '0.5 m'], [1, '1 m']]).map(([v, l]) => (
-                  <Pressable key={String(l)} onPress={() => setContourInterval(v as number)} style={[styles.chip, { borderColor: contourInterval === v ? t.accent : t.border }]}>
+                  <Pressable key={String(l)} onPress={() => setContourInterval(v as number)} style={[styles.chip, { borderColor: contourInterval === v ? t.accent : t.border }]}
+                    accessibilityRole="button" accessibilityLabel={`Contour every ${l}`} accessibilityState={{ selected: contourInterval === v }}>
                     <Text style={{ color: t.text }}>{l}</Text>
                   </Pressable>
                 ))}
@@ -887,7 +902,7 @@ function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSna
       <Body muted>{o.path && o.shape === 'line' ? `${formatLength(o.length, units)} long` : formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}{planted ? ` · ${planted} planting${planted === 1 ? '' : 's'} this year` : ''}{housed.length ? ` · ${housed.map((h) => herdLabel(h)).join(', ')}` : ''}</Body>
       {/* Point of use, but quiet: only notes still waiting for 'Got it' and distance problems sit up top. */}
       {notes.filter((n) => n.acknowledge && !acks[ackKey(n)]).map((n) => <SafetyNoteRow key={n.id} note={n} />)}
-      {safety.map((w) => <SafetyLine key={w.kind} text={w.message} caution={w.level === 'caution'} />)}
+      {safety.map((w, i) => <SafetyLine key={`${w.kind}-${i}`} text={w.message} caution={w.level === 'caution'} />)}
       {bedContents ?? (onPlan && <Button title={o.kind === 'vineyard-row' ? 'Plan this row: grapes and vines' : o.kind === 'orchard' ? 'Plan this orchard: fruit and nut trees' : 'Plan this bed: what grows best here'} onPress={onPlan} />)}
       {onHouse && <Button title={housed.length ? 'Animals here: capacity and care' : 'Plan animals here: who fits and how many'} icon="paw" onPress={onHouse} />}
       {!o.polygon && o.shape === 'rect' && <Stepper label="Length" value={o.length} step={step} min={0.3} units={units} onChange={(v) => onPatch({ length: v })} />}

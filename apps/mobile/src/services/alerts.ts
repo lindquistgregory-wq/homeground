@@ -5,7 +5,7 @@
  * Firebase/APNs sender). A background task re-checks roughly twice a day when the OS allows it; the
  * app also checks whenever it opens.
  */
-import { housingHeatCheck, livestockAlerts, plantById, weatherAlerts, FREEZE_F, type AnimalAlert, type Design, type PlantedCrop, type WeatherAlert } from '@plotwright/core';
+import { formatTempF, housingHeatCheck, livestockAlerts, plantById, weatherAlerts, FREEZE_F, type AnimalAlert, type Design, type PlantedCrop, type UnitSystem, type WeatherAlert } from '@plotwright/core';
 import { humidityClimatology, nwsForecast } from '@plotwright/providers';
 import * as BackgroundTask from 'expo-background-task';
 import * as Notifications from 'expo-notifications';
@@ -56,6 +56,22 @@ TaskManager.defineTask(ALERT_TASK, async () => {
 
 export async function alertsEnabled(): Promise<boolean> {
   return (await kvGet(ENABLED_KEY)) === '1';
+}
+
+/** The user's units, read directly so a background run (no UI, settings not loaded) uses them too. */
+async function unitSetting(): Promise<UnitSystem> {
+  return (await kvGet('units')) === 'metric' ? 'metric' : 'imperial';
+}
+
+/** Notification permission already granted (e.g. for health reminders), without asking. */
+async function notificationsAllowed(): Promise<boolean> {
+  try {
+    if (!(await Notifications.getPermissionsAsync()).granted) return false;
+    if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync(CHANNEL_ID, { name: 'Frost & weather alerts', importance: Notifications.AndroidImportance.HIGH });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export interface AlertsState {
@@ -146,7 +162,8 @@ export async function alertsForParcel(parcelId: string, parcelName: string, lat:
   // Only ever make alerts more cautious: apply the offset when the spot runs colder than forecast.
   const lowSpot = low && low.offsetF <= -1 ? low : undefined;
   if (lowSpot) periods = periods.map((p) => (p.isNight ? { ...p, temperatureF: p.temperatureF + lowSpot.offsetF } : p));
-  const alerts = weatherAlerts(periods, crops).map((a) =>
+  const units = await unitSetting();
+  const alerts = weatherAlerts(periods, crops, units).map((a) =>
     lowSpot && (a.kind === 'frost' || a.kind === 'freeze')
       ? { ...a, body: `${a.body} Adjusted for your low spot: “${lowSpot.sensor}” has run about ${Math.round(-lowSpot.offsetF)} °F colder than the forecast over ${lowSpot.nights} nights.` }
       : a);
@@ -156,7 +173,7 @@ export async function alertsForParcel(parcelId: string, parcelName: string, lat:
     const h = await humidityClimatology(http, { lat, lon }).catch(() => undefined);
     if (h?.status === 'ok') summerRhPct = h.value.summer;
   }
-  const animalAlerts = livestockAlerts(periods, herds, { summerRhPct });
+  const animalAlerts = livestockAlerts(periods, herds, { summerRhPct, units });
   return { parcelId, parcelName, alerts, animalAlerts, forecastNote: fc.attribution.notes?.[0], lowSpot };
 }
 
@@ -166,9 +183,11 @@ export function checkThresholdsNow(): Promise<void> {
   thresholdsInFlight ??= (async () => {
     // Share the sent-list with a full check that's already running rather than racing it.
     if (inFlight) await inFlight;
-    if (!(await alertsEnabled())) return;
     const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);
-    await checkSensorThresholds(sent);
+    if (await alertsEnabled()) await checkSensorThresholds(sent);
+    // Housing heat and freezing checks are safety alerts: they run whenever notifications are allowed.
+    else if (await notificationsAllowed()) await checkHousingSensors(sent);
+    else return;
     await kvSet(SENT_KEY, JSON.stringify([...sent]));
   })().finally(() => { thresholdsInFlight = null; });
   return thresholdsInFlight;
@@ -186,7 +205,15 @@ async function runCheck(opts: { background?: boolean }): Promise<void> {
   // Don't race a threshold check that's already writing the sent-list. Captured before any await: a
   // threshold check that starts after this one waits for it instead, so the two can't wait on each other.
   const earlier = thresholdsInFlight;
-  if (!(await alertsEnabled())) return;
+  if (!(await alertsEnabled())) {
+    // Weather alerts are off, but housing heat and freezing checks still run when notifications are allowed.
+    if (!(await notificationsAllowed())) return;
+    if (earlier) await earlier.catch(() => undefined);
+    const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);
+    await checkHousingSensors(sent);
+    await kvSet(SENT_KEY, JSON.stringify([...sent]));
+    return;
+  }
   await kvSet(LAST_CHECK_KEY, new Date().toISOString());
   if (earlier) await earlier.catch(() => undefined);
   const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);
@@ -234,6 +261,7 @@ async function checkSensorThresholds(sent: Set<string>): Promise<void> {
   const st = useEntitlements.getState();
   if (!st.entitlements.has('sensors.greenhouseAlerts') && !safetyEntitlements(st.cache?.transactions ?? [], { model: BUSINESS_MODEL }).has('sensors.greenhouseAlerts')) return;
   const now = Date.now();
+  const units = await unitSetting();
   for (const s of await listSensors()) {
     if (!s.thresholds) continue;
     const latest = await latestValues(s.id);
@@ -243,7 +271,7 @@ async function checkSensorThresholds(sent: Set<string>): Promise<void> {
       if (sent.has(key)) continue;
       sent.add(key);
       const isTemp = b.metric === 'temperature';
-      const fmt = (v: number) => (isTemp ? `${Math.round((v * 9) / 5 + 32)} °F` : `${Math.round(v)} %`);
+      const fmt = (v: number) => (isTemp ? formatTempF((v * 9) / 5 + 32, units) : `${Math.round(v)} %`);
       await Notifications.scheduleNotificationAsync({
         content: {
           title: `${s.name}: ${METRIC_LABEL[b.metric].toLowerCase()} ${b.kind} ${fmt(b.limit)}`,
@@ -280,11 +308,12 @@ async function checkHousingSensors(sent: Set<string>): Promise<void> {
       sent.add(key);
       await Notifications.scheduleNotificationAsync({ content: { title, body, data: { sensorId: s.id } }, trigger: Platform.OS === 'android' ? { channelId: CHANNEL_ID } : null });
     };
+    const units = await unitSetting();
     if (hot.length)
-      await post('heat', `Heat stress risk in ${housed.name}: ${Math.round(f)} °F`,
+      await post('heat', `Heat stress risk in ${housed.name}: ${formatTempF(f, units)}`,
         `${hot.map((x) => `${x.animal.commonName} (${x.basis})`).join('; ')}. Open up for air flow, give shade and plenty of cool water, and check on them through the afternoon.`);
     if (f <= FREEZE_F)
-      await post('freeze', `Freezing in ${housed.name}: ${Math.round(f)} °F`, 'Water may freeze: check waterers and keep water available. Dry bedding, and keep drafts off the animals.');
+      await post('freeze', `Freezing in ${housed.name}: ${formatTempF(f, units)}`, 'Water may freeze: check waterers and keep water available. Dry bedding, and keep drafts off the animals.');
   }
 }
 
