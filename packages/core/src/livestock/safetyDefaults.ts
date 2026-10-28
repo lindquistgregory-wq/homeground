@@ -39,6 +39,12 @@ export const fallbackHumidity = (summerRhPct?: number) => Math.max(70, summerRhP
  * follows the species' heat tolerance, cautious end first: low or unknown 120, medium 130, high 150.
  */
 export const FALLBACK_T_PLUS_RH: Record<'low' | 'medium' | 'high', number> = { low: 120, medium: 130, high: 150 };
+/**
+ * The general limit only applies on a genuinely warm day: below this air temperature an assumed muggy
+ * humidity alone would trip it (70 °F + 70% = 140), and daily alerts on mild days teach people to
+ * ignore real ones.
+ */
+export const FALLBACK_MIN_AIR_F = 80;
 /** Kinds the fallback doesn't apply to: bees regulate the hive, fish and worms aren't helped by this advice. */
 const NO_FALLBACK = new Set(['pollinator', 'aquatic', 'invertebrate']);
 
@@ -65,6 +71,7 @@ export function coldMinF(a: AnimalSpec): number | undefined {
 export function heatStress(a: AnimalSpec, tempF: number, rhPct?: number, summerRhPct?: number): { stressed: boolean; basis?: string } {
   const fallback = fallbackHeatOnset(a);
   if (fallback !== undefined) {
+    if (tempF < FALLBACK_MIN_AIR_F) return { stressed: false };
     const rh = rhPct ?? fallbackHumidity(summerRhPct);
     const v = tempF + rh;
     return v >= fallback

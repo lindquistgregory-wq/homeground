@@ -7,7 +7,7 @@
 import { formatDoy, formatGdd, formatTempDeltaF, isoAdd, itemsOn, plantById, type AgendaItem, type CustomEvent } from '@plotwright/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, View } from 'react-native';
 import { Text } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Chip, StaleProfileNotice } from '../../src/components/plants';
@@ -37,6 +37,7 @@ export default function CalendarScreen() {
   const [alerts, setAlerts] = useState<ParcelAlerts | null>(null);
   const [alertsError, setAlertsError] = useState<string | null>(null);
   const [notifyOn, setNotifyOn] = useState<boolean | null>(null);
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const animalsOn = useSettings((s) => s.animals) === 'yes';
   const today = localToday();
   const [ym, setYm] = useState({ year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) });
@@ -75,6 +76,9 @@ export default function CalendarScreen() {
   const frost = state.site.frost;
   const climate = state.profile?.climate;
   const weatherAlerts = alerts ? [...alerts.alerts, ...(animalsOn ? alerts.animalAlerts : [])] : [];
+  const alertSummary = weatherAlerts.length
+    ? `${weatherAlerts.length} alert${weatherAlerts.length === 1 ? '' : 's'} in the 7-day forecast: ${weatherAlerts[0]!.title}${weatherAlerts.length > 1 ? ` and ${weatherAlerts.length - 1} more` : ''}`
+    : alertsError ? 'Couldn’t check the forecast' : 'No alerts right now. Alert notifications are off.';
 
   const saveCustom = async (e: Parameters<Parameters<typeof EventEditor>[0]['onSave']>[0]) => {
     if (e.remindMinutes !== null && !(await ensureReminderPermission()))
@@ -94,25 +98,6 @@ export default function CalendarScreen() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       {state.profileStale && <StaleProfileNotice parcelId={state.parcel.id} />}
-      {(weatherAlerts.length > 0 || alertsError || notifyOn === false) && (
-        <Card title="Weather alerts" icon="weather-lightning-rainy">
-          {alertsError && <Body muted>Couldn’t check the forecast ({alertsError}).</Body>}
-          {weatherAlerts.map((a, i) => (
-            <View key={i} style={{ marginBottom: 8 }}>
-              <Text style={{ color: a.kind === 'heat' || a.kind === 'wind' ? t.warn : t.bad, fontWeight: '700' }}>{a.title}</Text>
-              <Body>{a.body}</Body>
-            </View>
-          ))}
-          {alerts?.forecastNote && <Text style={{ color: t.muted, fontSize: 12 }}>{alerts.forecastNote}</Text>}
-          <Text style={{ color: t.muted, fontSize: 12 }}>Not an official warning. For watches and warnings, see weather.gov. Forecast: National Weather Service (public domain).</Text>
-          {notifyOn === false && <Button title="Turn on alert notifications (free)" kind="secondary" onPress={async () => {
-            const r = await setAlertsEnabled(true).catch(() => ({ on: false, denied: false }));
-            if ('denied' in r && r.denied) Alert.alert('Notifications are off', 'Allow notifications for Plotwright in your phone’s settings, then try again.');
-            setNotifyOn(r.on);
-          }} />}
-        </Card>
-      )}
-
       <Card title="Calendar" icon="calendar-month" right={<Chip label="+ Event" active onPress={() => setEditor({})} />}>
         {!items ? <ActivityIndicator accessibilityLabel="Loading the calendar" /> : (
           <MonthCalendar year={ym.year} month={ym.month} items={items} selected={selected} today={today}
@@ -137,6 +122,37 @@ export default function CalendarScreen() {
       {soon.length > 0 && (
         <Card title="Next two weeks" icon="calendar-clock">
           {soon.map((i) => <EventRow key={i.id} item={i} onPress={() => setOpen(i)} />)}
+        </Card>
+      )}
+
+      {(weatherAlerts.length > 0 || alertsError || notifyOn === false) && (
+        // Collapsed by default so it doesn't fill the screen; the summary line says what's there.
+        <Card title="Weather alerts" icon="weather-lightning-rainy"
+          right={<Chip label={alertsOpen ? 'Hide' : 'Show'} active={false} onPress={() => setAlertsOpen((o) => !o)} />}>
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: alertsOpen }} onPress={() => setAlertsOpen((o) => !o)} style={{ minHeight: 36, justifyContent: 'center' }}
+            accessibilityLabel={`Weather alerts: ${alertSummary}. ${alertsOpen ? 'Hide' : 'Show'} details`}>
+            <Text style={{ color: weatherAlerts.length ? (weatherAlerts.some((a) => a.kind !== 'heat' && a.kind !== 'wind') ? t.bad : t.warn) : t.muted, fontWeight: '600' }} numberOfLines={alertsOpen ? undefined : 2}>
+              {alertSummary}
+            </Text>
+          </Pressable>
+          {alertsOpen && (
+            <>
+              {alertsError && <Body muted>Couldn’t check the forecast ({alertsError}).</Body>}
+              {weatherAlerts.map((a, i) => (
+                <View key={i} style={{ marginBottom: 8 }}>
+                  <Text style={{ color: a.kind === 'heat' || a.kind === 'wind' ? t.warn : t.bad, fontWeight: '700' }}>{a.title}</Text>
+                  <Body>{a.body}</Body>
+                </View>
+              ))}
+              {alerts?.forecastNote && <Text style={{ color: t.muted, fontSize: 12 }}>{alerts.forecastNote}</Text>}
+              <Text style={{ color: t.muted, fontSize: 12 }}>Not an official warning. For watches and warnings, see weather.gov. Forecast: National Weather Service (public domain).</Text>
+              {notifyOn === false && <Button title="Turn on alert notifications (free)" kind="secondary" onPress={async () => {
+                const r = await setAlertsEnabled(true).catch(() => ({ on: false, denied: false }));
+                if ('denied' in r && r.denied) Alert.alert('Notifications are off', 'Allow notifications for Plotwright in your phone’s settings, then try again.');
+                setNotifyOn(r.on);
+              }} />}
+            </>
+          )}
         </Card>
       )}
 

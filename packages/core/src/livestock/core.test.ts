@@ -40,6 +40,10 @@ test('species with no sourced onset still get cautious heat and cold alerts (by 
   assert.equal(heatStress(donkey, 85, 50).stressed, false);
   assert.equal(heatStress(donkey, 100, 55).stressed, true);
   assert.equal(heatStress(bees, 110, 60).stressed, false, 'no fallback for hives');
+  // A mild day with no humidity in the forecast doesn't alert (70 °F + assumed 70% would be 140).
+  assert.equal(heatStress(dog, 70).stressed, false);
+  assert.equal(heatStress(dog, 79).stressed, false);
+  assert.equal(heatStress(dog, 85).stressed, true);
   for (const id of ['guardian_dog', 'alpacas', 'guardian_llama', 'ducks_layers']) {
     const a = animalById(id)!;
     const heat = livestockAlerts([{ start: '2027-07-20T12:00:00-04:00', end: '2027-07-20T18:00:00-04:00', isNight: false, temperatureF: 104, relativeHumidityPct: 60 } as never], [{ herdId: 'h', animal: a, count: 1, housingName: 'run' }]);
