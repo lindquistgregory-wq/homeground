@@ -10,7 +10,7 @@ import {
   OBJECT_LIBRARY, bbox, estimatePv, footprintAreaM2, footprintLonLat, formatArea, formatLength, materialList, newObject, objectType,
   project, siteSuitability, snapRotationToBoundary, snapToContour, snapToGridM, unproject, validateDesign,
   SCENARIO_SEASONS, compareScenarios, scenarioLabel, sunPeriodForSeason,
-  HOUSING_KINDS, animalById, ackKey, plantById, safetyNotesFor, safetyProximity, type AnimalKind, type SafetyNote, type SafetyWarning,
+  HOUSING_KINDS, animalById, ackKey, isDrawnArea, plantById, safetyNotesFor, safetyProximity, type AnimalKind, type SafetyNote, type SafetyWarning,
   type Design, type DesignObject, type DesignWarning, type LocalFrame, type ObjectCategory, type ScenarioSeason, type SitingTarget,
 } from '@plotwright/core';
 import { OPENFREEMAP_STYLE_URL, STATE_IMAGERY, USGS_HILLSHADE, USGS_IMAGERY, USGS_NAIP_PLUS, imageryFor, mapMaxZoom, solarClimatology, type ImageryChoice } from '@plotwright/providers';
@@ -22,6 +22,7 @@ import { Text, TextInput } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Body, Button, Card, tapFeedback, useTheme } from '../../src/components/ui';
 import { Icon } from '../../src/components/Icon';
+import { AreaContents } from '../../src/components/AreaContents';
 import { CATEGORY_COLOR, objectIcon } from '../../src/components/objectIcons';
 import { artForAnimal, drawAnimal } from '../../src/components/AnimalArt';
 import Svg from 'react-native-svg';
@@ -627,6 +628,13 @@ export default function DesignScreen() {
             }}
             onPlan={isPlantable(selected) && !design.scenario ? () => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } }) : undefined}
             planted={plantings.filter((p) => p.bedObjectId === selected.id).length}
+            areaContents={isDrawnArea(selected) ? (
+              <AreaContents area={selected} objects={design.objects} herds={herds.filter((h) => h.designId === design.id)} plantings={plantings}
+                onChange={(a) => replaceSelected({ linkedIds: a.linkedIds, unlinkedIds: a.unlinkedIds })}
+                onSelect={(id) => selectObject(id)}
+                onSelectHerd={(id) => { setSelectedId(null); setSelectedHerdId(id); setTab('selected'); }}
+                onPlaceNew={() => { setTab('add'); setLibraryOpen(true); }} />
+            ) : undefined}
             bedContents={isPlantable(selected) && !design.scenario ? (
               <BedContents bed={selected} parcelId={parcel.id} designId={design.id} plantings={plantings.filter((p) => p.bedObjectId === selected.id)}
                 onChanged={async () => setPlantings(activePlantings(await plantingsForParcel(parcel.id), new Date().getFullYear()))}
@@ -898,11 +906,13 @@ function Stepper({ label, value, step, min, units, onChange }: { label: string; 
   );
 }
 
-function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted, onHouse, housed, bedContents }: {
+function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted, onHouse, housed, bedContents, areaContents }: {
   o: DesignObject; units: 'imperial' | 'metric'; areaM2: number; notes: SafetyNote[]; safety: SafetyWarning[]; onPatch: (p: Partial<DesignObject>) => void;
   onMove: () => void; onSnapAngle: () => void; onSnapContour?: () => void; onDelete: () => void; onPlan?: () => void; planted: number; onHouse?: () => void; housed: Herd[];
   /** A bed's plants, layout and add/suggest buttons (plantable spots only). */
   bedContents?: ReactNode;
+  /** A hand-drawn area's beds, buildings and animals. */
+  areaContents?: ReactNode;
 }) {
   const t = useTheme();
   const type = objectType(o.kind);
@@ -914,6 +924,7 @@ function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSna
       {/* Point of use, but quiet: only notes still waiting for 'Got it' and distance problems sit up top. */}
       {notes.filter((n) => n.acknowledge && !acks[ackKey(n)]).map((n) => <SafetyNoteRow key={n.id} note={n} />)}
       {safety.map((w, i) => <SafetyLine key={`${w.kind}-${i}`} text={w.message} caution={w.level === 'caution'} />)}
+      {areaContents}
       {bedContents ?? (onPlan && <Button title={o.kind === 'vineyard-row' ? 'Plan this row: grapes and vines' : o.kind === 'orchard' ? 'Plan this orchard: fruit and nut trees' : 'Plan this bed: what grows best here'} onPress={onPlan} />)}
       {onHouse && <Button title={housed.length ? 'Animals here: capacity and care' : 'Plan animals here: who fits and how many'} icon="paw" onPress={onHouse} />}
       {!o.polygon && o.shape === 'rect' && <Stepper label="Length" value={o.length} step={step} min={0.3} units={units} onChange={(v) => onPatch({ length: v })} />}

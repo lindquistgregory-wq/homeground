@@ -37,6 +37,54 @@ export interface DesignObject {
   facingDeg?: number;
   costUsd?: number;
   notes?: string;
+  /** Hand-drawn areas: objects added to the area by hand (beyond those inside it). */
+  linkedIds?: string[];
+  /** Hand-drawn areas: objects inside it that the user took off the area's list. */
+  unlinkedIds?: string[];
+}
+
+/** A hand-drawn closed shape ("my garden", "the back paddock") that can hold other objects. */
+export const isDrawnArea = (o: DesignObject): boolean => o.kind === 'custom-area' && !!o.polygon && o.polygon.length >= 3;
+
+function pointInRing(p: [number, number], ring: Array<[number, number]>): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i]!, [xj, yj] = ring[j]!;
+    if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/** Is this point (lon, lat) inside the hand-drawn area? */
+export function inDrawnArea(area: DesignObject, p: [number, number]): boolean {
+  return isDrawnArea(area) && pointInRing(p, area.polygon!);
+}
+
+/**
+ * The objects that belong to a hand-drawn area: every object whose centre is inside it (other drawn
+ * areas and existing map features included), plus those linked by hand, minus those taken off. Each is
+ * marked with how it got there, so the screen can say "inside" or "added".
+ */
+export function areaMembers(area: DesignObject, objects: DesignObject[]): Array<{ object: DesignObject; how: 'inside' | 'linked' }> {
+  if (!isDrawnArea(area)) return [];
+  const linked = new Set(area.linkedIds ?? []), unlinked = new Set(area.unlinkedIds ?? []);
+  const out: Array<{ object: DesignObject; how: 'inside' | 'linked' }> = [];
+  for (const o of objects) {
+    if (o.id === area.id) continue;
+    if (linked.has(o.id)) out.push({ object: o, how: 'linked' });
+    else if (!unlinked.has(o.id) && pointInRing(o.center, area.polygon!)) out.push({ object: o, how: 'inside' });
+  }
+  return out;
+}
+
+/** The area after adding (or removing) an object to its list by hand. */
+export function linkToArea(area: DesignObject, objectId: string, on: boolean, objects: DesignObject[]): DesignObject {
+  const target = objects.find((o) => o.id === objectId);
+  const inside = !!target && isDrawnArea(area) && pointInRing(target.center, area.polygon!);
+  const linked = new Set(area.linkedIds ?? []), unlinked = new Set(area.unlinkedIds ?? []);
+  if (on) { unlinked.delete(objectId); if (!inside) linked.add(objectId); }
+  else { linked.delete(objectId); if (inside) unlinked.add(objectId); }
+  return { ...area, linkedIds: linked.size ? [...linked] : undefined, unlinkedIds: unlinked.size ? [...unlinked] : undefined };
 }
 
 export interface Design {
