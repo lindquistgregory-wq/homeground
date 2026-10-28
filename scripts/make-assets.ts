@@ -56,6 +56,7 @@ const SHOTS: Array<[string, string, string, number, number]> = [
   ['bed', 'Know what to plant together', 'Suggested setups for each bed’s sun and soil', 230, 2212],
   ['design', 'Design on real aerial imagery', 'Beds, coops, trees and water, drawn to scale', 230, 2212],
   ['animals', 'Animals that suit your land', 'Shelter, pasture, water and care for each kind', 230, 2212],
+  ['records', 'Records for every animal', 'Your own photos, health, vaccinations and weights', 230, 2212],
 ];
 const shotsArg = process.argv.indexOf('--shots');
 const SHOTS_DIR = shotsArg > 0 ? process.argv[shotsArg + 1] : undefined;
