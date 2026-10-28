@@ -87,6 +87,8 @@ export default function DesignScreen() {
   const [sun, setSun] = useState<SunResult | null>(null);
   const [period, setPeriod] = useState<SunPeriod>('summer');
   const [tab, setTab] = useState<Tab>('add');
+  /** The tab panel fills the screen (map hidden) so long panels are easier to read and edit. */
+  const [panelFull, setPanelFull] = useState(false);
   const [placing, setPlacing] = useState<string | null>(null);
   const [moving, setMoving] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -109,6 +111,10 @@ export default function DesignScreen() {
   // Freehand drawing: a finger stroke becomes a custom line or area.
   const [drawing, setDrawing] = useState(false);
   const [drawn, setDrawn] = useState<{ coords: Array<[number, number]>; closed: boolean } | null>(null);
+  // Placing, moving or drawing needs the map: bring it back if the panel was full screen.
+  useEffect(() => {
+    if (placing || moving || placingAnimal || movingHerd || drawing) setPanelFull(false);
+  }, [placing, moving, placingAnimal, movingHerd, drawing]);
   const selectedHerd = selectedHerdId ? herds.find((h) => h.id === selectedHerdId) : undefined;
   const [sensorPins, setSensorPins] = useState<GeoJSON.FeatureCollection<GeoJSON.Point, { label: string }> | null>(null);
   const [shadeSeason, setShadeSeason] = useState({ fromDoy: 180, toDoy: 288 });
@@ -405,7 +411,8 @@ export default function DesignScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={styles.map}>
+      {/* Full-screen panel: the map stays mounted (no reload) but takes no space. */}
+      <View style={panelFull ? styles.mapHidden : styles.map}>
         <Map
           ref={mapRef}
           style={StyleSheet.absoluteFill}
@@ -558,6 +565,10 @@ export default function DesignScreen() {
             <Text style={{ color: tab === k ? t.accent : t.muted, fontWeight: '600' }}>{k === 'add' ? 'Add' : k === 'selected' ? 'Edit' : k === 'sun' ? 'Sun' : k === 'layers' ? 'Layers' : 'Plan'}</Text>
           </Pressable>
         ))}
+        <Pressable accessibilityRole="button" accessibilityLabel={panelFull ? 'Show the map' : 'Expand the panel to full screen'} accessibilityState={{ expanded: panelFull }}
+          onPress={() => { tapFeedback(); setPanelFull((f) => !f); }} style={styles.expand} hitSlop={6}>
+          <Icon name={panelFull ? 'arrow-collapse-vertical' : 'arrow-expand-vertical'} size={22} color={t.accent} />
+        </Pressable>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12 }}>
@@ -1101,6 +1112,8 @@ function ScenariosPanel({ design, frame, allowed, onOpen, onMain }: {
 const styles = StyleSheet.create({
   // Badges are native views: clip them so one near the edge can't draw over the tabs below.
   map: { height: '48%', overflow: 'hidden' },
+  mapHidden: { height: 0, overflow: 'hidden' },
+  expand: { width: 48, alignItems: 'center', justifyContent: 'center' },
   zoomAll: { position: 'absolute', top: 8, right: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
   banner: { position: 'absolute', top: 8, left: 8, right: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderRadius: 10 },
   tabs: { flexDirection: 'row', borderBottomWidth: 1 },
