@@ -1,6 +1,6 @@
 /**
- * Three Play Store feature-graphic options (1024 × 500) for the owner to choose from, drawn from the
- * app's own mark and palette (no real property in them). Run: pnpm tsx scripts/make-feature-options.ts <out folder>
+ * The Play Store feature graphic (1024 × 500): the "prairie" design the owner chose, drawn from the app's own
+ * mark and palette (no real property in it). Run: pnpm tsx scripts/make-feature-graphic.ts [out folder]
  */
 import { Resvg } from '@resvg/resvg-js';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = process.argv[2] ?? join(ROOT, 'docs/store');
 const FONTS = [
-  ...['400Regular/Inter_400Regular.ttf', '600SemiBold/Inter_600SemiBold.ttf', '700Bold/Inter_700Bold.ttf'].map((f) => join(ROOT, 'node_modules/@expo-google-fonts/inter', f)),
+  ...['400Regular/Inter_400Regular.ttf', '700Bold/Inter_700Bold.ttf'].map((f) => join(ROOT, 'node_modules/@expo-google-fonts/inter', f)),
   join(ROOT, 'node_modules/@expo-google-fonts/bitter/700Bold/Bitter_700Bold.ttf'),
 ];
 const COLOURS = { SUN: '#ffcf5a', FIELD1: '#b7e08a', FIELD2: '#8cc46f', FURROW: '#6fa84c', STEM: '#f7f3e3', LEAF1: '#f7f3e3', LEAF2: '#ffffff', VEIN: '#cfe6b8' };
@@ -54,31 +54,9 @@ const homestead = (ox: number, oy: number) => {
   <ellipse cx="${ox + 150}" cy="${oy + 120}" rx="11" ry="7" fill="#F2ECDD" stroke="#5E5141" stroke-width="1.4"/><circle cx="${ox + 161}" cy="${oy + 115}" r="5" fill="#F2ECDD" stroke="#5E5141" stroke-width="1.4"/>`;
 };
 
-/** A row of pill labels, each sized to its text (about 10.5 px a character at 19 px semibold). */
-const chips = (x: number, y: number, labels: string[], fill: string, ink: string) => {
-  let cx = x;
-  return labels.map((label) => {
-    const w = Math.round(label.replace('&amp;', '&').length * 10.5 + 32);
-    const out = `<rect x="${cx}" y="${y}" width="${w}" height="40" rx="20" fill="${fill}"/><text x="${cx + 16}" y="${y + 26}" font-family="Inter" font-weight="600" font-size="19" fill="${ink}">${label}</text>`;
-    cx += w + 10;
-    return out;
-  }).join('');
-};
-
 mkdirSync(OUT, { recursive: true });
 
-// Option 1: brand green, the mark and name, a tidy homestead map on the right.
-png(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500">
-  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3f8f35"/><stop offset="1" stop-color="#1f5a24"/></linearGradient></defs>
-  <rect width="1024" height="500" fill="url(#bg)"/>
-  ${icon(64, 70, 96)}
-  <text x="64" y="232" font-family="Bitter" font-weight="700" font-size="72" fill="#ffffff">Plotwright</text>
-  <text x="66" y="280" font-family="Inter" font-size="26" fill="#e2efdb">Plan your homestead on your own land</text>
-  ${chips(64, 326, ['Beds &amp; crops', 'Animals', 'Step-by-step plans'], 'rgba(255,255,255,0.16)', '#ffffff')}
-  <g transform="translate(612 78) scale(0.88) rotate(-3 210 180)">${homestead(0, 0)}</g>
-</svg>`, 'feature-option-1-brand.png');
-
-// Option 2: light prairie (oat background), the homestead as the hero, denim headline.
+// Light prairie (oat background), the homestead as the hero, denim headline.
 png(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500">
   <rect width="1024" height="500" fill="#F7F4EC"/>
   <path d="M 0 420 Q 260 380 520 420 T 1024 410 L 1024 500 L 0 500 Z" fill="#EDE7D9"/>
@@ -90,24 +68,4 @@ png(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500">
   <text x="522" y="336" font-family="Bitter" font-weight="700" font-size="42" fill="#4F6E3A">Season by season.</text>
   <text x="524" y="388" font-family="Inter" font-size="21" fill="#5E6168">Gardens, orchards and animals,</text>
   <text x="524" y="416" font-family="Inter" font-size="21" fill="#5E6168">mapped on real aerial imagery.</text>
-</svg>`, 'feature-option-2-prairie.png');
-
-// Option 3: dark charcoal, three feature tiles (map, plan, plant) under the name.
-const tile = (x: number, title: string, sub: string, art: string) => `
-  <rect x="${x}" y="230" width="290" height="210" rx="24" fill="#202328" stroke="#353A41" stroke-width="2"/>
-  <g transform="translate(${x + 24} 254)">${art}</g>
-  <text x="${x + 24}" y="388" font-family="Bitter" font-weight="700" font-size="28" fill="#ECEAE4">${title}</text>
-  <text x="${x + 24}" y="418" font-family="Inter" font-size="18" fill="#B9BBC0">${sub}</text>`;
-const mapArt = `<rect width="96" height="96" rx="18" fill="#7E9459"/><rect x="10" y="10" width="76" height="76" rx="10" fill="none" stroke="#F3E1B0" stroke-width="3" stroke-dasharray="6 4"/>
-  <rect x="20" y="22" width="14" height="24" rx="2" fill="#6E4F33" stroke="#E3D3B0" stroke-width="1.5"/><rect x="40" y="22" width="14" height="24" rx="2" fill="#6E4F33" stroke="#E3D3B0" stroke-width="1.5"/>
-  <rect x="58" y="54" width="26" height="20" rx="2" fill="#8E3B2E"/><ellipse cx="30" cy="70" rx="14" ry="8" fill="#1D6F7A"/>`;
-const planArt = `<rect width="96" height="96" rx="18" fill="#284563"/>${[0, 1, 2].map((i) => `<circle cx="24" cy="${24 + i * 24}" r="8" fill="${i === 0 ? '#A9CF8C' : 'none'}" stroke="#A7C7EA" stroke-width="3"/><rect x="40" y="${20 + i * 24}" width="${40 - i * 8}" height="8" rx="4" fill="#A7C7EA" opacity="${1 - i * 0.25}"/>`).join('')}<path d="M24 32 v8 M24 56 v8" stroke="#A7C7EA" stroke-width="3"/>`;
-const plantArt = `<rect width="96" height="96" rx="18" fill="#4A3800"/><path d="M48 78 V46" stroke="#F3E1B0" stroke-width="6" stroke-linecap="round"/>
-  <path d="M48 56 C36 56 24 48 22 34 C36 34 46 42 48 56Z" fill="#A9CF8C"/><path d="M48 48 C54 36 66 30 76 32 C74 44 62 50 48 48Z" fill="#cfe6b8"/><circle cx="70" cy="22" r="7" fill="#EBC75F"/>`;
-png(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500">
-  <rect width="1024" height="500" fill="#16181C"/>
-  ${icon(64, 56, 84)}
-  <text x="168" y="112" font-family="Bitter" font-weight="700" font-size="58" fill="#ffffff">Plotwright</text>
-  <text x="170" y="156" font-family="Inter" font-size="24" fill="#B9BBC0">The homestead planner built from your own land</text>
-  ${tile(50, 'Map it', 'Beds, barns and animals', mapArt)}${tile(367, 'Plan it', 'Projects as checklists', planArt)}${tile(684, 'Grow it', 'What to plant, and when', plantArt)}
-</svg>`, 'feature-option-3-tiles.png');
+</svg>`, 'feature-graphic.png');
