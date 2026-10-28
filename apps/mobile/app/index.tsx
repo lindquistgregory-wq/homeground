@@ -98,7 +98,7 @@ export default function Home() {
       <View style={{ flex: 1, backgroundColor: t.bg }} onLayout={(e) => setPageH(e.nativeEvent.layout.height)}>
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
           {/* The map fills the screen; a strip of the page below hints that there's more. */}
-          {pageH > 0 && <HomeHomestead parcel={home} profile={profiles[home.id]} brief={briefs[home.id]} height={Math.max(360, pageH - 64)} topInset={insets.top} />}
+          {pageH > 0 && <HomeHomestead key={home.id} parcel={home} profile={profiles[home.id]} brief={briefs[home.id]} height={Math.max(360, pageH - 64)} topInset={insets.top} />}
           <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
             <View style={styles.homeRow}>
               <View style={{ flex: 1 }}>

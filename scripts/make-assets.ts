@@ -42,18 +42,10 @@ png(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">${mark(COLO
 png(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">${mark(MONO)}</svg>`, 1024, join(OUT, 'adaptive-mono.png'));
 // The splash shows the mark (adaptive-icon.png) on the brand green; see app.json.
 
-// Play Store: 512 px icon and the 1024 × 500 feature graphic.
+// Play Store: 512 px icon.
 mkdirSync(STORE, { recursive: true });
 png(square(mark(COLOURS)), 512, join(STORE, 'icon-512.png'));
-png(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500">${BG}
-  <rect width="1024" height="500" fill="url(#bg)"/>
-  <path d="M 520 470 Q 780 400 1024 430 L 1024 500 L 470 500 Z" fill="#8cc46f" opacity="0.35"/>
-  <path d="M 600 500 Q 820 440 1024 462 L 1024 500 Z" fill="#b7e08a" opacity="0.35"/>
-  <g transform="translate(64 120) scale(0.25)"><rect width="1024" height="1024" rx="228" fill="#ffffff" opacity="0.12"/>${mark(COLOURS)}</g>
-  <text x="352" y="220" font-family="Inter" font-weight="700" font-size="86" fill="#ffffff">Plotwright</text>
-  <text x="356" y="288" font-family="Inter" font-size="38" fill="#e2efdb">Plan your land, plot by plot.</text>
-  <text x="356" y="344" font-family="Inter" font-size="26" fill="#b7d9a0">Soils · sun · frost dates · planting calendar</text>
-</svg>`, 1024, join(STORE, 'feature-graphic.png'));
+// The 1024 × 500 feature graphic is drawn by scripts/make-feature-graphic.ts.
 
 // Store screenshots: the phone screen (status and navigation bars cropped) framed under a caption.
 // [name, title, subtitle, top, bottom]: the rows of the raw screenshot to keep. Screens with a header drop it

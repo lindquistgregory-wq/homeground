@@ -186,13 +186,15 @@ function placeObjects(parcel: ParcelRecord, existing: DesignObject[], kind: stri
   const boxes = existing.map((o) => boxOf(footprintUtm(o, frame)));
   const out: DesignObject[] = [];
   const w = size.width ?? t.width, l = size.length ?? t.length;
-  const step = Math.max(1.5, Math.max(w, l) + 1);
-  // Spiral outwards in rings of candidate points.
-  for (let ring = 0; ring < 60 && out.length < count; ring++) {
-    const pts = ring === 0 ? [[0, 0]] : Array.from({ length: 8 * ring }, (_, k) => {
-      const a = (2 * Math.PI * k) / (8 * ring);
-      return [Math.cos(a) * ring * step, Math.sin(a) * ring * step];
-    });
+  // Candidate spots on a grid of rows (a 1 m path between objects; 2 m round larger ones), nearest the
+  // anchor first, so a garden's beds come out in tidy rows instead of a ring.
+  const gap = Math.max(w, l) > 6 ? 2 : 1;
+  const sx = Math.max(1.5, w + gap), sy = Math.max(1.5, l + gap);
+  const reach = 60;
+  const pts: Array<[number, number]> = [];
+  for (let i = -reach; i <= reach; i++) for (let j = -reach; j <= reach; j++) pts.push([i * sx, j * sy]);
+  pts.sort((a, b) => Math.hypot(a[0] / sx, a[1] / sy * 1.6) - Math.hypot(b[0] / sx, b[1] / sy * 1.6) || a[1] - b[1] || a[0] - b[0]);
+  {
     for (const [dx, dy] of pts) {
       if (out.length >= count) break;
       const center = unproject(frame, [ax + dx!, ay + dy!]) as [number, number];

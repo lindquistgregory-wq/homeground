@@ -71,13 +71,18 @@ export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'b
 
   // Screen positions once the map settles (the camera is fixed, so they hold until the layout changes).
   const [screen, setScreen] = useState<{ homes: Array<{ x: number; y: number; r: number }>; box: { x0: number; y0: number; x1: number; y1: number } } | null>(null);
+  // Native project() crashes on a map view that has gone (or not finished loading): ask only while it's live.
+  const live = useRef({ loaded: false, mounted: true });
+  useEffect(() => () => { live.current.mounted = false; }, []);
   const measure = async () => {
     const m = mapRef.current;
-    if (!m) return;
+    if (!m || !live.current.loaded || !live.current.mounted) return;
     try {
       const [sw, ne] = await Promise.all([m.project([b[0], b[1]]), m.project([b[2], b[3]])]);
       const pxPerM = Math.abs(ne[0] - sw[0]) / Math.max(1, (b[2] - b[0]) * 111_320 * Math.cos(((b[1] + b[3]) / 2) * Math.PI / 180));
+      if (!live.current.mounted) return;
       const pts = await Promise.all(homes.map((h) => m.project([h.lon, h.lat])));
+      if (!live.current.mounted) return;
       setScreen({
         homes: pts.map((p, i) => ({ x: p[0], y: p[1], r: homes[i]!.roam ? 0 : Math.max(14, homes[i]!.radiusM * pxPerM) })),
         box: { x0: Math.min(sw[0], ne[0]) + 12, x1: Math.max(sw[0], ne[0]) - 12, y0: Math.min(sw[1], ne[1]) + 12, y1: Math.max(sw[1], ne[1]) - 12 },
@@ -94,7 +99,7 @@ export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'b
     <View style={StyleSheet.absoluteFill}>
       <Map ref={mapRef} style={StyleSheet.absoluteFill} mapStyle={OPENFREEMAP_STYLE_URL} attribution logoPosition={{ bottom: 8, left: 8 }} attributionPosition={{ bottom: 8, left: 92 }}
         dragPan={false} touchZoom={false} doubleTapZoom={false} doubleTapHoldZoom={false} touchRotate={false} touchPitch={false}
-        onRegionDidChange={() => void measure()} onDidFinishLoadingMap={() => void measure()}
+        onRegionDidChange={() => void measure()} onDidFinishLoadingMap={() => { live.current.loaded = true; void measure(); }}
         onPress={() => { if (Date.now() - objectTapAt.current > 400) onSelect(null); }}>
         <Camera initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding }} maxZoom={maxUsefulZoom(res, (b[1] + b[3]) / 2)} />
         <RasterSource id="home-img" tiles={imagery.tiles} tileSize={imagery.tileSize} maxzoom={imagery.maxzoom} attribution={imagery.attribution}>
