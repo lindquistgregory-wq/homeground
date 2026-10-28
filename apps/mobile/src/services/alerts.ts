@@ -58,6 +58,17 @@ export async function alertsEnabled(): Promise<boolean> {
   return (await kvGet(ENABLED_KEY)) === '1';
 }
 
+/** Notification permission already granted (e.g. for health reminders), without asking. */
+async function notificationsAllowed(): Promise<boolean> {
+  try {
+    if (!(await Notifications.getPermissionsAsync()).granted) return false;
+    if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync(CHANNEL_ID, { name: 'Frost & weather alerts', importance: Notifications.AndroidImportance.HIGH });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export interface AlertsState {
   on: boolean;
   /** False when the OS won't run background checks (Low Power Mode, Background App Refresh off); alerts then come when the app opens. */
@@ -166,9 +177,11 @@ export function checkThresholdsNow(): Promise<void> {
   thresholdsInFlight ??= (async () => {
     // Share the sent-list with a full check that's already running rather than racing it.
     if (inFlight) await inFlight;
-    if (!(await alertsEnabled())) return;
     const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);
-    await checkSensorThresholds(sent);
+    if (await alertsEnabled()) await checkSensorThresholds(sent);
+    // Housing heat and freezing checks are safety alerts: they run whenever notifications are allowed.
+    else if (await notificationsAllowed()) await checkHousingSensors(sent);
+    else return;
     await kvSet(SENT_KEY, JSON.stringify([...sent]));
   })().finally(() => { thresholdsInFlight = null; });
   return thresholdsInFlight;
@@ -186,7 +199,15 @@ async function runCheck(opts: { background?: boolean }): Promise<void> {
   // Don't race a threshold check that's already writing the sent-list. Captured before any await: a
   // threshold check that starts after this one waits for it instead, so the two can't wait on each other.
   const earlier = thresholdsInFlight;
-  if (!(await alertsEnabled())) return;
+  if (!(await alertsEnabled())) {
+    // Weather alerts are off, but housing heat and freezing checks still run when notifications are allowed.
+    if (!(await notificationsAllowed())) return;
+    if (earlier) await earlier.catch(() => undefined);
+    const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);
+    await checkHousingSensors(sent);
+    await kvSet(SENT_KEY, JSON.stringify([...sent]));
+    return;
+  }
   await kvSet(LAST_CHECK_KEY, new Date().toISOString());
   if (earlier) await earlier.catch(() => undefined);
   const sent = new Set<string>(JSON.parse((await kvGet(SENT_KEY)) ?? '[]') as string[]);

@@ -25,6 +25,7 @@ import { AnimalPhotos } from '../../src/components/AnimalPhotos';
 import { deletePhotoFiles } from '../../src/services/photos';
 import { useGarden } from '../../src/services/useGarden';
 import { useSettings } from '../../src/services/settings';
+import { AlertsNudge } from '../../src/components/AlertsNudge';
 
 /** One colour per herd sharing the housing; distinct in both themes. */
 const HERD_COLORS = ['#7fb85a', '#d9a441', '#5aa1c8', '#c27ab8', '#c8735a'];
@@ -90,6 +91,8 @@ export default function HousingPlanner() {
     <ScrollView contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
       <Text style={{ color: t.text, fontSize: 22, fontWeight: '700' }} accessibilityRole="header">{name}</Text>
       <Body muted>{formatArea(areaM2, units)}{o.label ? ` · ${objectType(o.kind)?.name ?? o.kind}` : ''}</Body>
+
+      <AlertsNudge parcelId={state.parcel.id} />
 
       <Card title="How full it is" icon="home-group">
         {occ && occ.shares.length > 0 ? (

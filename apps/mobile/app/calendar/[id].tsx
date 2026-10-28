@@ -14,7 +14,7 @@ import { Chip, StaleProfileNotice } from '../../src/components/plants';
 import { MoreInfo, Pill } from '../../src/components/kit';
 import { EventEditor, EventRow, EventSheet, MonthCalendar } from '../../src/components/calendar';
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
-import { alertsEnabled, alertsForParcel, type ParcelAlerts } from '../../src/services/alerts';
+import { alertsEnabled, alertsForParcel, setAlertsEnabled, type ParcelAlerts } from '../../src/services/alerts';
 import { agendaFor, monthRange } from '../../src/services/agenda';
 import { localToday } from '../../src/services/animals';
 import { activePlantings, bedName, calendarFor } from '../../src/services/garden';
@@ -105,7 +105,11 @@ export default function CalendarScreen() {
           ))}
           {alerts?.forecastNote && <Text style={{ color: t.muted, fontSize: 12 }}>{alerts.forecastNote}</Text>}
           <Text style={{ color: t.muted, fontSize: 12 }}>Not an official warning. For watches and warnings, see weather.gov. Forecast: National Weather Service (public domain).</Text>
-          {notifyOn === false && <Button title="Turn on alert notifications" kind="secondary" onPress={() => router.push('/settings')} />}
+          {notifyOn === false && <Button title="Turn on alert notifications (free)" kind="secondary" onPress={async () => {
+            const r = await setAlertsEnabled(true).catch(() => ({ on: false, denied: false }));
+            if ('denied' in r && r.denied) Alert.alert('Notifications are off', 'Allow notifications for Plotwright in your phone’s settings, then try again.');
+            setNotifyOn(r.on);
+          }} />}
         </Card>
       )}
 
