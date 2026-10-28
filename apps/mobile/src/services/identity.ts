@@ -1,16 +1,28 @@
 import * as Crypto from 'expo-crypto';
+import * as SecureStore from 'expo-secure-store';
 import { HybridClock } from '@plotwright/core';
-import { kvGet, kvSet, maxStoredHlc } from '../db/database';
+import { kvSet, maxStoredHlc } from '../db/database';
 
 let deviceId: string | null = null;
 let hlc: HybridClock | null = null;
 
 export const newId = (): string => Crypto.randomUUID();
 
-/** Per-install random id used only to order sync edits. Never sent anywhere but the user's own cloud. */
+const DEVICE_KEY = 'plotwright.deviceId';
+
+/**
+ * Per-install random id used only to order sync edits. Never sent anywhere but the user's own cloud.
+ * Kept in secure storage, which Android backup and device transfer leave out: a phone restored from a
+ * backup of the database gets its own id, so it doesn't skip the old phone's changes as its own.
+ */
 export async function initIdentity(): Promise<string> {
   if (deviceId) return deviceId;
-  deviceId = (await kvGet('deviceId')) ?? newId();
+  let id: string | null = null;
+  try { id = await SecureStore.getItemAsync(DEVICE_KEY); } catch { id = null; }
+  deviceId = id ?? newId();
+  if (!id) {
+    try { await SecureStore.setItemAsync(DEVICE_KEY, deviceId, { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY }); } catch { /* keep the id for this run */ }
+  }
   await kvSet('deviceId', deviceId);
   hlc = new HybridClock(deviceId);
   // The clock restarts at zero on every launch; move it past every stamp already stored so a slow or

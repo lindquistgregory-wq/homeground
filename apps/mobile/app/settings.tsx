@@ -31,6 +31,9 @@ import { useAds } from '../src/ads/useAds';
 import { BUSINESS_MODEL, PRIVACY_POLICY_URL } from '../src/config';
 import { clearMetrics, metricsConsent, metricsReport, setMetricsConsent } from '../src/services/metrics';
 import { deleteAllPacks } from '../src/services/offlinePacks';
+import { pickBackup, restoreBackup, shareBackup, type BackupFile } from '../src/services/backup';
+import { refreshHealthReminders } from '../src/services/healthReminders';
+import { refreshEventReminders } from '../src/services/eventReminders';
 
 /**
  * A synthetic 100 m yard (sloped ground, a tree line, a house) run through both engines: times the
@@ -81,6 +84,7 @@ export default function Settings() {
   const { privacyOptionsRequired, showPrivacyOptions, personalised, setPersonalised } = useAds();
   const [metricsOn, setMetricsOn] = useState(metricsConsent());
   const [cloud, setCloud] = useState<boolean | null>(null);
+  const [backupBusy, setBackupBusy] = useState<'save' | 'restore' | null>(null);
   const [endpointUrl, setEndpointUrl] = useState('');
   const [checking, setChecking] = useState(false);
   const [bench, setBench] = useState<string | null>(null);
@@ -171,6 +175,41 @@ export default function Settings() {
         {cloud && <Button title="Sync now" kind="secondary" onPress={() => syncNow().then((r) => Alert.alert('Sync', JSON.stringify(r)))} />}
       </Card>
 
+      <Card title="Backup">
+        <Body muted>
+          {Platform.OS === 'android'
+            ? 'Android backs up Plotwright with your Google account when backup is on in your phone’s settings, and copies it to a new phone. '
+            : ''}
+          Save a backup file now and then too: it holds every property, design, planting, animal record and photo, and you keep it wherever you
+          like. Station and AI keys aren’t included; enter them again after restoring.
+        </Body>
+        <Button title={backupBusy === 'save' ? 'Preparing…' : 'Back up to a file'} kind="secondary" disabled={!!backupBusy} onPress={async () => {
+          setBackupBusy('save');
+          try { await shareBackup(); } catch (e) { Alert.alert('Backup failed', (e as Error).message); } finally { setBackupBusy(null); }
+        }} />
+        <Button title={backupBusy === 'restore' ? 'Restoring…' : 'Restore from a file'} kind="secondary" disabled={!!backupBusy} onPress={async () => {
+          let b: BackupFile | null = null;
+          try { b = await pickBackup(); } catch (e) { Alert.alert('Can’t restore that file', (e as Error).message); return; }
+          if (!b) return;
+          const picked = b;
+          Alert.alert('Replace everything on this phone?', `Restores the backup from ${picked.createdAt.slice(0, 10)}. What’s on this phone now is replaced.`, [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Restore', style: 'destructive', onPress: async () => {
+              setBackupBusy('restore');
+              try {
+                const r = await restoreBackup(picked);
+                await refreshHealthReminders().catch(() => 0);
+                await refreshEventReminders().catch(() => 0);
+                Alert.alert('Restored', `${r.rows} records and ${r.photos} photos restored. Close and reopen Plotwright to finish.`);
+                router.replace('/');
+              } catch (e) {
+                Alert.alert('Restore failed', `${(e as Error).message} Nothing on this phone was changed.`);
+              } finally { setBackupBusy(null); }
+            } },
+          ]);
+        }} />
+      </Card>
+
       <Card title="Add your county's parcel map">
         <Body muted>
           If your county publishes parcels as an ArcGIS REST layer (…/MapServer/0 or …/FeatureServer/0), paste the link. We test it
@@ -213,7 +252,7 @@ export default function Settings() {
 
       <Card title="Privacy">
         <Body muted>
-          Your properties, designs, sensor readings and plans stay on this phone and in your own cloud account. Plotwright has no server and
+          Your properties, designs, sensor readings and plans stay on this phone{cloud ? ' and in your own cloud account' : ''} (and in your phone’s own backup, or a backup file you save). Plotwright has no server and
           never sells or shares your data. Ads on the free plan come from Google AdMob and are not personalised unless you choose so here
           (and, in the EU and UK, agree in the consent form).
         </Body>
