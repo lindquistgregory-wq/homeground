@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { STATE_IMAGERY, USGS_IMAGERY, USGS_NAIP_PLUS, imageryFor, maxUsefulZoom } from './basemaps';
+import { STATE_IMAGERY, USGS_IMAGERY, USGS_NAIP_PLUS, imageryFor, mapMaxZoom, maxUsefulZoom } from './basemaps';
 
 test('the sharpest free imagery: the state program where there is one, NAIP Plus elsewhere', () => {
   assert.equal(imageryFor('best', '37').id, 'nc-onemap-ortho', 'North Carolina: 6-inch statewide imagery');
@@ -20,4 +20,10 @@ test('zoom stops half a level past where pixels match the ground resolution', ()
   // NAIP 0.6 m → about 17.7 + 0.5.
   assert.equal(maxUsefulZoom(0.6, 35.7), 18.2);
   assert.equal(maxUsefulZoom(100, 35.7), 15, 'never below 15');
+});
+
+test('the maps zoom two levels past sharp imagery (blurry, but closer) and stop at 23', () => {
+  assert.equal(mapMaxZoom(0.6, 35.7), 20.2);
+  assert.equal(mapMaxZoom(0.1524, 35.7), 22.2);
+  assert.equal(mapMaxZoom(0.05, 35.7), 23);
 });

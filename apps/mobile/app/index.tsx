@@ -53,6 +53,8 @@ export default function Home() {
   // The property Home shows as a full-screen map: the last one picked, once it has a layout.
   const [mapParcel, setMapParcel] = useState<string | null>(null);
   const [pageH, setPageH] = useState(0);
+  // The map holds the page still while it's pinched or zoomed in, so a drag pans the map.
+  const [pageHeld, setPageHeld] = useState(false);
   const showProcessing = useSettings((s) => s.showProcessing);
   // Read inside the focus effect without re-running it on every settings change.
   const animalsRef = useRef(animals);
@@ -96,9 +98,9 @@ export default function Home() {
     ]);
     return (
       <View style={{ flex: 1, backgroundColor: t.bg }} onLayout={(e) => setPageH(e.nativeEvent.layout.height)}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }} scrollEnabled={!pageHeld}>
           {/* The map fills the screen; a strip of the page below hints that there's more. */}
-          {pageH > 0 && <HomeHomestead key={home.id} parcel={home} profile={profiles[home.id]} brief={briefs[home.id]} height={Math.max(360, pageH - 64)} topInset={insets.top} />}
+          {pageH > 0 && <HomeHomestead key={home.id} parcel={home} profile={profiles[home.id]} brief={briefs[home.id]} height={Math.max(360, pageH - 64)} topInset={insets.top} onHoldPage={setPageHeld} />}
           <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
             <View style={styles.homeRow}>
               <View style={{ flex: 1 }}>

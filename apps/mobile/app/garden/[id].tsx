@@ -116,20 +116,23 @@ export default function BedPlanner() {
     ranked, plant: plantById, existing: gridPlantings.map((p) => ({ plantId: p.plantId, share: p.share })), history: bedHistory(bedPlantings), year, planCrops,
     areaSqFt: (analysis?.frame ? footprintAreaM2(bed, analysis.frame) : bed.width * bed.length) * 10.7639,
   };
+  // The ranking exists as soon as the soil is in, but sun takes a moment to model: suggest only once it's
+  // known (or failed), or a shady bed could be offered full-sun crops.
+  const sunSettled = cond?.sunHours !== undefined || !!sunError;
   const builtIn = () => {
     const input = setupInput();
-    if (!input) return;
+    if (!input || !sunSettled) return;
     const s = suggestBedSetup(input);
     setSetup({ picks: s.picks, notes: s.notes, by: 'built-in' });
   };
   // Opened from Design's "Suggest a setup": show the built-in suggestion as soon as the ranking is ready.
   useEffect(() => {
-    if (wantSetup === '1' && !autoRan.current && ranked.length) { autoRan.current = true; builtIn(); }
+    if (wantSetup === '1' && !autoRan.current && ranked.length && sunSettled) { autoRan.current = true; builtIn(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wantSetup, ranked]);
+  }, [wantSetup, ranked, sunSettled]);
   const askAi = async () => {
     const input = setupInput();
-    if (!input || !cond) return;
+    if (!input || !cond || !sunSettled) return;
     setAiBusy(true);
     try {
       const soil = cond.soil ? [cond.soil.texture, cond.soil.drainageClass, cond.soil.pH !== undefined ? `pH ${cond.soil.pH}` : null].filter(Boolean).join(', ') : '';
@@ -243,9 +246,9 @@ export default function BedPlanner() {
           <View>
             <Body muted>A few plants that suit this bed and each other{planCrops.length ? ', favouring your homestead plan' : ''}, around what’s already here.</Body>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              <View style={{ flex: 1, minWidth: 140 }}><Button title="Suggest a setup" kind={setup ? 'secondary' : 'primary'} onPress={builtIn} /></View>
+              <View style={{ flex: 1, minWidth: 140 }}><Button title={sunSettled ? 'Suggest a setup' : 'Modeling sun…'} kind={setup ? 'secondary' : 'primary'} disabled={!sunSettled} onPress={builtIn} /></View>
               <View style={{ flex: 1, minWidth: 140 }}>
-                <Button title={aiBusy ? 'Asking AI…' : 'Ask AI'} icon="auto-fix" kind="secondary" disabled={aiBusy || !ai} onPress={() => void askAi()}
+                <Button title={aiBusy ? 'Asking AI…' : 'Ask AI'} icon="auto-fix" kind="secondary" disabled={aiBusy || !ai || !sunSettled} onPress={() => void askAi()}
                   accessibilityHint={ai === 'device' ? 'Uses the AI model on this phone; nothing is sent anywhere' : ai === 'claude' ? 'Sends this bed’s conditions and plant list to Claude with your own API key' : undefined} />
               </View>
             </View>

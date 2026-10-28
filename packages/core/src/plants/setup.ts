@@ -111,7 +111,7 @@ export function suggestBedSetup(input: BedSetupInput): BedSetup {
   if (!chosen.length) notes.push('No plant suits this bed well enough to suggest. Check its sun and the site profile.');
   const each = Math.floor((freeShare / Math.max(1, chosen.length)) * 20) / 20;
   const feeders = new Set([...existing, ...chosen.map((c) => c.p)].map(feederOf));
-  if (feeders.has('heavy') && !feeders.has('light') && !feeders.has('fixer')) notes.push('All heavy feeders: work in compost before planting and side-dress mid-season.');
+  if (feeders.size === 1 && feeders.has('heavy')) notes.push('All heavy feeders: work in compost before planting and side-dress mid-season.');
   if (input.history.some((h) => h.family === 'Fabaceae' && h.year === input.year - 1)) notes.push('Last year’s legumes left extra nitrogen: a good spot for heavy feeders.');
   return {
     picks: chosen.map((c) => ({ plantId: c.p.id, share: each, score: Math.round(c.score), reasons: c.reasons })),

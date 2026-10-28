@@ -13,7 +13,7 @@ import {
   HOUSING_KINDS, animalById, ackKey, safetyNotesFor, safetyProximity, type SafetyNote, type SafetyWarning,
   type Design, type DesignObject, type DesignWarning, type LocalFrame, type ObjectCategory, type ScenarioSeason, type SitingTarget,
 } from '@plotwright/core';
-import { OPENFREEMAP_STYLE_URL, STATE_IMAGERY, USGS_HILLSHADE, USGS_IMAGERY, USGS_NAIP_PLUS, imageryFor, maxUsefulZoom, solarClimatology, type ImageryChoice } from '@plotwright/providers';
+import { OPENFREEMAP_STYLE_URL, STATE_IMAGERY, USGS_HILLSHADE, USGS_IMAGERY, USGS_NAIP_PLUS, imageryFor, mapMaxZoom, solarClimatology, type ImageryChoice } from '@plotwright/providers';
 import { http } from '../../src/services/http';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -320,12 +320,18 @@ export default function DesignScreen() {
       setSelectedHerdId(null);
       setTab('selected');
       // Frame the object with ~40 m around it: close enough to work on, not past the detail the aerial imagery has.
+      // If it's already in view (say the user zoomed in close to tap it), leave the camera where they put it.
       const ring = objectsGeo?.features.find((f) => f.properties.id === fid)?.geometry.coordinates[0];
       if (ring) {
         const lons = ring.map((p) => p[0]!), lats = ring.map((p) => p[1]!);
         const lat = (Math.min(...lats) + Math.max(...lats)) / 2;
         const dLat = 40 / 111_320, dLon = 40 / (111_320 * Math.cos((lat * Math.PI) / 180));
-        cameraRef.current?.fitBounds([Math.min(...lons) - dLon, Math.min(...lats) - dLat, Math.max(...lons) + dLon, Math.max(...lats) + dLat], { padding: CAMERA_PADDING, duration: 500 });
+        const frame = () => cameraRef.current?.fitBounds([Math.min(...lons) - dLon, Math.min(...lats) - dLat, Math.max(...lons) + dLon, Math.max(...lats) + dLat], { padding: CAMERA_PADDING, duration: 500 });
+        void (mapRef.current?.getBounds() ?? Promise.reject(new Error('no map'))).then(([w, s, e, n]) => {
+          const inView = Math.min(...lons) >= w && Math.max(...lons) <= e && Math.min(...lats) >= s && Math.max(...lats) <= n;
+          const closer = (n - s) < 2 * dLat; // the view spans less than the 40 m framing would
+          if (!(inView && closer)) frame();
+        }).catch(frame);
       }
     }
   };
@@ -394,7 +400,7 @@ export default function DesignScreen() {
           attribution
           onPress={(e) => onMapPress(e.nativeEvent.lngLat[0], e.nativeEvent.lngLat[1])}
         >
-          <Camera ref={cameraRef} initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding: CAMERA_PADDING }} maxZoom={layers.imagery ? maxUsefulZoom(imageryRes, (b[1] + b[3]) / 2) : 21} />
+          <Camera ref={cameraRef} initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding: CAMERA_PADDING }} maxZoom={layers.imagery ? mapMaxZoom(imageryRes, (b[1] + b[3]) / 2) : 23} />
           {layers.imagery && offlineImagery && (
             <RasterSource id="img-offline" tiles={[offlineImagery.template]} tileSize={256} maxzoom={offlineImagery.maxZoom} attribution={USGS_IMAGERY.attribution}>
               <Layer type="raster" id="img-offline-l" />
@@ -1078,7 +1084,8 @@ function ScenariosPanel({ design, frame, allowed, onOpen, onMain }: {
 }
 
 const styles = StyleSheet.create({
-  map: { height: '48%' },
+  // Badges are native views: clip them so one near the edge can't draw over the tabs below.
+  map: { height: '48%', overflow: 'hidden' },
   zoomAll: { position: 'absolute', top: 8, right: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
   banner: { position: 'absolute', top: 8, left: 8, right: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderRadius: 10 },
   tabs: { flexDirection: 'row', borderBottomWidth: 1 },

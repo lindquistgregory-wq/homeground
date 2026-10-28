@@ -1,23 +1,25 @@
 /**
  * Home's homestead map: the property on aerial imagery with every design object drawn on it, small
  * animals walking around the housing they live in, and free-roaming animals (a guardian dog, barn
- * cats) wandering the property. Objects carry no labels, so the map stays clean; tap one for its name. The map holds still (no pan or zoom) so it reads like a picture and
- * the page scrolls; tap an object to see what's in it.
+ * cats) wandering the property. Objects carry no labels, so the map stays clean; tap one for its name and
+ * what's in it. It opens on the whole property; pinch or double-tap to look closer, then drag to pan.
  *
  * The animals walk on a layer above the map: their homes are projected to screen points once the map
  * has settled, then each animal is animated natively from there, so the map itself never re-renders.
  */
-import { Camera, GeoJSONSource, Layer, Map, RasterSource, type MapRef } from '@maplibre/maplibre-react-native';
+import { Camera, GeoJSONSource, Layer, Map, RasterSource, type CameraRef, type MapRef } from '@maplibre/maplibre-react-native';
 import { bbox, footprintLonLat, frameForBoundary, objectType, type Areal, type Design } from '@plotwright/core';
-import { OPENFREEMAP_STYLE_URL, imageryFor, maxUsefulZoom, type ImageryChoice } from '@plotwright/providers';
+import { OPENFREEMAP_STYLE_URL, imageryFor, mapMaxZoom, type ImageryChoice } from '@plotwright/providers';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import Svg from 'react-native-svg';
 import type { Herd } from '../db/herds';
 import { isCurrent } from '../services/animals';
 import { animalById } from '@plotwright/core';
 import { artForAnimal, drawAnimal } from './AnimalArt';
 import { CATEGORY_COLOR } from './objectIcons';
+import { Text } from './Text';
+import { tapFeedback, useTheme } from './ui';
 
 /** Kinds of animal that don't walk about on the map (fish stay in the pond, worms in the bin). */
 const STILL = new Set(['aquatic', 'invertebrate']);
@@ -26,10 +28,13 @@ const MAX_PER_GROUP = 3;
 
 export interface HomeMapPadding { top: number; right: number; bottom: number; left: number }
 
-export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'best', selectedId, onSelect, padding, children }: {
+export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'best', selectedId, onSelect, padding, onHoldPage, children }: {
   boundary: Areal; design: Design | undefined; herds: Herd[]; stateFips?: string; imageryChoice?: ImageryChoice;
-  selectedId: string | null; onSelect: (objectId: string | null) => void; padding: HomeMapPadding; children?: ReactNode;
+  selectedId: string | null; onSelect: (objectId: string | null) => void; padding: HomeMapPadding;
+  /** The map needs the page to stop scrolling (a pinch, or zoomed in and panning), or can let it go. */
+  onHoldPage?: (hold: boolean) => void; children?: ReactNode;
 }) {
+  const t = useTheme();
   const mapRef = useRef<MapRef>(null);
   // A tap on an object also reaches the map; the map's own tap (which closes the popup) skips it.
   const objectTapAt = useRef(0);
@@ -73,7 +78,8 @@ export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'b
   const [screen, setScreen] = useState<{ homes: Array<{ x: number; y: number; r: number }>; box: { x0: number; y0: number; x1: number; y1: number } } | null>(null);
   // Native project() crashes on a map view that has gone (or not finished loading): ask only while it's live.
   const live = useRef({ loaded: false, mounted: true });
-  useEffect(() => () => { live.current.mounted = false; }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => () => { live.current.mounted = false; onHoldPage?.(false); }, []);
   const measure = async () => {
     const m = mapRef.current;
     if (!m || !live.current.loaded || !live.current.mounted) return;
@@ -92,16 +98,40 @@ export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'b
   useEffect(() => { void measure(); /* re-project when the animals change */ // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homes]);
 
+  // Pinch or double-tap to look closer (past sharp imagery: blurry, but small objects get big enough to see).
+  // Zoomed in, the map pans and the page holds still; at the whole-property view a drag scrolls the page.
+  const cameraRef = useRef<CameraRef>(null);
+  const fitZoom = useRef<number | undefined>(undefined);
+  const [zoomed, setZoomedState] = useState(false);
+  const zoomedRef = useRef(false);
+  const [moving, setMoving] = useState(false);
+  const holdPage = (hold: boolean) => onHoldPage?.(hold);
+  const setZoomed = (z: boolean) => {
+    if (z === zoomedRef.current) return;
+    zoomedRef.current = z;
+    setZoomedState(z);
+    holdPage(z);
+  };
+
   const [still, setStill] = useState(false);
   useEffect(() => { void AccessibilityInfo.isReduceMotionEnabled().then(setStill).catch(() => undefined); }, []);
 
   return (
-    <View style={StyleSheet.absoluteFill}>
+    <View style={StyleSheet.absoluteFill}
+      // A second finger means a pinch: hold the page still so the map gets it.
+      onTouchStart={(e) => { if (e.nativeEvent.touches.length > 1) holdPage(true); }}
+      onTouchEnd={(e) => { if (e.nativeEvent.touches.length === 0) holdPage(zoomedRef.current); }}>
       <Map ref={mapRef} style={StyleSheet.absoluteFill} mapStyle={OPENFREEMAP_STYLE_URL} attribution logoPosition={{ bottom: 8, left: 8 }} attributionPosition={{ bottom: 8, left: 92 }}
-        dragPan={false} touchZoom={false} doubleTapZoom={false} doubleTapHoldZoom={false} touchRotate={false} touchPitch={false}
-        onRegionDidChange={() => void measure()} onDidFinishLoadingMap={() => { live.current.loaded = true; void measure(); }}
+        dragPan={zoomed} touchZoom doubleTapZoom doubleTapHoldZoom={false} touchRotate={false} touchPitch={false}
+        onRegionWillChange={(e) => { if (e.nativeEvent.userInteraction) setMoving(true); }}
+        onRegionDidChange={(e) => { setMoving(false); setZoomed(fitZoom.current !== undefined && e.nativeEvent.zoom > fitZoom.current + 0.25); void measure(); }}
+        onDidFinishLoadingMap={() => {
+          live.current.loaded = true;
+          void mapRef.current?.getZoom().then((z) => { if (live.current.mounted) fitZoom.current = z; }).catch(() => undefined);
+          void measure();
+        }}
         onPress={() => { if (Date.now() - objectTapAt.current > 400) onSelect(null); }}>
-        <Camera initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding }} maxZoom={maxUsefulZoom(res, (b[1] + b[3]) / 2)} />
+        <Camera ref={cameraRef} initialViewState={{ bounds: [b[0], b[1], b[2], b[3]], padding }} maxZoom={mapMaxZoom(res, (b[1] + b[3]) / 2)} />
         <RasterSource id="home-img" tiles={imagery.tiles} tileSize={imagery.tileSize} maxzoom={imagery.maxzoom} attribution={imagery.attribution}>
           <Layer type="raster" id="home-img-l" />
         </RasterSource>
@@ -117,10 +147,17 @@ export function HomeMap({ boundary, design, herds, stateFips, imageryChoice = 'b
 
       {/* Animals: drawn above the map, never catching touches. */}
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        {screen && homes.map((h, i) => Array.from({ length: h.count }, (_, k) => (
+        {screen && !moving && homes.map((h, i) => Array.from({ length: h.count }, (_, k) => (
           <Walker key={`${h.key}-${k}`} speciesId={h.speciesId} home={screen.homes[i]!} box={screen.box} roam={h.roam} still={still} seed={i * 7 + k} />
         )))}
       </View>
+      {zoomed && !selectedId && (
+        <Pressable accessibilityRole="button" accessibilityLabel="Show the whole property"
+          onPress={() => { tapFeedback(); cameraRef.current?.fitBounds([b[0], b[1], b[2], b[3]], { padding, duration: 500 }); }}
+          style={[styles.zoomAll, { backgroundColor: t.card, borderColor: t.border }]}>
+          <Text style={{ color: t.accent, fontWeight: '600' }}>⤢ Whole property</Text>
+        </Pressable>
+      )}
       {children}
     </View>
   );
@@ -187,4 +224,5 @@ function Walker({ speciesId, home, box, roam, still, seed }: {
 
 const styles = StyleSheet.create({
   shadow: { position: 'absolute', height: 4, borderRadius: 2, backgroundColor: 'rgba(0,0,0,0.28)' },
+  zoomAll: { position: 'absolute', right: 12, bottom: 12, minHeight: 40, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, elevation: 4 },
 });
