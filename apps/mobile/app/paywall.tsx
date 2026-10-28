@@ -59,7 +59,8 @@ export default function Paywall() {
   const plans = useMemo(() => (products ? buildPlans(products, platform, eligible) : []), [products, platform, eligible]);
   const removeAds = products?.find((p) => p.id === PRODUCT_IDS.removeAds);
   const chosen = plans.find((p) => p.productId === selected) ?? defaultPlan(plans);
-  const reward = feature && canOfferReward(feature, entitlements, adsReady) ? feature : undefined;
+  // Offered only when a rewarded ad unit exists, so the button can't promise an ad that never loads.
+  const reward = feature && ads.unitId('rewarded') && canOfferReward(feature, entitlements, adsReady) ? feature : undefined;
 
   const buy = async (plan: Pick<PaywallPlan, 'productId' | 'offerTokenAndroid'>) => {
     // A one-time purchase doesn't end a subscription: say so before charging.
