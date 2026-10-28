@@ -57,6 +57,25 @@ test('proximity: fences and structures near the boundary, trees that outgrow the
   assert.equal(safetyProximity([pond], frame, { parcelInFloodZone: false }).length, 0);
 });
 
+test('proximity: toxic plantings within reach of the animals housed nearby are flagged on both', () => {
+  const coop = at('chicken-coop', 0, 0, 'coop');
+  const bed = at('raised-bed', 6, 0, 'bed');
+  const farBed = at('raised-bed', 40, 0, 'far');
+  const kennel = at('kennel', 0, 30, 'kennel');
+  const grapes = at('raised-bed', 4, 30, 'grapes');
+  const hens = { id: 'laying_hens', kind: 'poultry' as const, commonName: 'Laying hens' };
+  const dog = { id: 'guardian_dog', kind: 'working' as const, commonName: 'Livestock guardian dog' };
+  const w = safetyProximity([coop, bed, farBed, kennel, grapes], frame, {
+    plantsByObject: { bed: ['avocado', 'lettuce'], far: ['avocado'], grapes: ['grape'] },
+    animalsByObject: { coop: [hens], kennel: [dog] },
+    plantName: (id) => id.charAt(0).toUpperCase() + id.slice(1),
+  }).filter((x) => x.kind === 'toxic-near-animals');
+  assert.deepEqual(w.map((x) => x.objectId).sort(), ['bed', 'coop', 'grapes', 'kennel']);
+  assert.match(w.find((x) => x.objectId === 'coop')!.message, /Avocado .* for laying hens/);
+  assert.ok(!w.some((x) => x.message.includes('Lettuce')), 'only plants listed as toxic to that animal');
+  assert.match(w.find((x) => x.objectId === 'kennel')!.message, /Grape .* for livestock guardian dog/);
+});
+
 test('toxicity: every entry is a real plant with a source, and lines merge per animal', () => {
   const ids = new Set(PLANTS.map((p) => p.id));
   for (const [id, entries] of Object.entries(TOXICITY)) {

@@ -10,7 +10,7 @@ import {
   OBJECT_LIBRARY, bbox, estimatePv, footprintAreaM2, footprintLonLat, formatArea, formatLength, materialList, newObject, objectType,
   project, siteSuitability, snapRotationToBoundary, snapToContour, snapToGridM, unproject, validateDesign,
   SCENARIO_SEASONS, compareScenarios, scenarioLabel, sunPeriodForSeason,
-  HOUSING_KINDS, animalById, ackKey, safetyNotesFor, safetyProximity, type SafetyNote, type SafetyWarning,
+  HOUSING_KINDS, animalById, ackKey, plantById, safetyNotesFor, safetyProximity, type AnimalKind, type SafetyNote, type SafetyWarning,
   type Design, type DesignObject, type DesignWarning, type LocalFrame, type ObjectCategory, type ScenarioSeason, type SitingTarget,
 } from '@plotwright/core';
 import { OPENFREEMAP_STYLE_URL, STATE_IMAGERY, USGS_HILLSHADE, USGS_IMAGERY, USGS_NAIP_PLUS, imageryFor, mapMaxZoom, solarClimatology, type ImageryChoice } from '@plotwright/providers';
@@ -357,10 +357,22 @@ export default function DesignScreen() {
     () => (design && frame && parcel ? validateDesign(design.objects.filter((o) => !o.existing), { boundary: parcel.geometry, setbackM, slope: analysis?.slope, maxStructureSlopeDeg: 10, units }, frame) : []),
     [design, frame, parcel, setbackM, analysis, units],
   );
-  const safetyWarnings: SafetyWarning[] = useMemo(
-    () => (design && frame && parcel ? safetyProximity(design.objects, frame, { boundary: parcel.geometry, units, parcelInFloodZone: siteCtx.flood }) : []),
-    [design, frame, parcel, units, siteCtx.flood],
-  );
+  const safetyWarnings: SafetyWarning[] = useMemo(() => {
+    if (!design || !frame || !parcel) return [];
+    // What grows where this year, and who lives where, for the toxic-plants-near-animals check.
+    const year = new Date().getFullYear();
+    const plantsByObject: Record<string, string[]> = {};
+    for (const p of activePlantings(plantings, year)) (plantsByObject[p.bedObjectId] ??= []).push(p.plantId);
+    const animalsByObject: Record<string, Array<{ id: string; kind: AnimalKind; commonName: string }>> = {};
+    for (const h of herds) {
+      const a = h.designId === design.id && h.objectId && (h.status === 'active' || h.status === 'planned') ? animalById(h.speciesId) : undefined;
+      if (a) (animalsByObject[h.objectId!] ??= []).push(a);
+    }
+    return safetyProximity(design.objects, frame, {
+      boundary: parcel.geometry, units, parcelInFloodZone: siteCtx.flood, plantsByObject, animalsByObject,
+      plantName: (id) => plantById(id)?.commonName ?? id,
+    });
+  }, [design, frame, parcel, units, siteCtx.flood, plantings, herds]);
   const summary = analysis && sun ? sunSummary(analysis, sun.hours) : null;
 
   const runSiting = (target: SitingTarget) => {
@@ -889,7 +901,7 @@ function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSna
       <Body muted>{o.path && o.shape === 'line' ? `${formatLength(o.length, units)} long` : formatArea(areaM2, units)}{o.existing ? ' · existing feature from map data' : ''}{planted ? ` · ${planted} planting${planted === 1 ? '' : 's'} this year` : ''}{housed.length ? ` · ${housed.map((h) => herdLabel(h)).join(', ')}` : ''}</Body>
       {/* Point of use, but quiet: only notes still waiting for 'Got it' and distance problems sit up top. */}
       {notes.filter((n) => n.acknowledge && !acks[ackKey(n)]).map((n) => <SafetyNoteRow key={n.id} note={n} />)}
-      {safety.map((w) => <SafetyLine key={w.kind} text={w.message} caution={w.level === 'caution'} />)}
+      {safety.map((w, i) => <SafetyLine key={`${w.kind}-${i}`} text={w.message} caution={w.level === 'caution'} />)}
       {bedContents ?? (onPlan && <Button title={o.kind === 'vineyard-row' ? 'Plan this row: grapes and vines' : o.kind === 'orchard' ? 'Plan this orchard: fruit and nut trees' : 'Plan this bed: what grows best here'} onPress={onPlan} />)}
       {onHouse && <Button title={housed.length ? 'Animals here: capacity and care' : 'Plan animals here: who fits and how many'} icon="paw" onPress={onHouse} />}
       {!o.polygon && o.shape === 'rect' && <Stepper label="Length" value={o.length} step={step} min={0.3} units={units} onChange={(v) => onPatch({ length: v })} />}
