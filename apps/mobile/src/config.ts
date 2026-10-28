@@ -2,7 +2,10 @@
  * App-wide constants. NWS and Nominatim ask API users for a way to reach
  * the app's maintainer if requests misbehave. It is sent in the User-Agent, never any user data.
  */
-export const APP_VERSION = '0.1.0';
+import appJson from '../app.json';
+
+/** The version people see in the store, from app.json, so it can't drift from the release. */
+export const APP_VERSION: string = appJson.expo.version;
 export const CONTACT_EMAIL = 'handlenterprises1988@gmail.com';
 export const PROJECT_URL = 'https://github.com/lindquistgregory-wq/homeground';
 /** NWS asks for contact info in the User-Agent; Nominatim accepts an email parameter. */

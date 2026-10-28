@@ -12,7 +12,9 @@ import * as SecureStore from 'expo-secure-store';
 
 const KEY = 'ai.claudeApiKey';
 /** The current Claude model; low effort keeps a short JSON answer quick and cheap for the key owner. */
-const CLAUDE_MODEL = 'claude-opus-5-5';
+// A small structured pick from a short candidate list: a mid-size model does it well at a fraction of
+// the cost to the user's own key.
+const CLAUDE_MODEL = 'claude-sonnet-5-5';
 
 export type AiSource = 'device' | 'claude';
 

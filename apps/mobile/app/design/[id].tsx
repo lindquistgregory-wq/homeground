@@ -717,7 +717,8 @@ export default function DesignScreen() {
             {layers.contours && (
               <View style={styles.row}>
                 {(units === 'imperial' ? [[0.3048, '1 ft'], [0.6096, '2 ft'], [1.524, '5 ft']] : [[0.25, '0.25 m'], [0.5, '0.5 m'], [1, '1 m']]).map(([v, l]) => (
-                  <Pressable key={String(l)} onPress={() => setContourInterval(v as number)} style={[styles.chip, { borderColor: contourInterval === v ? t.accent : t.border }]}>
+                  <Pressable key={String(l)} onPress={() => setContourInterval(v as number)} style={[styles.chip, { borderColor: contourInterval === v ? t.accent : t.border }]}
+                    accessibilityRole="button" accessibilityLabel={`Contour every ${l}`} accessibilityState={{ selected: contourInterval === v }}>
                     <Text style={{ color: t.text }}>{l}</Text>
                   </Pressable>
                 ))}
