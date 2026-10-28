@@ -232,7 +232,7 @@ export function projectDraft(project: PlanProject, plan: HomesteadPlan, id: stri
   if (!items.length) return null;
   const changes: DraftObject[] = items.flatMap((i) => i.draft!);
   const herd = items.find((i) => i.livestock)?.livestock;
-  return { id, summary: project.title, changes, why: project.why, createdBy: 'rules', ...(herd ? { herd } : {}) };
+  return { id, summary: project.title, changes, why: project.why, createdBy: 'rules', phase: project.phase, ...(herd ? { herd } : {}) };
 }
 
 /**
