@@ -3,6 +3,7 @@
  * offline and at launch), then asks the store; a successful store answer replaces the cache.
  * Rewarded-ad unlocks (24 h, one feature each) are kept on the device only.
  */
+import { AppState } from 'react-native';
 import { create } from 'zustand';
 import * as Crypto from 'expo-crypto';
 import {
@@ -17,6 +18,7 @@ import { track } from '../services/metrics';
 const CACHE_KEY = 'billing.cache';
 const REWARD_KEY = 'ads.rewarded';
 const ACCESS_KEY = 'access.grant';
+const SEEN_KEY = 'clock.seenAt';
 
 interface EntitlementState {
   cache: EntitlementCache | undefined;
@@ -44,8 +46,15 @@ let last: { key: string; ent: Entitlements } | undefined;
  * Resolve, but hand back the previous object when nothing changed, so screens that depend on
  * `entitlements` don't reload after every background store check.
  */
+/**
+ * The latest time this phone has seen. A clock set back can't stretch a time-limited unlock (access
+ * code, rewarded ad): expiry is checked against whichever is later, the clock or this.
+ */
+let seenNow = 0;
+const trustedNow = () => (seenNow = Math.max(seenNow, Date.now()));
+
 function resolve(cache: EntitlementCache | undefined, rewarded: RewardedUnlock[], access?: AccessGrant): Entitlements {
-  const now = Date.now();
+  const now = trustedNow();
   const transactions = [...(cache?.transactions ?? []), ...accessGrantTransactions(access, new Date(now))];
   const ent = resolveEntitlements(transactions, { model: BUSINESS_MODEL, rewarded, now: new Date(now) });
   const live = rewarded.filter((r) => Date.parse(r.expiresAt) > now).map((r) => r.feature).sort().join(',');
@@ -81,13 +90,21 @@ export const useEntitlements = create<EntitlementState>((set, get) => ({
   async init() {
     await get().loadCached();
     firstCheck = get().refresh().catch(() => undefined);
+    // Time-limited unlocks lapse even if the app stays open: re-resolve whenever it comes back.
+    AppState.addEventListener('change', (s) => {
+      if (s !== 'active') return;
+      set({ entitlements: resolve(get().cache, get().rewarded, get().access) });
+      void kvSet(SEEN_KEY, String(seenNow)).catch(() => undefined);
+    });
   },
 
   async loadCached() {
     const cache = await readJson<EntitlementCache>(CACHE_KEY);
     const rewarded = (await readJson<RewardedUnlock[]>(REWARD_KEY)) ?? [];
     const access = await readJson<AccessGrant>(ACCESS_KEY);
+    seenNow = Math.max(seenNow, Number((await kvGet(SEEN_KEY)) ?? 0));
     set({ cache, rewarded, access, entitlements: resolve(cache, rewarded, access) });
+    await kvSet(SEEN_KEY, String(seenNow));
   },
 
   async refresh() {
