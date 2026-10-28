@@ -31,8 +31,10 @@ export async function homesteadDesign(parcelId: string): Promise<Design | undefi
   return d && d.objects.some((o) => !o.existing) ? d : undefined;
 }
 
-export function HomeHomestead({ parcel, profile, brief, height, topInset }: {
+export function HomeHomestead({ parcel, profile, brief, height, topInset, onHoldPage }: {
   parcel: ParcelRecord; profile?: SiteProfile; brief: DailyBrief | null | undefined; height: number; topInset: number;
+  /** The map wants the page to stop scrolling while it's pinched or zoomed in. */
+  onHoldPage?: (hold: boolean) => void;
 }) {
   const t = useTheme();
   const units = useSettings((s) => s.units);
@@ -81,7 +83,7 @@ export function HomeHomestead({ parcel, profile, brief, height, topInset }: {
   return (
     <View style={{ height }}>
       <HomeMap boundary={parcel.geometry} design={design} herds={animalsOn ? herds : []} stateFips={profile?.place.stateFips} imageryChoice={imagery}
-        selectedId={selected} onSelect={(id) => setSelected(id)} padding={{ top: topInset + 76, right: ribbon ? 84 : 28, bottom: 28, left: 20 }} />
+        selectedId={selected} onSelect={(id) => setSelected(id)} padding={{ top: topInset + 76, right: ribbon ? 84 : 28, bottom: 28, left: 20 }} onHoldPage={onHoldPage} />
       {/* A soft band under the status bar so the clock and icons stay readable over the imagery. */}
       <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: topInset, backgroundColor: 'rgba(0,0,0,0.28)' }} />
 

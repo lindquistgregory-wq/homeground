@@ -150,6 +150,11 @@ test('suitability: explainable factors, hard fails and sun', () => {
   assert.equal(zoneNumber('6b'), 6.5);
   const ranked = rankPlants([p('lettuce'), p('watermelon'), p('tomato')], site, { sunHours: 4.5 });
   assert.equal(ranked[0]!.plantId, 'lettuce', 'lettuce wins a part-shade bed');
+  // Below its minimum sun a plant rates poor at best, however good the rest is (a shady demo berry row rated "good").
+  const goodSoil = { pH: 5.5, drainageClass: 'Well drained', texture: 'Sandy loam' };
+  const shadyBerry = scorePlant(p('blackberry'), site, { sunHours: 1.9, soil: goodSoil });
+  assert.equal(shadyBerry.verdict, 'poor', `${shadyBerry.verdict} ${shadyBerry.score}`);
+  assert.ok(scorePlant(p('blackberry'), site, { sunHours: 6, soil: goodSoil }).score > 54, 'at its minimum it is not capped');
 });
 
 test('§14 acceptance: a 10 ft shed south of a bed lowers its December sun and the full-sun score, with a reason', () => {

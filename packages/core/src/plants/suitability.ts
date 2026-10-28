@@ -201,6 +201,9 @@ export function scorePlant(
   const wSum = factors.reduce((s, f) => s + f.weight, 0);
   let score = wSum > 0 ? (100 * factors.reduce((s, f) => s + f.score * f.weight, 0)) / wSum : 50;
   if (hardFails.length) score = Math.min(score, 20);
+  // Less sun than the plant's minimum means a poor crop whatever else is right, so it can't rate better
+  // than poor (otherwise good soil and climate average a shady bed up to "good").
+  if (bed.sunHours !== undefined && bed.sunHours < plant.sunHours.min) score = Math.min(score, 54);
   const verdict: Suitability['verdict'] = hardFails.length ? 'not-suitable' : score >= 85 ? 'great' : score >= 70 ? 'good' : score >= 55 ? 'fair' : 'poor';
   // Lead with the biggest problems (lowest score × weight first).
   const concerns = factors

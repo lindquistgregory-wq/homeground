@@ -121,6 +121,14 @@ export function maxUsefulZoom(resolutionM: number, latDeg: number): number {
   return Math.min(22, Math.max(15, Math.round((z + 0.5) * 10) / 10));
 }
 
+/** Levels the maps zoom past maxUsefulZoom: the imagery blurs, but small objects get big enough to see and tap. */
+export const ZOOM_PAST_IMAGERY = 2;
+
+/** The deepest zoom the maps allow over imagery of this resolution (MapLibre draws to about 24; 23 keeps a margin). */
+export function mapMaxZoom(resolutionM: number, latDeg: number): number {
+  return Math.min(23, Math.round((maxUsefulZoom(resolutionM, latDeg) + ZOOM_PAST_IMAGERY) * 10) / 10);
+}
+
 /**
  * Layers saved in an offline parcel pack (Pro): the aerial imagery the maps draw. Only USGS services, which are public domain and
  * publish `exportTilesAllowed: true` (checked 2026-09-29). Saved to zoom 16, the deepest scale the
