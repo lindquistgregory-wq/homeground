@@ -111,7 +111,16 @@ export async function queryParcelAt(http: HttpClient, endpoint: ParcelEndpoint, 
     outSR: '4326',
     f: 'json',
   });
-  const { data } = await http.json<EsriQueryResponse>(`${endpoint.url.replace(/\/+$/, '')}/query?${q}`, { ttlMs: TTL.parcel });
+  const { data } = await http.json<EsriQueryResponse>(`${endpoint.url.replace(/\/+$/, '')}/query?${q}`, {
+    ttlMs: TTL.parcel,
+    // Strip every attribute except the allow-listed id/acreage before the response is cached, so owner
+    // names or addresses from a server that ignores outFields never reach the device.
+    transform: (body) => {
+      const d = JSON.parse(body) as EsriQueryResponse;
+      for (const f of d.features ?? []) f.attributes = sanitizeAttributes(f.attributes ?? {}, outFields);
+      return JSON.stringify(d);
+    },
+  });
   if (data.error) throw new HttpError(`Parcel service error: ${data.error.message ?? data.error.code}`, null, false, endpoint.url);
 
   const out: ParcelCandidate[] = [];

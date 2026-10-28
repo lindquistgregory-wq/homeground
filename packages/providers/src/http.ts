@@ -89,6 +89,8 @@ export interface RequestOptions {
   maxAttempts?: number;
   /** Validate a body before it is returned or cached; throw to reject it. */
   accept?: (body: string) => void;
+  /** Rewrite an accepted body before it is cached and returned (e.g. drop fields that must never be stored). */
+  transform?: (body: string) => string;
 }
 
 export interface HttpResult<T> {
@@ -177,6 +179,8 @@ export class HttpClient {
         parsed = d as T;
       },
     });
+    // With a transform, return what was stored (the transformed body), not the raw parse.
+    if (opts.transform && !res.fromCache) parsed = undefined;
     return { ...res, data: parsed ?? (JSON.parse(res.data) as T) };
   }
 
@@ -194,8 +198,9 @@ export class HttpClient {
       }
     }
     try {
-      const body = await this.fetchWithRetry(url, method, opts);
-      opts.accept?.(body); // throws before anything is cached
+      const raw = await this.fetchWithRetry(url, method, opts);
+      opts.accept?.(raw); // throws before anything is cached
+      const body = opts.transform ? opts.transform(raw) : raw;
       if (ttl > 0 && this.cache) {
         const storedAt = this.now();
         await this.cache.set(key, { value: body, storedAt, expiresAt: storedAt + ttl });
