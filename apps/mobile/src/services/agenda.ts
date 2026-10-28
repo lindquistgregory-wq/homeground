@@ -10,7 +10,7 @@ import {
 import { eventsForParcel } from '../db/calendarEvents';
 import { herdsForParcel } from '../db/herds';
 import { listProjectProgress, listTasks } from '../db/planner';
-import { allRecords, listAnimals } from '../db/records';
+import { allRecords, listAnimals, liveHealthRecords } from '../db/records';
 import { herdCalendars, herdLabel, localToday } from './animals';
 import { activePlantings, bedName, calendarFor } from './garden';
 import { healthSubjects } from './healthReminders';
@@ -71,7 +71,7 @@ export async function agendaFor(state: GardenState, opts: AgendaOptions): Promis
       if (b.dueTo! >= from && b.dueFrom! <= to)
         items.push({ id: `breed-${b.id}`, source: 'record', title: `${b.damId ? names.get(b.damId)?.name ?? 'Dam' : 'Eggs set'}: ${b.method === 'eggs-set' ? 'hatch' : 'due'}`, start: b.dueFrom!, end: b.dueTo !== b.dueFrom ? b.dueTo : undefined, animalId: b.speciesId, details: [`${b.method === 'eggs-set' ? 'Set' : 'Bred'} ${b.bredOn}`, 'The window covers the full cited range.'] });
     const who = await healthSubjects();
-    for (const d of healthDue((await allRecords('healthRecords')).filter((r) => r.parcelId === parcelId || !r.parcelId), today, 400)) {
+    for (const d of healthDue((await liveHealthRecords()).filter((r) => r.parcelId === parcelId || !r.parcelId), today, 400)) {
       const due = d.record.nextDue!;
       if (due < from || due > to) continue;
       const animal = d.record.animalId ? names.get(d.record.animalId) : undefined;

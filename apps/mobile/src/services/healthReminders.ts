@@ -9,7 +9,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { kvGet, kvSet } from '../db/database';
 import { herdsForParcel } from '../db/herds';
-import { allRecords, listAnimals } from '../db/records';
+import { allRecords, listAnimals, liveHealthRecords } from '../db/records';
 import { herdLabel, localToday } from './animals';
 
 const IDS_KEY = 'health.reminderIds';
@@ -41,16 +41,25 @@ export async function enableReminders(): Promise<boolean> {
 }
 
 let running: Promise<number> | null = null;
+let queued: Promise<number> | null = null;
 
-/** Cancel and re-create every health reminder from the stored records. Returns how many are scheduled. */
+/**
+ * Cancel and re-create every health reminder from the stored records. Returns how many are scheduled.
+ * A call made while one is running gets one more run after it, so a record saved meanwhile isn't missed.
+ */
 export function refreshHealthReminders(): Promise<number> {
-  running ??= (async () => {
+  if (running) {
+    const again = () => { queued = null; return refreshHealthReminders(); };
+    queued ??= running.then(again, again);
+    return queued;
+  }
+  running = (async () => {
     if (!(await remindersAllowed())) return 0;
     if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync(CHANNEL_ID, { name: 'Animal health reminders', importance: Notifications.AndroidImportance.DEFAULT });
     const old = JSON.parse((await kvGet(IDS_KEY)) ?? '[]') as string[];
     for (const id of old) await Notifications.cancelScheduledNotificationAsync(id).catch(() => undefined);
     const today = localToday();
-    const due = healthDue(await allRecords('healthRecords'), today, 400).filter((d) => d.days >= 0);
+    const due = healthDue(await liveHealthRecords(), today, 400).filter((d) => d.days >= 0);
     const nameOf = await healthSubjects();
     const ids: string[] = [];
     const at9 = (iso: string, minusDays: number) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y!, m! - 1, d! - minusDays, 9, 0, 0); };

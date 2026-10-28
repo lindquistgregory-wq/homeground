@@ -5,6 +5,7 @@
  */
 import type { AnimalLog, AnimalRecord, BreedingRecord, HealthRecord } from '@plotwright/core';
 import { getDb } from './database';
+import { allHerds } from './herds';
 import { clock, newId } from '../services/identity';
 
 export type RecordCollection = 'animals' | 'animalLogs' | 'breedingRecords' | 'healthRecords';
@@ -63,12 +64,25 @@ async function query<C extends RecordCollection>(c: C, where: string, ...args: A
 export const listAnimals = () => query('animals', '');
 export const getAnimal = async (id: string) => (await query('animals', 'id = ?', id))[0];
 export const animalsInHerd = (herdId: string) => query('animals', 'herd_id = ?', herdId);
+export const animalsForParcel = (parcelId: string) => query('animals', 'parcel_id = ?', parcelId);
 
 /** Records for one animal or one herd (the group's own records, not its members'). */
 export function recordsFor<C extends Exclude<RecordCollection, 'animals'>>(c: C, owner: { animalId?: string; herdId?: string }): Promise<Array<RecordOf<C>>> {
   return owner.animalId ? query(c, 'animal_id = ?', owner.animalId) : query(c, 'herd_id = ? AND animal_id IS NULL', owner.herdId ?? '');
 }
 export const allRecords = <C extends Exclude<RecordCollection, 'animals'>>(c: C) => query(c, '');
+
+/**
+ * Health records that should still raise due dates: the animal is still active (not sold, retired,
+ * deceased or processed) and the group still exists and hasn't left. History stays; it just stops
+ * reminding.
+ */
+export async function liveHealthRecords(): Promise<HealthRecord[]> {
+  const [records, animals, herds] = await Promise.all([allRecords('healthRecords'), listAnimals(), allHerds()]);
+  const activeAnimal = new Set(animals.filter((a) => a.status === 'active').map((a) => a.id));
+  const liveHerd = new Set(herds.filter((h) => h.status === 'active' || h.status === 'planned').map((h) => h.id));
+  return records.filter((r) => (r.animalId ? activeAnimal.has(r.animalId) : r.herdId ? liveHerd.has(r.herdId) : true));
+}
 
 /** Remove an animal and every record about it (so nothing about it keeps raising reminders). */
 export async function deleteAnimalAndRecords(id: string): Promise<void> {

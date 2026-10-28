@@ -26,6 +26,7 @@ import { deletePhotoFiles } from '../../src/services/photos';
 import { useGarden } from '../../src/services/useGarden';
 import { useSettings } from '../../src/services/settings';
 import { AlertsNudge } from '../../src/components/AlertsNudge';
+import { refreshHealthReminders } from '../../src/services/healthReminders';
 
 /** One colour per herd sharing the housing; distinct in both themes. */
 const HERD_COLORS = ['#7fb85a', '#d9a441', '#5aa1c8', '#c27ab8', '#c8735a'];
@@ -84,7 +85,7 @@ export default function HousingPlanner() {
   const remove = (h: Herd) =>
     Alert.alert('Remove herd?', `Remove ${herdLabel(h)} from ${name}?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(h.photos); await deleteHerd(h.id); await load(); } },
+      { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(h.photos); await deleteHerd(h.id); await refreshHealthReminders().catch(() => 0); await load(); } },
     ]);
 
   return (

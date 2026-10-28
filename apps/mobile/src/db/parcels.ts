@@ -5,8 +5,9 @@ import { getDb } from './database';
 import { clock, newId } from '../services/identity';
 import { deleteDesignsForParcel } from './designs';
 import { deletePlantingsForParcel } from './plantings';
-import { deleteHerdsForParcel } from './herds';
-import { deleteRecordsForParcel } from './records';
+import { deleteHerdsForParcel, herdsForParcel } from './herds';
+import { animalsForParcel, deleteRecordsForParcel } from './records';
+import { deletePhotoFiles } from '../services/photos';
 import { deleteEventsForParcel } from './calendarEvents';
 import { deletePlannerForParcel } from './planner';
 import { deleteSensorsForParcel } from './sensors';
@@ -102,18 +103,29 @@ export async function saveParcel(input: Omit<ParcelRecord, 'id' | 'createdAt' | 
 
 export async function deleteParcel(id: string): Promise<void> {
   const db = await getDb();
-  const hlc = clock().tick();
-  await db.runAsync('UPDATE parcels SET deleted = 1, updated_hlc = ? WHERE id = ?', hlc, id);
-  await db.runAsync('DELETE FROM site_profiles WHERE parcel_id = ?', id);
-  await db.runAsync("DELETE FROM sync_pending WHERE collection = 'siteProfiles' AND id = ?", id);
-  await markPending('parcels', id, hlc);
-  await deleteDesignsForParcel(id);
-  await deletePlantingsForParcel(id);
-  await deleteHerdsForParcel(id);
-  await deleteRecordsForParcel(id);
-  await deleteEventsForParcel(id);
-  await deletePlannerForParcel(id);
-  await deleteSecrets(await deleteSensorsForParcel(id));
+  // Photos of this property's groups and animals: their files go too, once the rows are gone.
+  const photos = [
+    ...(await herdsForParcel(id)).flatMap((h) => h.photos ?? []),
+    ...(await animalsForParcel(id)).flatMap((a) => a.photos ?? []),
+  ];
+  let sensorIds: string[] = [];
+  // One transaction, so a failure part-way leaves the property as it was rather than half deleted.
+  await db.withTransactionAsync(async () => {
+    const hlc = clock().tick();
+    await db.runAsync('UPDATE parcels SET deleted = 1, updated_hlc = ? WHERE id = ?', hlc, id);
+    await db.runAsync('DELETE FROM site_profiles WHERE parcel_id = ?', id);
+    await db.runAsync("DELETE FROM sync_pending WHERE collection = 'siteProfiles' AND id = ?", id);
+    await markPending('parcels', id, hlc);
+    await deleteDesignsForParcel(id);
+    await deletePlantingsForParcel(id);
+    await deleteHerdsForParcel(id);
+    await deleteRecordsForParcel(id);
+    await deleteEventsForParcel(id);
+    await deletePlannerForParcel(id);
+    sensorIds = await deleteSensorsForParcel(id);
+  });
+  await deleteSecrets(sensorIds);
+  deletePhotoFiles(photos);
 }
 
 export async function getSiteProfile(parcelId: string): Promise<SiteProfile | undefined> {

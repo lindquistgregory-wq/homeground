@@ -20,9 +20,16 @@ export async function ensureReminderPermission(): Promise<boolean> {
 }
 
 let running: Promise<number> | null = null;
+let queued: Promise<number> | null = null;
 
+/** Re-create event reminders; a call made while one is running gets one more run after it. */
 export function refreshEventReminders(): Promise<number> {
-  running ??= (async () => {
+  if (running) {
+    const again = () => { queued = null; return refreshEventReminders(); };
+    queued ??= running.then(again, again);
+    return queued;
+  }
+  running = (async () => {
     let granted = false;
     try { granted = (await Notifications.getPermissionsAsync()).granted; } catch { granted = false; }
     if (!granted) return 0;

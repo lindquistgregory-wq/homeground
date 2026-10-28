@@ -16,6 +16,7 @@ import { herdsForParcel, type Herd } from '../../src/db/herds';
 import { getAnimal, listAnimals, saveRecord } from '../../src/db/records';
 import { herdLabel, isCurrent } from '../../src/services/animals';
 import { useSettings } from '../../src/services/settings';
+import { refreshHealthReminders } from '../../src/services/healthReminders';
 
 const SEXES: Array<[AnimalSex, string]> = [['female', 'Female'], ['male', 'Male'], ['castrated', 'Castrated / spayed'], ['unknown', 'Not sure']];
 
@@ -61,6 +62,8 @@ export default function EditAnimal() {
     };
     if (orig) await saveRecord('animals', { ...base, id: orig.id });
     else for (let i = 1; i <= n; i++) await saveRecord('animals', { ...base, name: n > 1 ? `${base.name} ${i}` : base.name });
+    // A status change (sold, deceased…) stops or restarts that animal's health reminders.
+    await refreshHealthReminders().catch(() => 0);
     router.back();
   };
 

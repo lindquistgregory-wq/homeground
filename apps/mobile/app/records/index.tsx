@@ -17,9 +17,9 @@ import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { deleteHerd, herdsForParcel, type Herd } from '../../src/db/herds';
 import { getDesign } from '../../src/db/designs';
 import { listParcels, type ParcelRecord } from '../../src/db/parcels';
-import { allRecords, listAnimals, saveRecord } from '../../src/db/records';
+import { allRecords, listAnimals, liveHealthRecords, saveRecord } from '../../src/db/records';
 import { herdCount, herdLabel, isCurrent, localToday } from '../../src/services/animals';
-import { enableReminders, healthSubjects, remindersAllowed, speciesName } from '../../src/services/healthReminders';
+import { enableReminders, healthSubjects, refreshHealthReminders, remindersAllowed, speciesName } from '../../src/services/healthReminders';
 import { exportRecords, type RecordsExport } from '../../src/services/recordsExport';
 import { useSettings } from '../../src/services/settings';
 import { deletePhotoFiles } from '../../src/services/photos';
@@ -52,7 +52,7 @@ export default function MyAnimals() {
     }
     const today = localToday();
     const who = await healthSubjects();
-    const due = healthDue(await allRecords('healthRecords'), today, 30).map((d) => ({ ...d, who: who(d.record) }));
+    const due = healthDue(await liveHealthRecords(), today, 30).map((d) => ({ ...d, who: who(d.record) }));
     const eggsToday = new Map((await allRecords('animalLogs')).filter((l) => l.kind === 'eggs' && l.date === today && l.herdId && !l.animalId).map((l) => [l.herdId!, l]));
     setData({ parcels, herds, orphans, animals, due, eggsToday, reminders: await remindersAllowed() });
   }, []);
@@ -147,7 +147,7 @@ export default function MyAnimals() {
             {data.orphans.has(h.id) && (
               <View style={{ marginVertical: 4 }}>
                 <Text style={{ color: t.warn }}>Its housing is no longer in the design, so it gets no capacity checks or weather alerts.</Text>
-                <Chip label="Remove this group" active={false} onPress={() => Alert.alert('Remove group?', `Remove ${herdLabel(h, sp)}? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(h.photos); await deleteHerd(h.id); await load(); } }])} />
+                <Chip label="Remove this group" active={false} onPress={() => Alert.alert('Remove group?', `Remove ${herdLabel(h, sp)}? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(h.photos); await deleteHerd(h.id); await refreshHealthReminders().catch(() => 0); await load(); } }])} />
               </View>
             )}
             {members.map(row)}

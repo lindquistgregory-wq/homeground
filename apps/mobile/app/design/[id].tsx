@@ -52,6 +52,7 @@ import { newId } from '../../src/services/identity';
 import { useSettings } from '../../src/services/settings';
 import { SafetyLine, SafetyNoteRow } from '../../src/components/SafetyNote';
 import { useSafetyAcks } from '../../src/services/safetyAcks';
+import { refreshHealthReminders } from '../../src/services/healthReminders';
 
 type Tab = 'add' | 'selected' | 'sun' | 'layers' | 'plan';
 
@@ -593,6 +594,7 @@ export default function DesignScreen() {
                 if (housed.length) {
                   housed.forEach((h) => deletePhotoFiles(h.photos));
                   await deleteHerdsForObject(design.id, selected.id);
+                  void refreshHealthReminders().catch(() => 0);
                   setHerds((hs) => hs.filter((h) => h.objectId !== selected.id));
                 }
               };
@@ -616,7 +618,7 @@ export default function DesignScreen() {
             onMove={() => setMovingHerd(selectedHerd.id)}
             onRecords={() => router.push({ pathname: '/records/[id]', params: { id: selectedHerd.id, type: 'herd', parcelId: parcel.id } })}
             onCare={() => router.push({ pathname: '/animals/[animalId]', params: { animalId: selectedHerd.speciesId, parcelId: parcel.id } })}
-            onRemove={() => Alert.alert('Remove animals?', `Remove ${herdLabel(selectedHerd)} from the map? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(selectedHerd.photos); await deleteHerd(selectedHerd.id); setHerds((hs) => hs.filter((x) => x.id !== selectedHerd.id)); setSelectedHerdId(null); } }])} />
+            onRemove={() => Alert.alert('Remove animals?', `Remove ${herdLabel(selectedHerd)} from the map? Records for individual animals stay.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Remove', style: 'destructive', onPress: async () => { deletePhotoFiles(selectedHerd.photos); await deleteHerd(selectedHerd.id); void refreshHealthReminders().catch(() => 0); setHerds((hs) => hs.filter((x) => x.id !== selectedHerd.id)); setSelectedHerdId(null); } }])} />
         ) : <Body muted>Tap an object or animals on the map to edit them.</Body>)}
 
         {tab === 'sun' && (

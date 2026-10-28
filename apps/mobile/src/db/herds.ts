@@ -49,6 +49,12 @@ export async function herdsForParcel(parcelId: string): Promise<Herd[]> {
   return (await db.getAllAsync<Row>('SELECT * FROM herds WHERE parcel_id = ? AND deleted = 0 ORDER BY created_at', parcelId)).map(fromRow);
 }
 
+/** Every group on every property (not deleted). */
+export async function allHerds(): Promise<Herd[]> {
+  const db = await getDb();
+  return (await db.getAllAsync<Row>('SELECT * FROM herds WHERE deleted = 0 ORDER BY created_at')).map(fromRow);
+}
+
 export async function herdsForObject(designId: string, objectId: string): Promise<Herd[]> {
   const db = await getDb();
   return (await db.getAllAsync<Row>('SELECT * FROM herds WHERE design_id = ? AND object_id = ? AND deleted = 0 ORDER BY created_at', designId, objectId)).map(fromRow);
