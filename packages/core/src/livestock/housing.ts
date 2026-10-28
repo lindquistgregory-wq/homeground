@@ -9,7 +9,7 @@ import type { LocalFrame } from '../geo/measure';
 import { formatDoy } from '../climate/normals';
 import type { AnimalEvent } from './calendar';
 import { housingCapacity, type Capacity } from './capacity';
-import { FREEZE_F, heatStress } from './safetyDefaults';
+import { FREEZE_F, fallbackHeatOnset, heatStress } from './safetyDefaults';
 import type { AnimalSpec } from './types';
 
 export interface HousedHerd { herdId: string; animal: AnimalSpec; count: number }
@@ -61,6 +61,9 @@ export function housingSensorLimits(animals: AnimalSpec[]): SensorLimits {
   }
   if (animals.some((a) => a.heat.airOnsetF === undefined && a.heat.thiOnset !== undefined))
     basis.push('For animals rated by heat index (THI), the sensor’s own humidity is used too.');
+  const fallback = animals.filter((a) => fallbackHeatOnset(a) !== undefined);
+  if (fallback.length)
+    basis.push(`No heat figure is sourced for ${fallback.map((a) => a.commonName.toLowerCase()).join(', ')}: a cautious °F + humidity limit is used, with the sensor’s humidity.`);
   const mins = animals.filter((a) => a.cold.safeMinF !== undefined && a.cold.safeMinF > FREEZE_F);
   let minF = FREEZE_F;
   if (mins.length) {

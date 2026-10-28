@@ -4,7 +4,7 @@
  * awareness (never treatment), the rules to check, and where the figures come from.
  */
 import {
-  SAFETY_NOTES, animalById, isCustomAnimalId, animalCalendar, formatDoy, minimumGroup, objectType, scoreAnimal, spacePerHeadSqFt, waterGallons, type SafetyNote,
+  SAFETY_NOTES, animalById, isCustomAnimalId, animalCalendar, fallbackHeatOnset, formatDoy, minimumGroup, objectType, scoreAnimal, spacePerHeadSqFt, waterGallons, type SafetyNote,
 } from '@plotwright/core';
 import { livestockGuide } from '@plotwright/data';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -82,7 +82,7 @@ export default function AnimalDetail() {
           { icon: 'fence', label: a.pastureAcresPerHead ? 'Pasture' : 'Outdoors', value: a.pastureAcresPerHead ? `${Math.max(...a.pastureAcresPerHead)} acre${Math.max(...a.pastureAcresPerHead) === 1 ? '' : 's'} each` : outdoor ? `${outdoor} sq ft each` : '—' },
           { icon: 'water-outline', label: 'Water', value: water ? `up to ${water} gal/day` : 'always fresh' },
           { icon: 'account-group-outline', label: 'Group', value: group > 1 ? `${group} or more` : 'fine alone' },
-          { icon: 'thermometer-high', label: 'Heat stress', value: a.heat.airOnsetF ? `from ${a.heat.airOnsetF} °F` : a.heat.thiOnset ? `THI ${a.heat.thiOnset}` : a.heat.tPlusRhOnset ? `°F + humidity ${a.heat.tPlusRhOnset}` : a.heat.tolerance ?? '—' },
+          { icon: 'thermometer-high', label: 'Heat stress', value: a.heat.airOnsetF ? `from ${a.heat.airOnsetF} °F` : a.heat.thiOnset ? `THI ${a.heat.thiOnset}` : a.heat.tPlusRhOnset ? `°F + humidity ${a.heat.tPlusRhOnset}` : fallbackHeatOnset(a) !== undefined ? `°F + humidity ${fallbackHeatOnset(a)} (general)` : a.heat.tolerance ?? '—' },
           { icon: 'snowflake', label: 'Cold', value: a.cold.tolerance ? `${a.cold.tolerance} tolerance` : '—' },
           { icon: 'volume-high', label: 'Noise', value: a.noise ?? '—' },
           { icon: 'heart-pulse', label: 'Lifespan', value: range(a.lifespanYears, ' yrs') ?? '—' },

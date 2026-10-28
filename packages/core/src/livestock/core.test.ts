@@ -29,6 +29,30 @@ test('heat stress: air threshold, THI threshold, and a muggy fallback when the f
   assert.equal(heatStress(cattle, 72, 20).stressed, true, 'cattle: the 72 °F air onset trips first');
 });
 
+test('species with no sourced onset still get cautious heat and cold alerts (by tolerance)', () => {
+  const dog = animalById('guardian_dog')!, alpaca = animalById('alpacas')!, donkey = animalById('guardian_donkey')!;
+  const bees = animalById('honeybees')!;
+  // Low heat tolerance: °F + humidity 120. 75 °F at 40% = 115 is fine; 80 °F at 45% = 125 is not.
+  assert.equal(heatStress(dog, 75, 40).stressed, false);
+  assert.equal(heatStress(dog, 80, 45).stressed, true);
+  assert.match(heatStress(alpaca, 80, 45).basis!, /cautious general limit/);
+  // High heat tolerance (donkeys): 150, so a warm muggy day doesn't alert daily.
+  assert.equal(heatStress(donkey, 85, 50).stressed, false);
+  assert.equal(heatStress(donkey, 100, 55).stressed, true);
+  assert.equal(heatStress(bees, 110, 60).stressed, false, 'no fallback for hives');
+  for (const id of ['guardian_dog', 'alpacas', 'guardian_llama', 'ducks_layers']) {
+    const a = animalById(id)!;
+    const heat = livestockAlerts([{ start: '2027-07-20T12:00:00-04:00', end: '2027-07-20T18:00:00-04:00', isNight: false, temperatureF: 104, relativeHumidityPct: 60 } as never], [{ herdId: 'h', animal: a, count: 1, housingName: 'run' }]);
+    assert.equal(heat.filter((x) => x.kind === 'heat').length, 1, `${id} gets a heat alert at 104 °F`);
+  }
+  // Cold: donkeys (low cold tolerance) are warned at 20 °F; Great Pyrenees-type dogs (high) at 0 °F.
+  const night = (f: number) => [{ start: '2027-01-10T18:00:00-05:00', end: '2027-01-11T06:00:00-05:00', isNight: true, temperatureF: f } as never];
+  const kinds = (a: typeof dog, f: number) => livestockAlerts(night(f), [{ herdId: 'h', animal: a, count: 1, housingName: 'barn' }]).map((x) => x.kind);
+  assert.ok(kinds(donkey, 18).includes('cold'));
+  assert.ok(!kinds(dog, 18).includes('cold'));
+  assert.ok(kinds(dog, -2).includes('cold'));
+});
+
 test('fit: heat, cold, pasture and social factors explain the score; impossible plans are capped', () => {
   const hot = scoreAnimal(hens, { zone: '8a', peakSummerMaxF: 95, summerRhPct: 75 }, undefined, 10);
   assert.equal(hot.factors.find((f) => f.key === 'heat')!.status === 'good', false);

@@ -5,7 +5,7 @@
  * give medical advice. Safety alerts are free on every plan.
  */
 import type { ForecastPeriod } from '../plants/garden';
-import { FREEZE_F, heatStress } from './safetyDefaults';
+import { FREEZE_F, coldMinF, heatStress } from './safetyDefaults';
 import type { AnimalSpec } from './types';
 
 export interface ActiveHerd {
@@ -55,7 +55,7 @@ export function livestockAlerts(periods: ForecastPeriod[], allHerds: ActiveHerd[
           title: `Freezing ${day} night: low ${Math.round(p.temperatureF)} °F`,
           body: 'Water troughs, bowls and lines may freeze: check them first thing and keep water available. Close up poultry and give dry bedding.',
         });
-      const cold = herds.filter((h) => h.animal.cold.safeMinF !== undefined && p.temperatureF <= h.animal.cold.safeMinF);
+      const cold = herds.filter((h) => { const min = coldMinF(h.animal); return min !== undefined && p.temperatureF <= min; });
       if (cold.length)
         out.push({ kind: 'cold', at: p.start, herdIds: cold.map((h) => h.herdId), title: `Hard cold ${day} night: low ${Math.round(p.temperatureF)} °F`, body: `Bring ${names(cold)} into shelter out of the wind, with dry bedding and unfrozen water.` });
     }
