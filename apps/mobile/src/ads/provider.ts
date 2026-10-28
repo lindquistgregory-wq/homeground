@@ -152,8 +152,19 @@ class NoAds implements AdProvider {
   async showRewarded(): Promise<'unavailable'> { return 'unavailable'; }
 }
 
+/**
+ * Release builds need the owner's own ad unit ids (config.ts) and AdMob app id (app.json). Until they
+ * exist there is nothing to show, so the SDK isn't started, no consent form appears, and the rewarded
+ * "watch an ad" offer stays hidden. Debug builds use Google's test units.
+ */
+export function adUnitsConfigured(): boolean {
+  if (__DEV__) return true;
+  const units = Platform.OS === 'ios' ? ADMOB_UNITS.ios : ADMOB_UNITS.android;
+  return Object.values(units).some((u) => !!u);
+}
+
 function makeProvider(): AdProvider {
-  if (process.env.EXPO_PUBLIC_ADS === 'off') return new NoAds();
+  if (process.env.EXPO_PUBLIC_ADS === 'off' || !adUnitsConfigured()) return new NoAds();
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const gma = require('react-native-google-mobile-ads') as Gma;

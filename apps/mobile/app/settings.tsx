@@ -28,6 +28,7 @@ import { cancelEventReminders } from '../src/services/eventReminders';
 import { alertsEnabled, alertsLastChecked, setAlertsEnabled } from '../src/services/alerts';
 import { cloudSyncAvailable, syncNow, wipeCloudData } from '../src/sync/userCloud';
 import { useAds } from '../src/ads/useAds';
+import { ads } from '../src/ads/provider';
 import { BUSINESS_MODEL, PRIVACY_POLICY_URL } from '../src/config';
 import { clearMetrics, metricsConsent, metricsReport, setMetricsConsent } from '../src/services/metrics';
 import { deleteAllPacks } from '../src/services/offlinePacks';
@@ -231,7 +232,7 @@ export default function Settings() {
       <Card title={BUSINESS_MODEL === 'openSource' ? 'Ads' : `Plan: ${TIER_NAMES[entitlements.tier]}`}>
         {BUSINESS_MODEL === 'openSource'
           ? <Body muted>Every feature is free. {entitlements.showAds ? 'Ads support the app; a one-time purchase removes them.' : 'Ads are removed on this store account. Thank you!'}</Body>
-          : <Body muted>{entitlements.tier === 'free' ? 'The free plan shows a few ads on browse screens, never on the design canvas, in the planner chat or with alerts.' : 'No ads. Thank you for supporting Plotwright.'}</Body>}
+          : <Body muted>{entitlements.tier === 'free' ? (ads.name === 'none' ? 'The free plan doesn’t show ads in this version.' : 'The free plan shows a few ads on browse screens, never on the design canvas, in the planner chat or with alerts.') : 'No ads. Thank you for supporting Plotwright.'}</Body>}
         {storeError && <Body muted>The store couldn't be reached, so your last known plan is used.</Body>}
         <Button title={entitlements.tier === 'free' || entitlements.showAds ? 'See plans' : 'Change plan'} onPress={() => router.push({ pathname: '/paywall', params: { source: 'settings' } })} />
         <Button title="Restore purchases" kind="secondary" onPress={async () => {
@@ -256,7 +257,7 @@ export default function Settings() {
           never sells or shares your data. Ads on the free plan come from Google AdMob and are not personalised unless you choose so here
           (and, in the EU and UK, agree in the consent form).
         </Body>
-        {entitlements.showAds && (
+        {entitlements.showAds && ads.name !== 'none' && (
           <Button title={personalised ? '✓ Personalised ads allowed' : 'Allow personalised ads'} kind={personalised ? 'primary' : 'secondary'}
             accessibilityHint="Lets Google use data about your device to choose ads. Off by default." onPress={async () => {
               await setPersonalised(!personalised);
