@@ -10,6 +10,14 @@ test('day-of-year windows become dates, wrapping into the next year', () => {
   assert.deepEqual(windowToIso(2026, 311, 87), { start: '2026-11-07', end: '2027-03-28' });
 });
 
+test('leap years: a normals date (Apr 15 = day 105) stays Apr 15, and out-of-range days roll over', () => {
+  assert.equal(doyToIso(2028, 105), '2028-04-15');
+  assert.equal(doyToIso(2028, 59), '2028-02-28');
+  assert.equal(doyToIso(2028, 60), '2028-03-01');
+  assert.equal(doyToIso(2026, 0), '2025-12-31');
+  assert.equal(doyToIso(2026, 366), '2027-01-01');
+});
+
 test('repeating custom events: weekly, monthly (31st falls back), yearly, and one-offs', () => {
   assert.equal(expandCustom(ev({ repeat: 'weekly', date: '2026-10-01' }), '2026-10-01', '2026-10-31').length, 5);
   const monthly = expandCustom(ev({ repeat: 'monthly' }), '2026-01-01', '2026-04-30').map((i) => i.start);

@@ -8,6 +8,8 @@
  * month never drowns in the same card.
  */
 
+import { doyToMonthDay } from '../climate/normals';
+
 export type AgendaSource = 'planting' | 'animal' | 'record' | 'task' | 'alert' | 'custom';
 
 export interface AgendaItem {
@@ -41,9 +43,17 @@ const t = (iso: string) => Date.parse(`${iso}T00:00:00Z`);
 export const isoAdd = (iso: string, days: number) => new Date(t(iso) + days * DAY).toISOString().slice(0, 10);
 export const isoDiff = (a: string, b: string) => Math.round((t(b) - t(a)) / DAY);
 
-/** Day of year → YYYY-MM-DD in `year` (day 1 = Jan 1). */
+/**
+ * Day of year → YYYY-MM-DD in `year` (day 1 = Jan 1). Days of year come from the 365-day calendar the
+ * climate normals use (mmddToDoy), so they map back through the same table: day 105 is Apr 15 in every
+ * year, leap years included. Days outside 1–365 roll into the year before or after.
+ */
 export function doyToIso(year: number, doy: number): string {
-  return new Date(Date.UTC(year, 0, doy)).toISOString().slice(0, 10);
+  let y = year, d = Math.round(doy);
+  while (d < 1) { d += 365; y--; }
+  while (d > 365) { d -= 365; y++; }
+  const { month, day } = doyToMonthDay(d);
+  return `${y}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
 /** A day-of-year window in `year`; one that wraps past New Year (Nov → Mar) ends the following year. */
