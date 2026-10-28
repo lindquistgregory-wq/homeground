@@ -22,7 +22,7 @@ export const BUSINESS_MODEL: 'tiers' | 'openSource' = 'tiers';
  */
 export const ADMOB_UNITS: Record<'ios' | 'android', Partial<Record<'browse-banner' | 'interstitial' | 'rewarded', string | null>>> = {
   ios: { 'browse-banner': null, interstitial: null, rewarded: null },
-  android: { 'browse-banner': 'ca-app-pub-3127748525980986/3766503469', interstitial: null, rewarded: null },
+  android: { 'browse-banner': 'ca-app-pub-3127748525980986/3766503469', interstitial: 'ca-app-pub-3127748525980986/8513105674', rewarded: 'ca-app-pub-3127748525980986/4382288973' },
 };
 
 /**
