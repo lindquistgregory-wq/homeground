@@ -2,7 +2,7 @@
  * Plant detail (§7): growing facts, a planting calendar personalised to the property's frost dates and
  * soil warming, climate fit with reasons, and links to land-grant extension guides for how-to detail.
  */
-import { EATER_LABEL, TOXICITY_SOURCES, isCustomPlantId, plantById, scorePlant, toxicityFor, type SafetyNote } from '@plotwright/core';
+import { EATER_LABEL, TOXICITY_SOURCES, formatRangeIn, formatTempF, isCustomPlantId, plantById, scorePlant, toxicityFor, type SafetyNote } from '@plotwright/core';
 import { cropGuide, stateExtensionHub } from '@plotwright/data';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -98,7 +98,7 @@ export default function PlantDetail() {
           <Body muted>Rows {inToUnits(plant.spacingIn.betweenRows, imperial)} apart · {inToUnits(plant.spreadIn, imperial)} wide · {plant.soil.drainage.replace('-', ' ')} soil{plant.soil.textures ? ` (${plant.soil.textures.join('/')})` : ''}</Body>
           {plant.chillHours && <Body muted>Winter chill: {plant.chillHours[0]}–{plant.chillHours[1]} hours, depending on variety</Body>}
           {plant.pollination && <Body muted>Pollination: {plant.pollination === 'needs-partner' ? 'needs a second, compatible variety nearby' : plant.pollination === 'partly-self' ? 'self-fruitful, but a partner improves the crop' : plant.pollination === 'wind' ? 'wind' : 'self-fruitful'}</Body>}
-          {plant.germination && <Body muted>Germination: soil {plant.germination.minSoilF} °F minimum, {plant.germination.optimalF[0]}–{plant.germination.optimalF[1]} °F best</Body>}
+          {plant.germination && <Body muted>Germination: soil {formatTempF(plant.germination.minSoilF, imperial ? 'imperial' : 'metric')} minimum, {formatRangeIn(plant.germination.optimalF, (n) => formatTempF(n, imperial ? 'imperial' : 'metric'))} best</Body>}
         </View>
       </Card>
 

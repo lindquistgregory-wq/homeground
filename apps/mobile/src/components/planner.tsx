@@ -1,6 +1,6 @@
 /** Planner UI pieces: guided interview, chat, plan view, drafts and tasks. */
 import {
-  NUTRIENT_KEYS, NUTRIENT_LABEL, PHASE_TITLE, QUESTIONS, interviewProgress, mergeGoals, moneyRange, nextQuestions, pct, readyToPlan, rng, summarizeGoals,
+  NUTRIENT_KEYS, NUTRIENT_LABEL, PHASE_TITLE, QUESTIONS, formatPounds, formatRangeIn, interviewProgress, mergeGoals, moneyRange, nextQuestions, pct, readyToPlan, rng, summarizeGoals,
   type Activity, type DesignDraft, type HomesteadGoals, type HomesteadPlan, type HouseholdMember, type PhaseId, type PlanItem, type Question, type TaskDraft,
 } from '@plotwright/core';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ import { Text, TextInput } from './Text';
 import type { DraftRow, StoredMessage, TaskRecord } from '../db/planner';
 import { Chip } from './plants';
 import { Body, Button, Card, useTheme } from './ui';
+import { useSettings } from '../services/settings';
 
 // ---------------- Guided interview ----------------
 
@@ -183,6 +184,7 @@ function ItemCard({ item, onDraft }: { item: PlanItem; onDraft?: () => void }) {
 
 export function PlanView({ plan, tier, onDraft }: { plan: HomesteadPlan; tier: { full: boolean; income: boolean; multiYear: boolean }; onDraft?: (item: PlanItem) => void }) {
   const t = useTheme();
+  const units = useSettings((s) => s.units);
   const phases: PhaseId[] = tier.multiYear ? ['year0', 'year1', 'years2to5'] : ['year0', 'year1'];
   const c = plan.coverage;
   const y1 = plan.coverageYear1;
@@ -218,7 +220,7 @@ export function PlanView({ plan, tier, onDraft }: { plan: HomesteadPlan; tier: {
           </View>
         ))}
         {c.notCounted.map((n, i) => <Body key={i} muted>Not counted: {n.reason}</Body>)}
-        {y1.storage.length > 0 && <Body>To store from year 1: {y1.storage.map((s) => `${Math.round(s.lb[0])}–${Math.round(s.lb[1])} lb for ${s.method.replace('-', ' ')}`).join('; ')}.</Body>}
+        {y1.storage.length > 0 && <Body>To store from year 1: {y1.storage.map((s) => `${formatRangeIn([Math.round(s.lb[0]), Math.round(s.lb[1])], (n) => formatPounds(n, units))} for ${s.method.replace('-', ' ')}`).join('; ')}.</Body>}
         <Text style={{ color: t.muted, fontSize: 12, marginTop: 6 }}>{tier.multiYear ? '“Once mature” counts everything planned, including fruit trees that take years to bear. ' : ''}{c.sources.join('. ')}.</Text>
       </Card>
 

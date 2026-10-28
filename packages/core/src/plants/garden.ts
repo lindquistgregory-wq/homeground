@@ -4,6 +4,7 @@
  * what's actually planted (§7.3).
  */
 import type { PlantSpec } from './types';
+import { formatTempF, formatWind, type UnitSystem } from '../units';
 
 // ---------------- Rotation ----------------
 
@@ -132,8 +133,9 @@ export interface WeatherAlert {
  * ~5 ft up; plants at ground level on clear, still nights can be a few degrees colder. */
 export const PROTECT_BELOW_F: Record<PlantSpec['frost'], number> = { tender: 36, 'half-hardy': 32, hardy: 28, 'very-hardy': 20 };
 
-export function weatherAlerts(periods: ForecastPeriod[], crops: PlantedCrop[]): WeatherAlert[] {
+export function weatherAlerts(periods: ForecastPeriod[], crops: PlantedCrop[], units: UnitSystem = 'imperial'): WeatherAlert[] {
   const alerts: WeatherAlert[] = [];
+  const temp = (f: number) => formatTempF(f, units);
   for (const p of periods) {
     if (p.isNight) {
       const hit = crops.filter((c) => p.temperatureF <= PROTECT_BELOW_F[c.plant.frost]);
@@ -143,7 +145,7 @@ export function weatherAlerts(periods: ForecastPeriod[], crops: PlantedCrop[]): 
         alerts.push({
           kind: hard ? 'freeze' : 'frost',
           at: p.start,
-          title: `${hard ? 'Freeze' : 'Frost'} risk ${dayLabel(p.start)} night: low ${Math.round(p.temperatureF)} °F`,
+          title: `${hard ? 'Freeze' : 'Frost'} risk ${dayLabel(p.start)} night: low ${temp(p.temperatureF)}`,
           body: `Protect ${names.slice(0, 4).join(', ')}${names.length > 4 ? ` and ${names.length - 4} more` : ''}: cover with row cover or sheets before dusk, water dry soil, and bring in containers.`,
           plantingIds: hit.map((c) => c.plantingId),
         });
@@ -153,8 +155,8 @@ export function weatherAlerts(periods: ForecastPeriod[], crops: PlantedCrop[]): 
         const hit = crops.filter((c) => c.plant.season === 'cool' || c.plant.heat === 'low' || c.plant.id === 'tomato' || c.plant.id.startsWith('pepper'));
         if (hit.length)
           alerts.push({
-            kind: 'heat', at: p.start, title: `Heat ${dayLabel(p.start)}: high ${Math.round(p.temperatureF)} °F`,
-            body: `Water deeply in the morning and shade ${unique(hit.map((c) => c.plant.commonName)).slice(0, 4).join(', ')}. Tomatoes and peppers drop blossoms above ~90 °F.`,
+            kind: 'heat', at: p.start, title: `Heat ${dayLabel(p.start)}: high ${temp(p.temperatureF)}`,
+            body: `Water deeply in the morning and shade ${unique(hit.map((c) => c.plant.commonName)).slice(0, 4).join(', ')}. Tomatoes and peppers drop blossoms above ~${temp(90)}.`,
             plantingIds: hit.map((c) => c.plantingId),
           });
       }
@@ -162,7 +164,7 @@ export function weatherAlerts(periods: ForecastPeriod[], crops: PlantedCrop[]): 
     if ((p.windMph ?? 0) >= 30) {
       const tall = crops.filter((c) => c.plant.heightIn >= 48);
       if (tall.length)
-        alerts.push({ kind: 'wind', at: p.start, title: `Wind to ${Math.round(p.windMph!)} mph ${dayLabel(p.start)}`, body: `Check stakes and trellises for ${unique(tall.map((c) => c.plant.commonName)).slice(0, 4).join(', ')}.`, plantingIds: tall.map((c) => c.plantingId) });
+        alerts.push({ kind: 'wind', at: p.start, title: `Wind to ${formatWind(p.windMph!, units)} ${dayLabel(p.start)}`, body: `Check stakes and trellises for ${unique(tall.map((c) => c.plant.commonName)).slice(0, 4).join(', ')}.`, plantingIds: tall.map((c) => c.plantingId) });
     }
   }
   return alerts;
