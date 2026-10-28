@@ -83,11 +83,26 @@ export async function saveDesign(d: Design): Promise<void> {
   const db = await getDb();
   const hlc = clock().tick();
   const now = new Date().toISOString();
+  // Stamp each new or changed object, and record removed ones, so sync can merge two devices' edits
+  // object by object instead of one device's design replacing the other's.
+  const prev = await db.getFirstAsync<{ objects: string; removed_objects: string | null }>('SELECT objects, removed_objects FROM designs WHERE id = ?', d.id);
+  const before = new Map<string, DesignObject>();
+  try { for (const o of JSON.parse(prev?.objects ?? '[]') as DesignObject[]) before.set(o.id, o); } catch { /* treat as new */ }
+  let removed: Record<string, string> = {};
+  try { removed = JSON.parse(prev?.removed_objects ?? '{}') as Record<string, string>; } catch { removed = {}; }
+  const strip = ({ hlc: _h, ...rest }: DesignObject) => JSON.stringify(rest);
+  const objects = d.objects.map((o) => {
+    const old = before.get(o.id);
+    return old && strip(old) === strip(o) ? { ...o, hlc: old.hlc ?? hlc } : { ...o, hlc };
+  });
+  const ids = new Set(objects.map((o) => o.id));
+  for (const id of before.keys()) if (!ids.has(id)) removed[id] = hlc;
+  for (const id of ids) delete removed[id];
   await db.runAsync(
-    `INSERT INTO designs (id, parcel_id, name, objects, created_at, updated_at, updated_hlc, scenario) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO designs (id, parcel_id, name, objects, created_at, updated_at, updated_hlc, scenario, removed_objects) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET name = excluded.name, objects = excluded.objects, updated_at = excluded.updated_at,
-       updated_hlc = excluded.updated_hlc, deleted = 0, scenario = excluded.scenario`,
-    d.id, d.parcelId, d.name, JSON.stringify(d.objects), d.createdAt, now, hlc, d.scenario ? JSON.stringify(d.scenario) : null,
+       updated_hlc = excluded.updated_hlc, deleted = 0, scenario = excluded.scenario, removed_objects = excluded.removed_objects`,
+    d.id, d.parcelId, d.name, JSON.stringify(objects), d.createdAt, now, hlc, d.scenario ? JSON.stringify(d.scenario) : null, JSON.stringify(removed),
   );
   await db.runAsync('INSERT OR REPLACE INTO sync_pending (collection, id, hlc) VALUES (?, ?, ?)', 'designs', d.id, hlc);
 }

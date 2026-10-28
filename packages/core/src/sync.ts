@@ -97,6 +97,8 @@ export interface LocalStore {
   applyRemote(record: SyncRecord): Promise<void>;
   /** Records changed locally since the last successful upload. */
   pendingChanges(): Promise<SyncRecord[]>;
+  /** Queue a stored record for upload (after a merge that combined both devices' changes). */
+  markPending?(record: SyncRecord): Promise<void>;
   /** Clear pending markers only for records whose stamp still equals the uploaded one (edits made during the upload stay pending). */
   markUploaded(records: SyncRecord[]): Promise<void>;
   getCursor(): Promise<string | null>;
@@ -108,6 +110,44 @@ export function mergeRecord(local: SyncRecord | undefined, incoming: SyncRecord)
   if (!local) return incoming;
   return compareHlc(incoming.hlc, local.hlc) > 0 ? incoming : local;
 }
+
+/** A design's objects and its removed-object tombstones, as stored (JSON text columns). */
+interface DesignRow { objects?: unknown; removed_objects?: unknown; [k: string]: unknown }
+type StampedObject = { id: string; hlc?: string } & Record<string, unknown>;
+
+const parseList = (v: unknown): StampedObject[] => {
+  try { const x = typeof v === 'string' ? JSON.parse(v) : v; return Array.isArray(x) ? (x as StampedObject[]) : []; } catch { return []; }
+};
+const parseMap = (v: unknown): Record<string, string> => {
+  try { const x = typeof v === 'string' ? JSON.parse(v) : v; return x && typeof x === 'object' && !Array.isArray(x) ? (x as Record<string, string>) : {}; } catch { return {}; }
+};
+
+/**
+ * Merge two devices' copies of a design object by object: each object keeps its newest version (by its
+ * own stamp), objects added on either side stay, and an object is dropped only if a removal newer than
+ * its last change was recorded. The design's other fields (name, scenario) come from the newer record.
+ * Returns the merged record, stamped with the newer of the two.
+ */
+export function mergeDesignRecords(local: SyncRecord, incoming: SyncRecord): SyncRecord {
+  if (local.deleted || incoming.deleted || !local.data || !incoming.data) return mergeRecord(local, incoming);
+  const newer = compareHlc(incoming.hlc, local.hlc) > 0 ? incoming : local;
+  const a = local.data as DesignRow, b = incoming.data as DesignRow;
+  const removed: Record<string, string> = { ...parseMap(a.removed_objects) };
+  for (const [id, h] of Object.entries(parseMap(b.removed_objects))) if (!removed[id] || compareHlc(h, removed[id]!) > 0) removed[id] = h;
+  const byId = new Map<string, StampedObject>();
+  const order: string[] = [];
+  for (const list of [parseList(a.objects), parseList(b.objects)])
+    for (const o of list) {
+      const cur = byId.get(o.id);
+      if (!cur) order.push(o.id);
+      if (!cur || compareHlc(o.hlc ?? '', cur.hlc ?? '') > 0) byId.set(o.id, o);
+    }
+  const objects = order.map((id) => byId.get(id)!).filter((o) => !removed[o.id] || compareHlc(o.hlc ?? '', removed[o.id]!) > 0);
+  return { ...newer, data: { ...(newer.data as DesignRow), objects: JSON.stringify(objects), removed_objects: JSON.stringify(removed) } };
+}
+
+/** Collections whose records merge field by field rather than last-writer-wins. */
+const MERGERS: Partial<Record<SyncCollection, (local: SyncRecord, incoming: SyncRecord) => SyncRecord>> = { designs: mergeDesignRecords };
 
 export interface SyncResult {
   uploaded: number;
@@ -136,6 +176,16 @@ export async function syncOnce(
     for (const rec of records) {
       clock.receive(rec.hlc);
       const local = await store.get(rec.collection, rec.id);
+      const merge = MERGERS[rec.collection];
+      if (local && merge) {
+        const merged = merge(local, rec);
+        if (JSON.stringify(merged.data) === JSON.stringify(local.data) && merged.deleted === local.deleted) { skipped++; continue; }
+        await store.applyRemote(merged);
+        applied++;
+        // This device holds changes the incoming copy lacks: send the merged copy back out.
+        if (JSON.stringify(merged.data) !== JSON.stringify(rec.data)) await store.markPending?.(merged);
+        continue;
+      }
       const winner = mergeRecord(local, rec);
       if (winner === rec) {
         await store.applyRemote(rec);
