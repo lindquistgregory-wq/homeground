@@ -3,11 +3,11 @@
  * and quick ways to fill it: add plants by hand, or a suggested setup (built-in or AI). The full bed
  * planner (sun, soil, every plant ranked) is still one tap away.
  */
-import { allPlants, bedGrid, MAX_GRID_CELLS, plantById, rotationAdvice, searchPlants, type DesignObject, type PlantSpec } from '@plotwright/core';
+import { allPlants, bedGrid, MAX_GRID_CELLS, objectType, plantById, rotationAdvice, searchPlants, type DesignObject, type PlantSpec } from '@plotwright/core';
 import { useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { deletePlanting, plantingsForParcel, savePlanting, type Planting } from '../db/plantings';
-import { bedHistory, isSpacedSpot, plantsForSpot } from '../services/garden';
+import { bedHistory, holdsOnePlant, isSpacedSpot, plantsForSpot } from '../services/garden';
 import { BedGridEditor } from './bedGrid';
 import { SearchField } from './kit';
 import { PlantArt } from './PlantArt';
@@ -17,11 +17,13 @@ import { Body, Button, useTheme } from './ui';
 
 const SHARES: Array<[number, string]> = [[1, 'Whole bed'], [0.5, 'Half'], [0.25, 'Quarter']];
 
-export function BedContents({ bed, parcelId, designId, plantings, onChanged, onPlan, onSuggest }: {
+export function BedContents({ bed, parcelId, designId, plantings, onChanged, onPlan, onSuggest, onLabel }: {
   bed: DesignObject; parcelId: string; designId: string;
   /** This bed's plantings growing (or planned) this season. */
   plantings: Planting[];
   onChanged: () => Promise<void>; onPlan?: () => void; onSuggest?: () => void;
+  /** One-plant spots: name the object after its plant when it has no name of its own. */
+  onLabel?: (label: string) => void;
 }) {
   const t = useTheme();
   const [adding, setAdding] = useState(false);
@@ -30,7 +32,9 @@ export function BedContents({ bed, parcelId, designId, plantings, onChanged, onP
   // The square-foot grid holds this year's crops; perennials from earlier years are listed above it.
   const gridPlantings = plantings.filter((p) => p.year === year);
   const grid = !isSpacedSpot(bed) ? bedGrid(bed.width, bed.length) : null;
-  const spot = bed.kind === 'orchard' ? 'orchard' : bed.kind === 'vineyard-row' ? 'row' : 'bed';
+  const one = holdsOnePlant(bed);
+  const spot = bed.kind === 'orchard' ? 'orchard' : bed.kind === 'vineyard-row' ? 'row' : one ? 'spot' : 'bed';
+  const typeName = objectType(bed.kind)?.name;
 
   return (
     <View style={[styles.box, { borderColor: t.border, backgroundColor: t.surface }]}>
@@ -64,29 +68,33 @@ export function BedContents({ bed, parcelId, designId, plantings, onChanged, onP
           }} />)}
 
       <View style={styles.row}>
-        <View style={{ flex: 1 }}><Button title="Add plants" icon="plus" kind="secondary" onPress={() => setAdding(true)} /></View>
-        {onSuggest && <View style={{ flex: 1 }}><Button title="Suggest a setup" icon="auto-fix" kind="secondary" onPress={onSuggest} /></View>}
+        <View style={{ flex: 1 }}><Button title={one ? (plantings.length ? 'Change plant' : 'Choose the plant') : 'Add plants'} icon={one ? 'sprout' : 'plus'} kind="secondary" onPress={() => setAdding(true)} /></View>
+        {onSuggest && <View style={{ flex: 1 }}><Button title={one ? 'Suggest a plant' : 'Suggest a setup'} icon="auto-fix" kind="secondary" onPress={onSuggest} /></View>}
       </View>
       {onPlan && <Button title={bed.kind === 'vineyard-row' ? 'Plan this row: grapes and vines' : bed.kind === 'orchard' ? 'Plan this orchard: fruit and nut trees' : 'Plan this bed: what grows best here'} onPress={onPlan} />}
 
-      <AddPlantSheet visible={adding} bed={bed} freeShare={Math.max(0, 1 - used)} onClose={() => setAdding(false)}
+      <AddPlantSheet visible={adding} bed={bed} one={one} freeShare={one ? 1 : Math.max(0, 1 - used)} onClose={() => setAdding(false)}
         onAdd={async (plant, share) => {
           const history = bedHistory((await plantingsForParcel(parcelId)).filter((p) => p.bedObjectId === bed.id));
           const rot = rotationAdvice(plant, history, year);
           // A rotation clash asks first; the sheet marks the plant added only if it was.
-          if (!rot.ok && !(await new Promise<boolean>((res) => Alert.alert('Rotation', rot.message, [
+          if (!one && !rot.ok && !(await new Promise<boolean>((res) => Alert.alert('Rotation', rot.message, [
             { text: 'Cancel', style: 'cancel', onPress: () => res(false) }, { text: 'Add anyway', onPress: () => res(true) },
           ], { cancelable: true, onDismiss: () => res(false) })))) return false;
-          await savePlanting({ parcelId, designId, bedObjectId: bed.id, plantId: plant.id, year, share, status: 'planned' });
+          // One-plant spots: the new plant replaces the old one.
+          if (one) for (const p of plantings) await deletePlanting(p.id);
+          await savePlanting({ parcelId, designId, bedObjectId: bed.id, plantId: plant.id, year, share: one ? 1 : share, status: 'planned' });
+          if (one && onLabel && (!bed.label || bed.label === typeName || plantings.some((p) => plantById(p.plantId)?.commonName === bed.label))) onLabel(plant.commonName);
           await onChanged();
+          if (one) setAdding(false);
           return true;
         }} />
     </View>
   );
 }
 
-function AddPlantSheet({ visible, bed, freeShare, onClose, onAdd }: {
-  visible: boolean; bed: DesignObject; freeShare: number; onClose: () => void; onAdd: (p: PlantSpec, share: number) => Promise<boolean>;
+function AddPlantSheet({ visible, bed, one, freeShare, onClose, onAdd }: {
+  visible: boolean; bed: DesignObject; one: boolean; freeShare: number; onClose: () => void; onAdd: (p: PlantSpec, share: number) => Promise<boolean>;
 }) {
   const t = useTheme();
   const [q, setQ] = useState('');
@@ -102,11 +110,15 @@ function AddPlantSheet({ visible, bed, freeShare, onClose, onAdd }: {
       <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: 44 }}>
         <View style={{ paddingHorizontal: 16 }}>
           <View style={[styles.row, { alignItems: 'center' }]}>
-            <Text style={{ color: t.text, fontSize: 20, fontWeight: '700', flex: 1 }} accessibilityRole="header">Add plants</Text>
+            <Text style={{ color: t.text, fontSize: 20, fontWeight: '700', flex: 1 }} accessibilityRole="header">{one ? 'Choose the plant' : 'Add plants'}</Text>
             <Button title="Done" onPress={close} />
           </View>
-          <Body muted>{freeShare < 0.99 ? `About ${Math.round(freeShare * 100)}% of this bed is free. ` : ''}Pick how much room each plant takes, then tap Add.</Body>
-          <View style={styles.row}>{SHARES.map(([v, l]) => <Chip key={v} label={l} active={share === v} onPress={() => setShare(v)} />)}</View>
+          {one ? <Body muted>This spot holds one plant. Choosing another replaces it.</Body> : (
+            <>
+              <Body muted>{freeShare < 0.99 ? `About ${Math.round(freeShare * 100)}% of this bed is free. ` : ''}Pick how much room each plant takes, then tap Add.</Body>
+              <View style={styles.row}>{SHARES.map(([v, l]) => <Chip key={v} label={l} active={share === v} onPress={() => setShare(v)} />)}</View>
+            </>
+          )}
           <SearchField value={q} onChangeText={setQ} placeholder={`Search ${fits.length} plants`} accessibilityLabel="Search plants to add" />
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 8 }} keyboardShouldPersistTaps="handled">
@@ -120,7 +132,7 @@ function AddPlantSheet({ visible, bed, freeShare, onClose, onAdd }: {
                   <Text style={{ color: t.text, fontWeight: '600' }}>{p.commonName}</Text>
                   <Text style={{ color: t.muted, fontSize: 12 }}>{p.season === 'perennial' ? 'Perennial' : `${p.season === 'cool' ? 'Cool' : 'Warm'} season`} · {p.sunHours.min}+ h sun</Text>
                 </View>
-                <Chip label={done ? 'Added' : 'Add'} active={done} onPress={() => { if (!done) void onAdd(p, share).then((ok) => { if (ok) setAdded((a) => [...a, p.id]); }); }} />
+                <Chip label={done ? 'Added' : one ? 'Choose' : 'Add'} active={done} onPress={() => { if (!done) void onAdd(p, share).then((ok) => { if (ok) setAdded((a) => [...a, p.id]); }); }} />
               </View>
             );
           })}

@@ -639,7 +639,8 @@ export default function DesignScreen() {
               <BedContents bed={selected} parcelId={parcel.id} designId={design.id} plantings={plantings.filter((p) => p.bedObjectId === selected.id)}
                 onChanged={async () => setPlantings(activePlantings(await plantingsForParcel(parcel.id), new Date().getFullYear()))}
                 onPlan={() => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } })}
-                onSuggest={() => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id, setup: '1' } })} />
+                onSuggest={() => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id, setup: '1' } })}
+                onLabel={(label) => replaceSelected({ label })} />
             ) : undefined}
             onHouse={animalsOn && HOUSING_KINDS.has(selected.kind) && !design.scenario ? () => router.push({ pathname: '/housing/[id]', params: { id: parcel.id, objectId: selected.id } }) : undefined}
             housed={herds.filter((h) => h.designId === design.id && h.objectId === selected.id)}

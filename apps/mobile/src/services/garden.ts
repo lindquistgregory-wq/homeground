@@ -16,11 +16,15 @@ const TREE_SPOTS = new Set(['fruit-tree-dwarf', 'fruit-tree-semi', 'fruit-tree-s
 
 /** Tree spots hold one tree, so they get no square-foot grid. */
 export const isTreeSpot = (o: DesignObject): boolean => TREE_SPOTS.has(o.kind);
+/** An "Individual plant" on the map: one plant of any kind (a shrub, a specimen tree, a single tomato). */
+const SINGLE = new Set(['single-plant']);
+/** Spots that hold exactly one plant: choosing another replaces it. */
+export const holdsOnePlant = (o: DesignObject): boolean => TREE_SPOTS.has(o.kind) || SINGLE.has(o.kind);
 /** Vineyard rows take vining fruit (grapes, muscadine, kiwi); orchards take several fruit or nut trees. */
 const VINE_ROWS = new Set(['vineyard-row']);
 const ORCHARDS = new Set(['orchard']);
 /** Spots laid out by plant spacing, not on the 1-ft square grid. */
-export const isSpacedSpot = (o: DesignObject): boolean => TREE_SPOTS.has(o.kind) || VINE_ROWS.has(o.kind) || ORCHARDS.has(o.kind);
+export const isSpacedSpot = (o: DesignObject): boolean => TREE_SPOTS.has(o.kind) || SINGLE.has(o.kind) || VINE_ROWS.has(o.kind) || ORCHARDS.has(o.kind);
 /** Beds filled with bought or amended soil: native drainage and texture matter much less. */
 const RAISED = new Set(['raised-bed', 'raised-bed-l', 'round-bed', 'keyhole-bed', 'sfg-grid', 'container', 'vertical-tower', 'herb-spiral', 'hugel']);
 /** Covered growing space: frost dates and rain don't apply in the usual way. */
@@ -39,6 +43,7 @@ export function bedName(o: DesignObject, index?: number): string {
 
 /** Which plants make sense for this kind of spot (trees in tree spots, not in a grow bag). */
 export function plantsForSpot(o: DesignObject, plants: PlantSpec[]): PlantSpec[] {
+  if (SINGLE.has(o.kind)) return plants;
   if (TREE_SPOTS.has(o.kind) || ORCHARDS.has(o.kind)) return plants.filter((p) => p.kind === 'fruit-tree' || p.kind === 'nut-tree');
   if (VINE_ROWS.has(o.kind)) return plants.filter((p) => p.kind === 'vine-fruit');
   const small = o.kind === 'container' || o.kind === 'vertical-tower' || o.kind === 'sfg-grid' || o.kind === 'herb-spiral';

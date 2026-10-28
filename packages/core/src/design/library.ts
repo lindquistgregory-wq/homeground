@@ -41,6 +41,7 @@ export const OBJECT_LIBRARY: ObjectType[] = [
   T({ kind: 'keyhole-bed', name: 'Keyhole bed', category: 'growing', shape: 'circle', width: 1.8, length: 1.8, height: 0.6, material: Material.none, tier: 'grower' }),
   T({ kind: 'in-ground-row', name: 'In-ground row', category: 'growing', shape: 'rect', width: 0.75, length: 10, height: 0, material: Material.none, tier: 'free' }),
   T({ kind: 'sfg-grid', name: 'Square-foot grid', category: 'growing', shape: 'rect', width: 1.22, length: 1.22, height: 0.15, material: Material.none, tier: 'free' }),
+  T({ kind: 'single-plant', name: 'Individual plant', category: 'growing', shape: 'circle', width: 0.6, length: 0.6, height: 0.5, material: Material.none, tier: 'free', notes: 'One plant: a shrub, a specimen, a single tomato or rose' }),
   T({ kind: 'container', name: 'Container / grow bag', category: 'growing', shape: 'circle', width: 0.5, length: 0.5, height: 0.4, material: Material.none, tier: 'free' }),
   T({ kind: 'vertical-tower', name: 'Vertical tower', category: 'growing', shape: 'circle', width: 0.6, length: 0.6, height: 1.8, material: Material.opaque, tier: 'grower' }),
   T({ kind: 'trellis', name: 'Trellis', category: 'growing', shape: 'line', width: 0.2, length: 2.4, height: 1.8, material: Material.deciduous, tier: 'free', notes: 'Shades like foliage once covered' }),
