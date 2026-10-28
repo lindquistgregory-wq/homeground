@@ -10,7 +10,7 @@ import {
   OBJECT_LIBRARY, bbox, estimatePv, footprintAreaM2, footprintLonLat, formatArea, formatLength, materialList, newObject, objectType,
   project, siteSuitability, snapRotationToBoundary, snapToContour, snapToGridM, unproject, validateDesign,
   SCENARIO_SEASONS, compareScenarios, scenarioLabel, sunPeriodForSeason,
-  HOUSING_KINDS, animalById, ackKey, plantById, safetyNotesFor, safetyProximity, type AnimalKind, type SafetyNote, type SafetyWarning,
+  HOUSING_KINDS, animalById, ackKey, isDrawnArea, plantById, safetyNotesFor, safetyProximity, type AnimalKind, type SafetyNote, type SafetyWarning,
   type Design, type DesignObject, type DesignWarning, type LocalFrame, type ObjectCategory, type ScenarioSeason, type SitingTarget,
 } from '@plotwright/core';
 import { OPENFREEMAP_STYLE_URL, STATE_IMAGERY, USGS_HILLSHADE, USGS_IMAGERY, USGS_NAIP_PLUS, imageryFor, mapMaxZoom, solarClimatology, type ImageryChoice } from '@plotwright/providers';
@@ -22,6 +22,7 @@ import { Text, TextInput } from '../../src/components/Text';
 import { useEntitlements } from '../../src/billing/entitlements';
 import { Body, Button, Card, tapFeedback, useTheme } from '../../src/components/ui';
 import { Icon } from '../../src/components/Icon';
+import { AreaContents } from '../../src/components/AreaContents';
 import { CATEGORY_COLOR, objectIcon } from '../../src/components/objectIcons';
 import { artForAnimal, drawAnimal } from '../../src/components/AnimalArt';
 import Svg from 'react-native-svg';
@@ -87,6 +88,8 @@ export default function DesignScreen() {
   const [sun, setSun] = useState<SunResult | null>(null);
   const [period, setPeriod] = useState<SunPeriod>('summer');
   const [tab, setTab] = useState<Tab>('add');
+  /** The tab panel fills the screen (map hidden) so long panels are easier to read and edit. */
+  const [panelFull, setPanelFull] = useState(false);
   const [placing, setPlacing] = useState<string | null>(null);
   const [moving, setMoving] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -109,6 +112,10 @@ export default function DesignScreen() {
   // Freehand drawing: a finger stroke becomes a custom line or area.
   const [drawing, setDrawing] = useState(false);
   const [drawn, setDrawn] = useState<{ coords: Array<[number, number]>; closed: boolean } | null>(null);
+  // Placing, moving or drawing needs the map: bring it back if the panel was full screen.
+  useEffect(() => {
+    if (placing || moving || placingAnimal || movingHerd || drawing) setPanelFull(false);
+  }, [placing, moving, placingAnimal, movingHerd, drawing]);
   const selectedHerd = selectedHerdId ? herds.find((h) => h.id === selectedHerdId) : undefined;
   const [sensorPins, setSensorPins] = useState<GeoJSON.FeatureCollection<GeoJSON.Point, { label: string }> | null>(null);
   const [shadeSeason, setShadeSeason] = useState({ fromDoy: 180, toDoy: 288 });
@@ -405,7 +412,8 @@ export default function DesignScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={styles.map}>
+      {/* Full-screen panel: the map stays mounted (no reload) but takes no space. */}
+      <View style={panelFull ? styles.mapHidden : styles.map}>
         <Map
           ref={mapRef}
           style={StyleSheet.absoluteFill}
@@ -558,6 +566,10 @@ export default function DesignScreen() {
             <Text style={{ color: tab === k ? t.accent : t.muted, fontWeight: '600' }}>{k === 'add' ? 'Add' : k === 'selected' ? 'Edit' : k === 'sun' ? 'Sun' : k === 'layers' ? 'Layers' : 'Plan'}</Text>
           </Pressable>
         ))}
+        <Pressable accessibilityRole="button" accessibilityLabel={panelFull ? 'Show the map' : 'Expand the panel to full screen'} accessibilityState={{ expanded: panelFull }}
+          onPress={() => { tapFeedback(); setPanelFull((f) => !f); }} style={styles.expand} hitSlop={6}>
+          <Icon name={panelFull ? 'arrow-collapse-vertical' : 'arrow-expand-vertical'} size={22} color={t.accent} />
+        </Pressable>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12 }}>
@@ -616,11 +628,19 @@ export default function DesignScreen() {
             }}
             onPlan={isPlantable(selected) && !design.scenario ? () => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } }) : undefined}
             planted={plantings.filter((p) => p.bedObjectId === selected.id).length}
+            areaContents={isDrawnArea(selected) ? (
+              <AreaContents area={selected} objects={design.objects} herds={herds.filter((h) => h.designId === design.id)} plantings={plantings}
+                onChange={(a) => replaceSelected({ linkedIds: a.linkedIds, unlinkedIds: a.unlinkedIds })}
+                onSelect={(id) => selectObject(id)}
+                onSelectHerd={(id) => { setSelectedId(null); setSelectedHerdId(id); setTab('selected'); }}
+                onPlaceNew={() => { setTab('add'); setLibraryOpen(true); }} />
+            ) : undefined}
             bedContents={isPlantable(selected) && !design.scenario ? (
               <BedContents bed={selected} parcelId={parcel.id} designId={design.id} plantings={plantings.filter((p) => p.bedObjectId === selected.id)}
                 onChanged={async () => setPlantings(activePlantings(await plantingsForParcel(parcel.id), new Date().getFullYear()))}
                 onPlan={() => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id } })}
-                onSuggest={() => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id, setup: '1' } })} />
+                onSuggest={() => router.push({ pathname: '/garden/[id]', params: { id: parcel.id, bedId: selected.id, setup: '1' } })}
+                onLabel={(label) => replaceSelected({ label })} />
             ) : undefined}
             onHouse={animalsOn && HOUSING_KINDS.has(selected.kind) && !design.scenario ? () => router.push({ pathname: '/housing/[id]', params: { id: parcel.id, objectId: selected.id } }) : undefined}
             housed={herds.filter((h) => h.designId === design.id && h.objectId === selected.id)}
@@ -887,11 +907,13 @@ function Stepper({ label, value, step, min, units, onChange }: { label: string; 
   );
 }
 
-function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted, onHouse, housed, bedContents }: {
+function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSnapAngle, onSnapContour, onDelete, onPlan, planted, onHouse, housed, bedContents, areaContents }: {
   o: DesignObject; units: 'imperial' | 'metric'; areaM2: number; notes: SafetyNote[]; safety: SafetyWarning[]; onPatch: (p: Partial<DesignObject>) => void;
   onMove: () => void; onSnapAngle: () => void; onSnapContour?: () => void; onDelete: () => void; onPlan?: () => void; planted: number; onHouse?: () => void; housed: Herd[];
   /** A bed's plants, layout and add/suggest buttons (plantable spots only). */
   bedContents?: ReactNode;
+  /** A hand-drawn area's beds, buildings and animals. */
+  areaContents?: ReactNode;
 }) {
   const t = useTheme();
   const type = objectType(o.kind);
@@ -903,6 +925,7 @@ function SelectedPanel({ o, units, areaM2, notes, safety, onPatch, onMove, onSna
       {/* Point of use, but quiet: only notes still waiting for 'Got it' and distance problems sit up top. */}
       {notes.filter((n) => n.acknowledge && !acks[ackKey(n)]).map((n) => <SafetyNoteRow key={n.id} note={n} />)}
       {safety.map((w, i) => <SafetyLine key={`${w.kind}-${i}`} text={w.message} caution={w.level === 'caution'} />)}
+      {areaContents}
       {bedContents ?? (onPlan && <Button title={o.kind === 'vineyard-row' ? 'Plan this row: grapes and vines' : o.kind === 'orchard' ? 'Plan this orchard: fruit and nut trees' : 'Plan this bed: what grows best here'} onPress={onPlan} />)}
       {onHouse && <Button title={housed.length ? 'Animals here: capacity and care' : 'Plan animals here: who fits and how many'} icon="paw" onPress={onHouse} />}
       {!o.polygon && o.shape === 'rect' && <Stepper label="Length" value={o.length} step={step} min={0.3} units={units} onChange={(v) => onPatch({ length: v })} />}
@@ -1101,6 +1124,8 @@ function ScenariosPanel({ design, frame, allowed, onOpen, onMain }: {
 const styles = StyleSheet.create({
   // Badges are native views: clip them so one near the edge can't draw over the tabs below.
   map: { height: '48%', overflow: 'hidden' },
+  mapHidden: { height: 0, overflow: 'hidden' },
+  expand: { width: 48, alignItems: 'center', justifyContent: 'center' },
   zoomAll: { position: 'absolute', top: 8, right: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
   banner: { position: 'absolute', top: 8, left: 8, right: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderRadius: 10 },
   tabs: { flexDirection: 'row', borderBottomWidth: 1 },

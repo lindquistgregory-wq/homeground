@@ -18,7 +18,7 @@ import { Chip, FactorList, LayoutSvg, StaleProfileNotice, VerdictBadge } from '.
 import { Body, Button, Card, useTheme } from '../../src/components/ui';
 import { deletePlanting, savePlanting, type Planting, type PlantingStatus } from '../../src/db/plantings';
 import { computeSun, loadAnalysis, type ParcelAnalysis, type SunResult } from '../../src/services/analysis';
-import { activePlantings, bedConditions, bedHistory, bedName, cropShadeObjects, cropShadeSeason, isSpacedSpot, plantsForSpot, type BedReport } from '../../src/services/garden';
+import { activePlantings, bedConditions, bedHistory, bedName, cropShadeObjects, cropShadeSeason, holdsOnePlant, isSpacedSpot, plantsForSpot, type BedReport } from '../../src/services/garden';
 import { useGarden } from '../../src/services/useGarden';
 import { calibratedSunHours } from '@plotwright/core';
 import { listSensors } from '../../src/db/sensors';
@@ -112,10 +112,15 @@ export default function BedPlanner() {
     return rankPlants(plantsForSpot(bed, allPlants()), state.site, cond, name);
   }, [state, bed, cond, name, customVersion]);
 
+  // A one-plant spot (Individual plant, a fruit-tree spot) suggests one plant, to replace what's there.
+  const one = !!bed && holdsOnePlant(bed);
   const setupInput = (): BedSetupInput | null => !bed || !ranked.length ? null : {
-    ranked, plant: plantById, existing: gridPlantings.map((p) => ({ plantId: p.plantId, share: p.share })), history: bedHistory(bedPlantings), year, planCrops,
+    ranked, plant: plantById, existing: one ? [] : gridPlantings.map((p) => ({ plantId: p.plantId, share: p.share })), history: bedHistory(bedPlantings), year, planCrops,
     areaSqFt: (analysis?.frame ? footprintAreaM2(bed, analysis.frame) : bed.width * bed.length) * 10.7639,
+    ...(one ? { maxPicks: 1 } : {}),
   };
+  /** One-plant spots: clear the current plant before a new one goes in. */
+  const clearOne = async () => { if (one) for (const p of gridPlantings) await deletePlanting(p.id); };
   // The ranking exists as soon as the soil is in, but sun takes a moment to model: suggest only once it's
   // known (or failed), or a shady bed could be offered full-sun crops.
   const sunSettled = cond?.sunHours !== undefined || !!sunError;
@@ -155,7 +160,8 @@ export default function BedPlanner() {
   };
   const addSetup = async () => {
     if (!setup || !state || !bed) return;
-    for (const p of setup.picks) await savePlanting({ parcelId: state.parcel.id, designId: state.design.id, bedObjectId: bed.id, plantId: p.plantId, year, share: p.share, status: 'planned' });
+    await clearOne();
+    for (const p of setup.picks) await savePlanting({ parcelId: state.parcel.id, designId: state.design.id, bedObjectId: bed.id, plantId: p.plantId, year, share: one ? 1 : p.share, status: 'planned' });
     setSetup(null);
     await reload();
   };
@@ -173,7 +179,8 @@ export default function BedPlanner() {
   const add = async (plant: PlantSpec) => {
     const rot = rotationAdvice(plant, history, year);
     const go = async () => {
-      await savePlanting({ parcelId: state.parcel.id, designId: state.design.id, bedObjectId: bed.id, plantId: plant.id, year, share, status: 'planned' });
+      await clearOne();
+      await savePlanting({ parcelId: state.parcel.id, designId: state.design.id, bedObjectId: bed.id, plantId: plant.id, year, share: one ? 1 : share, status: 'planned' });
       setOpen(null);
       await reload();
     };

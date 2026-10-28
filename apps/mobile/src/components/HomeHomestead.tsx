@@ -3,7 +3,7 @@
  * the top left, the tools (Design, Calendar, Planner, Site profile, Plants, My animals) in a ribbon on
  * the right that folds away, and tapping an object shows what's planted or living there.
  */
-import { formatArea, footprintAreaM2, frameForBoundary, objectType, plantById, type Design } from '@plotwright/core';
+import { areaMembers, formatArea, footprintAreaM2, frameForBoundary, inDrawnArea, isDrawnArea, objectType, plantById, type Design } from '@plotwright/core';
 import type { SiteProfile } from '@plotwright/providers';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -77,6 +77,15 @@ export function HomeHomestead({ parcel, profile, brief, height, topInset, onHold
   const obj = selected ? design?.objects.find((o) => o.id === selected) : undefined;
   const objPlants = obj ? plantings.filter((p) => p.bedObjectId === obj.id) : [];
   const objHerds = obj ? herds.filter((h) => h.objectId === obj.id && isCurrent(h)) : [];
+  // A hand-drawn area (a garden, a paddock): what's in it, and the plants and animals of those too.
+  const members = obj && design ? areaMembers(obj, design.objects).map((m) => m.object) : [];
+  const memberIds = new Set(members.map((m) => m.id));
+  const areaPlants = members.length ? plantings.filter((p) => memberIds.has(p.bedObjectId)) : [];
+  const areaHerds = obj && isDrawnArea(obj)
+    ? herds.filter((h) => isCurrent(h) && ((h.objectId && memberIds.has(h.objectId)) || (!h.objectId && h.location && inDrawnArea(obj, [h.location.lon, h.location.lat]))))
+    : [];
+  const shownPlants = [...objPlants, ...areaPlants];
+  const shownHerds = [...objHerds, ...areaHerds];
   const frame = frameForBoundary(parcel.geometry);
   const weather = brief?.weather?.split(' · ').slice(0, 2).join(' · ');
 
@@ -150,16 +159,24 @@ export function HomeHomestead({ parcel, profile, brief, height, topInset, onHold
             </View>
             <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={() => setSelected(null)} style={styles.close}><Icon name="close" size={20} color={t.muted} /></Pressable>
           </View>
+          {isDrawnArea(obj) && (
+            <View style={{ marginTop: 8 }}>
+              <Text style={[styles.colHead, { color: t.accent }]}>IN THIS AREA</Text>
+              {members.length
+                ? <Text style={{ color: t.text, fontSize: 13 }}>{members.slice(0, 6).map((m) => m.label ?? objectType(m.kind)?.name ?? m.kind).join(', ')}{members.length > 6 ? ` and ${members.length - 6} more` : ''}</Text>
+                : <Text style={{ color: t.muted, fontSize: 13 }}>Nothing yet</Text>}
+            </View>
+          )}
           <View style={styles.cols}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.colHead, { color: t.growth }]}>PLANTS</Text>
-              {objPlants.length ? objPlants.slice(0, 5).map((p) => <Text key={p.id} style={{ color: t.text, fontSize: 13 }}>{plantById(p.plantId)?.commonName ?? p.plantId}{p.share < 1 ? ` (${Math.round(p.share * 100)}%)` : ''}</Text>)
-                : <Text style={{ color: t.muted, fontSize: 13 }}>{isPlantable(obj) ? 'Nothing planted yet' : 'None'}</Text>}
-              {objPlants.length > 5 && <Text style={{ color: t.muted, fontSize: 12 }}>+{objPlants.length - 5} more</Text>}
+              {shownPlants.length ? shownPlants.slice(0, 5).map((p) => <Text key={p.id} style={{ color: t.text, fontSize: 13 }}>{plantById(p.plantId)?.commonName ?? p.plantId}{p.share < 1 && !areaPlants.includes(p) ? ` (${Math.round(p.share * 100)}%)` : ''}</Text>)
+                : <Text style={{ color: t.muted, fontSize: 13 }}>{isPlantable(obj) || isDrawnArea(obj) ? 'Nothing planted yet' : 'None'}</Text>}
+              {shownPlants.length > 5 && <Text style={{ color: t.muted, fontSize: 12 }}>+{shownPlants.length - 5} more</Text>}
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.colHead, { color: t.warn }]}>ANIMALS</Text>
-              {objHerds.length ? objHerds.map((h) => <Text key={h.id} style={{ color: t.text, fontSize: 13 }}>{herdLabel(h)}{h.status === 'planned' ? ' (planned)' : ''}</Text>)
+              {shownHerds.length ? shownHerds.map((h) => <Text key={h.id} style={{ color: t.text, fontSize: 13 }}>{herdLabel(h)}{h.status === 'planned' ? ' (planned)' : ''}</Text>)
                 : <Text style={{ color: t.muted, fontSize: 13 }}>None</Text>}
             </View>
           </View>
